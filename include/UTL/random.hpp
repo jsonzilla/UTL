@@ -206,6 +206,16 @@ template <class T, std::size_t N>
     return true;
 }
 
+template<class ResultType>
+[[nodiscard]] constexpr ResultType _mix_seed(ResultType seed) {
+    std::uint64_t state = (static_cast<std::uint64_t>(seed) + 0x9E3779B97f4A7C15);
+    state               = (state ^ (state >> 30)) * 0xBF58476D1CE4E5B9;
+    state               = (state ^ (state >> 27)) * 0x94D049BB133111EB;
+    return static_cast<ResultType>(state ^ (state >> 31));
+    // some of the 16/32-bit PRNGs have bad correlation on the successive seeds, this usually
+    // can be alleviated by using a signle iteration of a "good" PRNG to pre-mix the seed
+}
+
 template <class T>
 constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
 // an "overall decent" default seed - doesn't gave too many zeroes,
@@ -265,6 +275,10 @@ public:
 
     constexpr void seed(result_type seed) noexcept {
         this->s = (seed & 0x1fffffffu) + 1156979152u; // accepts 29 seed-bits
+        
+        for (std::size_t i = 0; i < 10; ++i) this->operator()();
+        // naively seeded RomuMono produces correlating patterns on the first iterations 
+        // for successive seeds, we can do a few iterations to escape that
     }
 
     template <class SeedSeq, _is_seed_seq_enable_if<SeedSeq> = true>
@@ -318,7 +332,11 @@ public:
     [[nodiscard]] static constexpr result_type min() noexcept { return 0; }
     [[nodiscard]] static constexpr result_type max() noexcept { return std::numeric_limits<result_type>::max(); }
 
-    constexpr void seed(result_type seed) noexcept { this->s = seed; }
+    constexpr void seed(result_type seed) noexcept {
+        this->s = _mix_seed(seed);
+        // naively seeded SplitMix32 has a horrible correlation between successive seeds, we can mostly alleviate
+        // the issue by pre-mixing the seed with a single iteration of a "better" 64-bit algorithm 
+    }
 
     template <class SeedSeq, _is_seed_seq_enable_if<SeedSeq> = true>
     void seed(SeedSeq&& seq) {

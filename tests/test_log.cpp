@@ -85,37 +85,37 @@ TEST_CASE("Stringifier correctly handles integers") {
     CHECK(log::stringify(-17ll) == "-17");
     CHECK(log::stringify(17ull) == "17");
 
-    CHECK(log::stringify(nlim<std::int8_t>::min()) == std::to_string(nlim<std::int8_t>::min()));
-    CHECK(log::stringify(nlim<std::int16_t>::min()) == std::to_string(nlim<std::int16_t>::min()));
-    CHECK(log::stringify(nlim<std::int32_t>::min()) == std::to_string(nlim<std::int32_t>::min()));
-    CHECK(log::stringify(nlim<std::int64_t>::min()) == std::to_string(nlim<std::int64_t>::min()));
+    CHECK(log::stringify(nl<std::int8_t>::min()) == std::to_string(nl<std::int8_t>::min()));
+    CHECK(log::stringify(nl<std::int16_t>::min()) == std::to_string(nl<std::int16_t>::min()));
+    CHECK(log::stringify(nl<std::int32_t>::min()) == std::to_string(nl<std::int32_t>::min()));
+    CHECK(log::stringify(nl<std::int64_t>::min()) == std::to_string(nl<std::int64_t>::min()));
 
-    CHECK(log::stringify(nlim<std::int8_t>::max()) == std::to_string(nlim<std::int8_t>::max()));
-    CHECK(log::stringify(nlim<std::int16_t>::max()) == std::to_string(nlim<std::int16_t>::max()));
-    CHECK(log::stringify(nlim<std::int32_t>::max()) == std::to_string(nlim<std::int32_t>::max()));
-    CHECK(log::stringify(nlim<std::int64_t>::max()) == std::to_string(nlim<std::int64_t>::max()));
+    CHECK(log::stringify(nl<std::int8_t>::max()) == std::to_string(nl<std::int8_t>::max()));
+    CHECK(log::stringify(nl<std::int16_t>::max()) == std::to_string(nl<std::int16_t>::max()));
+    CHECK(log::stringify(nl<std::int32_t>::max()) == std::to_string(nl<std::int32_t>::max()));
+    CHECK(log::stringify(nl<std::int64_t>::max()) == std::to_string(nl<std::int64_t>::max()));
 
-    CHECK(log::stringify(nlim<std::uint8_t>::min()) == std::to_string(nlim<std::uint8_t>::min()));
-    CHECK(log::stringify(nlim<std::uint16_t>::min()) == std::to_string(nlim<std::uint16_t>::min()));
-    CHECK(log::stringify(nlim<std::uint32_t>::min()) == std::to_string(nlim<std::uint32_t>::min()));
-    CHECK(log::stringify(nlim<std::uint64_t>::min()) == std::to_string(nlim<std::uint64_t>::min()));
+    CHECK(log::stringify(nl<std::uint8_t>::min()) == std::to_string(nl<std::uint8_t>::min()));
+    CHECK(log::stringify(nl<std::uint16_t>::min()) == std::to_string(nl<std::uint16_t>::min()));
+    CHECK(log::stringify(nl<std::uint32_t>::min()) == std::to_string(nl<std::uint32_t>::min()));
+    CHECK(log::stringify(nl<std::uint64_t>::min()) == std::to_string(nl<std::uint64_t>::min()));
 
-    CHECK(log::stringify(nlim<std::uint8_t>::max()) == std::to_string(nlim<std::uint8_t>::max()));
-    CHECK(log::stringify(nlim<std::uint16_t>::max()) == std::to_string(nlim<std::uint16_t>::max()));
-    CHECK(log::stringify(nlim<std::uint32_t>::max()) == std::to_string(nlim<std::uint32_t>::max()));
-    CHECK(log::stringify(nlim<std::uint64_t>::max()) == std::to_string(nlim<std::uint64_t>::max()));
+    CHECK(log::stringify(nl<std::uint8_t>::max()) == std::to_string(nl<std::uint8_t>::max()));
+    CHECK(log::stringify(nl<std::uint16_t>::max()) == std::to_string(nl<std::uint16_t>::max()));
+    CHECK(log::stringify(nl<std::uint32_t>::max()) == std::to_string(nl<std::uint32_t>::max()));
+    CHECK(log::stringify(nl<std::uint64_t>::max()) == std::to_string(nl<std::uint64_t>::max()));
 }
 
 TEST_CASE("Stringifier correctly handles floats") {
     CHECK(log::stringify(0.5) == "0.5");
     CHECK(log::stringify(-1.5) == "-1.5");
     CHECK(log::stringify(0.) == "0");
-    CHECK(!check_if_throws([] { return log::stringify(nlim<float>::max()); }));
-    CHECK(!check_if_throws([] { return log::stringify(nlim<float>::min()); }));
-    CHECK(!check_if_throws([] { return log::stringify(nlim<double>::max()); }));
-    CHECK(!check_if_throws([] { return log::stringify(nlim<double>::min()); }));
-    CHECK(!check_if_throws([] { return log::stringify(nlim<long double>::max()); }));
-    CHECK(!check_if_throws([] { return log::stringify(nlim<long double>::min()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<float>::max()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<float>::min()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<double>::max()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<double>::min()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<long double>::max()); }));
+    CHECK(!check_if_throws([] { return log::stringify(nl<long double>::min()); }));
 }
 
 TEST_CASE("Stringifier correctly handles complex") { CHECK(log::stringify(std::complex{1, 2}) == "1 + 2 i"); }

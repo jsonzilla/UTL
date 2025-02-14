@@ -17,6 +17,7 @@ macro(add_utl_test filename)
 endmacro()
 
 # Tests
+add_utl_test(test_integral)
 add_utl_test(test_json)
 add_utl_test(test_log)
 add_utl_test(test_math)

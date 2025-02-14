@@ -6,7 +6,7 @@
 
 **integral** module implements various utilities for that deal with integer types & bit twiddling. Main highlights are:
 
-- Integer bit operations
+- Bit operations
 - Integer math
 - Fixed-size literals
 - Arbitrary precision integers / bitsets
@@ -14,35 +14,49 @@
 Such functionality is mostly useful in `constexpr` context when dealing with optimizations such as compile-time creation of bit-masks, bit-buffers, computation of different alignments, coefficients and etc. `BigUint<>` also serves as a "better" alternative to `std::bitset<>`.
 
 > [!Note]
-> Significant part of this module gets added into the standard library with **C++20** `<bits>` and `<utility>`
+> Significant part of this module gets added into the standard library with **C++20** `<bits>` and `<utility>`, saturated math ships with **C++26** `<numeric>`. All such functions provide the same API as their `std::` variants to allow seamless future transition.
 
 ## Definitions
 
 ```cpp
-// Integer bit operations
+// - Bit operations -
+namespace bits {
+
 using bit_type = bool;
 
-namespace bits {
-    template <class T> constexpr T    get(T  value, int bit)                 noexcept;
-    template <class T> constexpr void set(T& value, int bit, bit_type state) noexcept;
+template <class T> constexpr std::size_t bit_sizeof;
 
-    template <class T> constexpr std::size_t bit_width(T value) noexcept;
+template <class T> constexpr T    get(T  value, std::size_t bit)                 noexcept;
+template <class T> constexpr void set(T& value, std::size_t bit, bit_type state) noexcept;
 
-    template <class T> constexpr T rotl(T value, int shift) noexcept;
-    template <class T> constexpr T rotr(T value, int shift) noexcept;
+template <class T> constexpr std::size_t bit_width(T value) noexcept;
+
+template <class T> constexpr T rotl(T value, std::size_t shift) noexcept;
+template <class T> constexpr T rotr(T value, std::size_t shift) noexcept;
+
 }
 
-// Integer math
+// - Integer math -
 namespace math {
-template <class T> constexpr T int_divide_ceil( T numerator, T denominator) noexcept;
-template <class T> constexpr T int_divide_floor(T numerator, T denominator) noexcept;
     
-template <class T> constexpr bool addition_overflows(     T lhs, T rhs) noexcept;
-template <class T> constexpr bool substraction_underflows(T lhs, T rhs) noexcept;
-    
-template <class T> constexpr T clamped_add(      T lhs, T rhs) noexcept;
-template <class T> constexpr T clamped_substract(T lhs, T rhs) noexcept;
-    
+// Rounding integer division
+template <class T> constexpr T div_floor(T dividend, T divisor) noexcept;
+template <class T> constexpr T div_ceil( T dividend, T divisor) noexcept;
+template <class T> constexpr T div_down( T dividend, T divisor) noexcept;
+template <class T> constexpr T div_up(   T dividend, T divisor) noexcept;
+
+// Saturated math
+template <class T> constexpr bool add_overflows(T lhs, T rhs) noexcept;
+template <class T> constexpr bool sub_overflows(T lhs, T rhs) noexcept;
+template <class T> constexpr bool mul_overflows(T lhs, T rhs) noexcept;
+template <class T> constexpr bool div_overflows(T lhs, T rhs) noexcept;
+
+template <class T> constexpr T add_sat(T lhs, T rhs) noexcept;
+template <class T> constexpr T sub_sat(T lhs, T rhs) noexcept;
+template <class T> constexpr T mul_sat(T lhs, T rhs) noexcept;
+template <class T> constexpr T div_sat(T lhs, T rhs) noexcept;
+
+// Heterogenous integer comparison
 template <class T1, class T2> constexpr bool cmp_equal(        T1 lhs, T2 rhs) noexcept;
 template <class T1, class T2> constexpr bool cmp_not_equal(    T1 lhs, T2 rhs) noexcept;
 template <class T1, class T2> constexpr bool cmp_less(         T1 lhs, T2 rhs) noexcept;
@@ -51,13 +65,16 @@ template <class T1, class T2> constexpr bool cmp_less_equal(   T1 lhs, T2 rhs) n
 template <class T1, class T2> constexpr bool cmp_greater_equal(T1 lhs, T2 rhs) noexcept;
     
 template <class To, class From> constexpr bool in_range(From value) noexcept;
-    
-template <class To, class From> constexpr To narrow_cast(From value);
+ 
+// Casts
+template <class To, class From> constexpr To narrow_cast(  From value);
+template <class To, class From> constexpr To saturate_cast(From value) noexcept;
     
 template <class T> constexpr T reverse_idx(T idx, T size) noexcept;
+
 }
 
-// Integer literals
+// - Integer literals -
 namespace literals {
     constexpr std::int8_t   operator"" _i8( unsigned long long v) noexcept;
     constexpr std::uint8_t  operator"" _u8( unsigned long long v) noexcept;
@@ -70,7 +87,7 @@ namespace literals {
     constexpr std::size_t   operator"" _sz( unsigned long long v) noexcept;
 }
 
-// Arbitrary sized integers & bitsets
+// - Arbitrary sized integers & bitsets -
 template <std::size_t bits_to_fit>
 struct BigUint {
     using word_type = std::uint64_t;

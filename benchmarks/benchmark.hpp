@@ -1,3 +1,5 @@
+#include "UTL/enum_reflect.hpp"
+#include "UTL/integral.hpp"
 #include "UTL/json.hpp"
 #include "UTL/log.hpp"
 #include "UTL/math.hpp"
@@ -10,11 +12,13 @@
 #include "UTL/shell.hpp"
 #include "UTL/sleep.hpp"
 #include "UTL/stre.hpp"
+#include "UTL/struct_reflect.hpp"
 #include "UTL/table.hpp"
 #include "UTL/timer.hpp"
 
 #include <chrono>
 #include <complex>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -33,6 +37,11 @@ inline ankerl::nanobench::Bench bench;
 template <class Func>
 void benchmark(const char* name, Func lambda) {
     bench.run(name, lambda);
+}
+
+template <class Func>
+void benchmark(const std::string &name, Func lambda) {
+    bench.run(name.c_str(), lambda);
 }
 
 using namespace utl;
@@ -56,6 +65,9 @@ constexpr double max_double = 1e3;
 constexpr int min_int = -1500;
 constexpr int max_int = 1500;
 
+constexpr std::uint64_t min_uint = 15;
+constexpr std::uint64_t max_uint = 17500;
+
 // PRNG & buffers
 inline random::generators::RomuDuoJr64 gen;
 inline std::vector<std::string>        pregen_strings;
@@ -67,6 +79,7 @@ inline std::vector<std::string>        pregen_strings;
 inline auto rand_bool() { return static_cast<bool>(random::UniformIntDistribution{0, 1}(gen)); }
 inline auto rand_char() { return static_cast<char>(random::UniformIntDistribution{'a', 'z'}(gen)); }
 inline auto rand_int() { return random::UniformIntDistribution{min_int, max_int}(gen); }
+inline auto rand_uint() { return random::UniformIntDistribution{min_uint, max_uint}(gen); }
 inline auto rand_double() { return random::UniformRealDistribution{min_double, max_double}(gen); }
 inline auto rand_complex() { return std::complex{rand_double(), rand_double()}; }
 inline auto rand_string() {

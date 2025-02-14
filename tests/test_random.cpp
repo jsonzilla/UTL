@@ -38,15 +38,15 @@ void test_in_every_real_range(Func&& func) {
     // try range [ -2^N, 2^N ] for all N
     auto min = T(-1);
     auto max = T(1);
-    for (; max < nlim<T>::max() / 2; min *= 2, max *= 2) func(min, max);
+    for (; max < nl<T>::max() / 2; min *= 2, max *= 2) func(min, max);
     // try range [ 0,    2^N ] for all N
     min = T(-1);
     max = T(1);
-    for (; max < nlim<T>::max() / 2; min *= 2, max *= 2) func(T(0), max);
+    for (; max < nl<T>::max() / 2; min *= 2, max *= 2) func(T(0), max);
     // try range [ -2^N,   0 ] for all N
     min = T(-1);
     max = T(1);
-    for (; max < nlim<T>::max() / 2; min *= 2, max *= 2) func(min, T(0));
+    for (; max < nl<T>::max() / 2; min *= 2, max *= 2) func(min, T(0));
 }
 
 TEST_CASE_TEMPLATE("Uniform real distribution doesn't go out of range", T, //
@@ -77,20 +77,20 @@ void test_in_every_int_range(Func&& func) {
     if constexpr (std::is_signed_v<T>) {
         auto min = T(-1);
         auto max = T(1);
-        for (; max < nlim<T>::max() / 2; min *= 2, max *= 2) func(min, max);
-        func(nlim<T>::min(), nlim<T>::max());
+        for (; max < nl<T>::max() / 2; min *= 2, max *= 2) func(min, max);
+        func(nl<T>::min(), nl<T>::max());
     }
     // try range [ 0,    2^N ] for all N
     if constexpr (true) {
         auto max = T(1);
-        for (; max < nlim<T>::max() / 2; max *= 2) func(T(0), max);
-        func(T(0), nlim<T>::max());
+        for (; max < nl<T>::max() / 2; max *= 2) func(T(0), max);
+        func(T(0), nl<T>::max());
     }
     // try range [ -2^N,   0 ] for all N
     if constexpr (std::is_signed_v<T>) {
         auto min = T(-1);
-        for (; min > nlim<T>::min() / 2; min *= 2) func(min, T(0));
-        func(nlim<T>::min(), T(0));
+        for (; min > nl<T>::min() / 2; min *= 2) func(min, T(0));
+        func(nl<T>::min(), T(0));
     }
 }
 

@@ -25,4 +25,10 @@ bool check_if_throws(Func f) {
 }
 
 template<class T>
-using nlim = std::numeric_limits<T>;
+using nl = std::numeric_limits<T>;
+
+template<class T>
+constexpr auto nlmin = nl<T>::min();
+
+template<class T>
+constexpr auto nlmax = nl<T>::max();

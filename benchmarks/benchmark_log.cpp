@@ -28,7 +28,7 @@ void benchmark_stringification() {
 
     constexpr int repeats = 20'000;
 
-    bench.timeUnit(1ns, "ms").minEpochIterations(20);
+    bench.timeUnit(1ms, "ms").minEpochIterations(20);
 
     // --- Integer stringification ---
     // -------------------------------
