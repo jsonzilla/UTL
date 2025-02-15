@@ -22,6 +22,7 @@
 #include <cstdint>          // uint8_t
 #include <cuchar>           // size_t, char32_t, mbstate_t
 #include <exception>        // exception
+#include <filesystem>       // create_directories()
 #include <fstream>          // ifstream, ofstream
 #include <initializer_list> // initializer_list<>
 #include <limits>           // numeric_limits<>::max_digits10, numeric_limits<>::max_exponent10
@@ -595,7 +596,10 @@ public:
     }
 
     void to_file(const std::string& filepath, Format format = Format::PRETTY) const {
-        auto chars = this->to_string(format);
+        const auto chars = this->to_string(format);
+        std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
+        // if user doesn't want to pay for 'create_directories()' call (which seems to be inconsequential on
+        // my benchmarks) they can always use 'std::ofstream' and 'to_string()' to export manually
         std::ofstream(filepath).write(chars.data(), chars.size());
         // maybe a little faster than doing 'std::ofstream(filepath) << node.to_string(format)'
     }

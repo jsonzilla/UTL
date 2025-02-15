@@ -263,6 +263,8 @@ Serializes JSON node to a string using a given `format`.
 
 Serializes JSON node to the file at `filepath` using a given `format`.
 
+Missing directories from `filepath` will be created automatically.
+
 > ```cpp
 > template <class T> T to_struct() const;
 > ```
