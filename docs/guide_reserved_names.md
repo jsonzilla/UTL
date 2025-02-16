@@ -16,9 +16,9 @@ utl::<module_name>::_<local_identifier_name>
 
 ## Reserved Global Identifiers
 
-All global identifiers prefixed with `UTL_`:
+All global identifiers prefixed with `utl_`:
 
 ```cpp
-UTL_<global_identifier_name>
+utl_<global_identifier_name>
 ```
 

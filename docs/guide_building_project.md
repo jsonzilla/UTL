@@ -45,11 +45,11 @@ compiler="g++"
 test_flags="--rerun-failed --output-on-failure --timeout 60"
 ```
 
-**Compilation flags** can be changed in `source/CMakeLists.txt`, find following lines and enter appropriate values if necessary:
+**Compilation flags** can be changed in `tests/CMakeLists.txt` and `benchmarks/CMakeLists.txt`, find following lines and enter appropriate values if necessary:
 
 ```cmake
-target_compile_features(run PRIVATE cxx_std_17)
-target_compile_options(run PRIVATE -O2 -Wall -Wextra -Wpedantic -Werror)
+target_compile_features(${filename} PRIVATE cxx_std_17)
+target_compile_options(${filename} PRIVATE -O2 -Wall -Wextra -Wpedantic -Werror)
 ```
 
 ## Building manually
