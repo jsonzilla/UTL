@@ -1,4 +1,4 @@
-# ---------------------------------- CONTENTS -----------------------------------
+# __________________________________ CONTENTS ___________________________________
 #   
 #   This script contains shortcuts for building, running
 #   and testing the project. All action keywords can be
@@ -6,27 +6,28 @@
 #
 #   See "docs/guide_building_project.md" for the whole building guide.
 #   
-# ------------------------------------ GUIDE ------------------------------------
+# ____________________________________ GUIDE ____________________________________
 #   
 #   Usage format:
 #     > bash actions.sh [ACTIONS]
 #   
 #   Actions:
-#     clear  - Clears "build/" folder
-#     config - Configures CMake with appropriate args
-#     build  - Builds the project (requires configured CMake)
-#     run    - Runs main executable (requires successful build)
-#     test   - Runs CTest tests
+#     clear   - Clears "build/" folder
+#     config  - Configures CMake with appropriate args
+#     build   - Builds the project (requires configured CMake)
+#     test    - Runs CTest tests (requires successful build)
+#     run     - Runs currently selected executable
+#     profile - Runs currently selected executable with Callgrind profiler
 #   
 #   Usage example:
 #     > bash actions.sh clear config build test
 #   
-# -------------------------------------------------------------------------------
+# _______________________________________________________________________________
 
-# -----------------------
+# =======================
 # ---- Configuration ----
-# -----------------------
-directory_source="source/"
+# =======================
+
 directory_build="build/"
 directory_tests="${directory_build}tests/"
 
@@ -37,9 +38,10 @@ test_flags="--rerun-failed --output-on-failure --timeout 60"
 build_jobs="6"
 header_merger_script="cmake/create_single_header.sh"
 
-# -----------------------
+# =======================
 # ------ Functions ------
-# -----------------------
+# =======================
+
 check_command_exists() {
     if ! command -v $1 &> /dev/null
     then
@@ -98,9 +100,10 @@ executable_profile() {
     kcachegrind "./${directory_temp}callgrind.latest"
 }
 
-# -----------------------
+# =======================
 # --- Action selector ---
-# -----------------------
+# =======================
+
 valid_command=false
 
 for var in "$@"
