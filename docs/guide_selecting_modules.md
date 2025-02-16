@@ -52,7 +52,7 @@ int main() {
 // Pick some modules in one header
 #define UTL_PICK_MODULES
 #define UTLMODULE_JSON
-#include <https://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp>
+#include "UTL.hpp"
 
 // ...
 
@@ -60,7 +60,7 @@ int main() {
 #define UTL_PICK_MODULES
 #define UTLMODULE_RANDOM
 #define UTLMODULE_LOG
-#include <https://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp>
+#include "UTL.hpp"
 
 // ...
 

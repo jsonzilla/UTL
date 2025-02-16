@@ -5,4 +5,6 @@
 #
 theme: jekyll-theme-hacker
 title: UTL
-description: Collection of self-contained header-only libraries for C++17 
+description: Collection of self-contained header-only libraries for C++17
+plugins:
+  - jekyll-seo-tag
