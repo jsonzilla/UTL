@@ -26,6 +26,8 @@
 !*.png
 # > Data
 !*.json
+# > Website
+!*.yml
 
 # Ignore build & temporary directories regarless of their contents
 .cache/
