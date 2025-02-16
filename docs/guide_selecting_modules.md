@@ -83,4 +83,4 @@ int main(int argc, char **argv) {
 
 ## Including modules directly
 
-Individual modules can also be grabbed directly from [`include/UTL/`](../include/UTL/). In this case they can be included directly and no other action is needed.
+Individual modules can also be grabbed directly from [`include/UTL/`](https://github.com/DmitriBogdanov/UTL/tree/master/include/UTL). In this case they can be included directly and no other action is needed.

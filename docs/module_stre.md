@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/stre.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/stre.hpp)
 
 **stre** (aka **STR**ing **E**xpansions) module contains efficient implementations of most commonly used string utility-functions.
 

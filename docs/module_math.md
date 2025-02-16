@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/math.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/math.hpp)
 
 **math** adds various helper functions that aim to reduce code verbosity when working with mathematical expressions.
 

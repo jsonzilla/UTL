@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/random.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/random.hpp)
 
 **random** module implements several additions to std [&lt;random&gt;](https://en.cppreference.com/w/cpp/header/random) that aim to:
 
@@ -411,7 +411,7 @@ Thankfully, `<random>` design is quite flexible and fully abstracts the concept 
 | `std::ranlux48`             | ~4%            | 120 bytes              | `std::uint64_t` | ★★★★☆   | $\approx 2^{576}$      |                                   |
 
 > [!Important]
-> Performance ratings are **relative to the commonly used  `std::minstd_rand` / `rand()`**.  Particular number may differ depending on the hardware and compilation settings, however general trends tend to stay the same. Benchmarks can be found [here](../benchmarks/benchmark_random.cpp).
+> Performance ratings are **relative to the commonly used  `std::minstd_rand` / `rand()`**.  Particular number may differ depending on the hardware and compilation settings, however general trends tend to stay the same. Benchmarks can be found [here](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/benchmark_random.cpp).
 
 > [!Important]
 > Performance is measured in **values per unit of time**, to get a *bytes per unit of time* metric, the measurements can be normalized by a `sizeof(result_type)`, making 32-bit generators effectively two times slower than listed in the table.

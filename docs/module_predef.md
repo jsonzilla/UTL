@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/predef.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/predef.hpp)
 
 **predef** module contains macros and constant expressions for detecting compilation details, while also providing several helper macros for codegen.
 

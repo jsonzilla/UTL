@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/sleep.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/sleep.hpp)
 
 **sleep** implements 3 variations of sleep() function with a goal of providing improved precision.
 

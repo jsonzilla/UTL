@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/enum_reflect.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/enum_reflect.hpp)
 
 **enum_reflect** is a lean `enum` reflection library based around the [map-macro](https://github.com/swansontec/map-macro).
 

@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/struct_reflect.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/struct_reflect.hpp)
 
 **struct_reflect** is a lean `struct` reflection library based around the [map-macro](https://github.com/swansontec/map-macro).
 

@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/json.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/json.hpp)
 
 **json** module aims to provide an intuitive JSON manipulation API similar to [nlohmann_json](https://github.com/nlohmann/json) while being a bit more lightweight and explicit about the underlying type conversions. The few key features & differences are:
 
@@ -84,13 +84,23 @@ class Node {
     // - Object methods -
     Node      & operator[](std::string_view key);
     const Node& operator[](std::string_view key) const;
+    Node      &         at(std::string_view key);
+    const Node&         at(std::string_view key) const;
     
-    Node      & at(std::string_view key);
-    const Node& at(std::string_view key) const;
+    std::pair<iterator, bool> insert(const Node&  node); // TODO:
+    std::pair<iterator, bool> insert(      Node&& node); // TODO:
     
-    bool contains(std::string_view key) const;
-    
+    bool              contains(std::string_view key) const;
     template<class T> value_or(std::string_view key, const T &else_value);
+    
+    // - Array methods -
+    Node      & operator[](std::size_t pos);       // TODO:
+    const Node& operator[](std::size_t pos) const; // TODO:
+    Node      &         at(std::size_t pos);       // TODO:
+    const Node&         at(std::size_t pos) const; // TODO:
+    
+    void push_back(const Node&  node); // TODO:
+    void push_back(      Node&& node); // TODO:
     
     // - Assignment -
     Node& operator=(const Node&) = default;
@@ -718,7 +728,7 @@ Parsing and serialization also satisfies [C++ `<charconv>`](https://en.cpprefere
 
 ## Benchmarks
 
-[Benchmarks](../benchmarks/benchmark_json.cpp) for parsing and serializing of minimized JSON data corresponding to various entries in the [test suite](../benchmarks/data). 
+[Benchmarks](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/benchmark_json.cpp) for parsing and serializing of minimized JSON data corresponding to various entries in the [test suite](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/data). 
 
 ```
 ====== BENCHMARKING ON DATA: `strings.json` ======

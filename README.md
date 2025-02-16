@@ -10,7 +10,7 @@
 
 For the ease of integration, this library is distributed in a form of a **single header**, which can be found [here](./single_include/UTL.hpp).
 
-All modules can also be downloaded [individually](./include/UTL).
+All modules can also be downloaded [individually](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL).
 
 ## Design goals
 

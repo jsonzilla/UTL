@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/timer.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/timer.hpp)
 
 **timer** contains a number of methods for time measurement. Intended mainly for measuring code execution time without [std::chrono](https://en.cppreference.com/w/cpp/chrono) boilerplate. Outputs time as a string, prints formatted local time and date.
 

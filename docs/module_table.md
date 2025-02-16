@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/table.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/table.hpp)
 
 **table** implements LaTeX-like table drawing methods. Useful in benchmarks and prototyping of algorithms to represent results as a table.
 

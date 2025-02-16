@@ -2,7 +2,7 @@
 
 [<- to README.md](..)
 
-[<- to implementation.hpp](../include/UTL/profiler.hpp)
+[<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/profiler.hpp)
 
 **utl::profiler** module contains macros for quick scope profiling and micro-benchmarking with x86 intrinsics (GCC/clang only).
 
@@ -245,7 +245,7 @@ To enable the use of intrinsics add folowing `#define` before including the `pro
 
 This will switch `profiler::clock` from `std::chrono::steady_clock` to a custom [`<chrono>`](https://en.cppreference.com/w/cpp/chrono)-compatible implementation using GCC/clang [RDTSC x86 intrinsic](https://en.wikipedia.org/wiki/Time_Stamp_Counter) that is likely to be DRASTICALLY faster at getting time that std-lib solutions like `std::chrono::steady_clock` or `ctime()`.
 
-This is exceedingly helpful when benchmarking code on a hot path, however it comes at a price of producing a non-portable executable. Below are a few [benchmarks](../benchmarks/benchmark_profiler.cpp) showcasing the difference on a particular hardware:
+This is exceedingly helpful when benchmarking code on a hot path, however it comes at a price of producing a non-portable executable. Below are a few [benchmarks](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/benchmark_profiler.cpp) showcasing the difference on a particular hardware:
 
 ```
 ======= USING std::chrono ========
