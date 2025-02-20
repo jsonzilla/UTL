@@ -14,7 +14,7 @@
 - [Nice error messages](#error-handling)
 - [Full support for class reflection](#structure-reflection)
 
-> [!Note]
+> [!NOTE]
 > Despite rather competitive performance, considerably faster parsing can be achieved with custom formatters, SIMD and unordered key optimizations (see [simdjson](https://github.com/simdjson/simdjson), [Glaze](https://github.com/stephenberry/glaze), [RapidJSON](https://github.com/Tencent/rapidjson)  and [yyjson](https://github.com/ibireme/yyjson)), this, however often comes at the expense of user convenience (like with *RapidJSON*) or features (*simdjson* is parser-only, *yyjson* is `C` and doesn't include reflection, *Glaze* has it all, but requires [C++23](https://en.cppreference.com/w/cpp/23)).
 
 > [!Tip]
