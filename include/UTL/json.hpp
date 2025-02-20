@@ -17,10 +17,8 @@
 #include <array>            // array<>
 #include <charconv>         // to_chars(), from_chars()
 #include <cmath>            // isfinite()
-#include <codecvt>          // codecvt_utf8<>
 #include <cstddef>          // size_t
-#include <cstdint>          // uint8_t
-#include <cuchar>           // size_t, char32_t, mbstate_t
+#include <cstdint>          // uint8_t, uint16_t, uint32_t
 #include <exception>        // exception
 #include <filesystem>       // create_directories()
 #include <fstream>          // ifstream, ofstream
@@ -28,9 +26,9 @@
 #include <limits>           // numeric_limits<>::max_digits10, numeric_limits<>::max_exponent10
 #include <map>              // map<>
 #include <stdexcept>        // runtime_error
-#include <string>           // string, stoul()
+#include <string>           // string
 #include <string_view>      // string_view
-#include <system_error>     // errc()
+#include <system_error>     // errc
 #include <type_traits>      // enable_if_t<>, void_t, is_convertible_v<>, is_same_v<>,
                             // conjunction<>, disjunction<>, negation<>
 #include <utility>          // move(), declval<>()
@@ -39,7 +37,7 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Reasonably simple (if we discound reflection) parser / serializer, doen't use any intrinsics or compiler-specific
+// Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
 // stuff. Unlike some other implementation, doesn't include the tokenizing step - we parse everything in a single 1D
 // scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is is
 // due to a nice quirk of JSON - parsing nodes, we can always determine node type based on a single first character,
@@ -60,21 +58,79 @@ namespace utl::json {
 // --- Misc. utils ---
 // ===================
 
-// Codepoint -> UTF-8 string conversion using <codecvt> (deprecated in C++17, removed in C++26)
-// This is kinda horrible, but there doesn't seem to a better way.
-// Returns success so we can handle the error message inside the parser itself.
-inline bool _unicode_codepoint_to_utf8(std::string& destination, char32_t cp) {
-    std::array<char, 4> buffer; // here we will put UTF-8 string
-    char32_t const*     from = &cp;
-    char*               end_of_buffer;
+// Codepoint convertion function. We could use <codecvt> to do the same in a few lines,
+// but <codecvt> was marked for deprecation in C++17 and fully removed in C++26, as of now
+// there is no standard library replacement so we have roll our own. This is likely to be
+// more performant too due to not having any redundant locale handling.
+//
+// The function was tested for all valid codepoints (from U+0000 to U+10FFFF)
+// against the <codecvt> implementation and proved to be exactly the same.
+//
+// Codepoint <-> UTF-8 convertion table (see https://en.wikipedia.org/wiki/UTF-8):
+//
+// | Codepoint range      | Byte 1   | Byte 2   | Byte 3   | Byte 4   |
+// |----------------------|----------|----------|----------|----------|
+// | U+0000   to U+007F   | 0eeeffff |          |          |          |
+// | U+0080   to U+07FF   | 110dddee | 10eeffff |          |          |
+// | U+0800   to U+FFFF   | 1110cccc | 10ddddee | 10eeffff |          |
+// | U+010000 to U+10FFFF | 11110abb | 10bbcccc | 10ddddee | 10eeffff |
+//
+// Characters 'a', 'b', 'c', 'd', 'e', 'f' correspond to the bits taken from the codepoint 'U+ABCDEF'
+// (each letter in a codepoint is a hex corresponding to 4 bits, 6 positions => 24 bits of info).
+// In terms of C++ 'U+ABCDEF' codepoints can be expressed as an integer hex-literal '0xABCDEF'.
+//
+bool _codepoint_to_utf8(std::string& destination, std::uint32_t cp) {
+    // returns success so we can handle the error message inside the parser itself.
 
-    std::mbstate_t              state;
-    std::codecvt_utf8<char32_t> codecvt;
+    std::array<char, 4> buffer;
+    std::size_t         count;
 
-    if (codecvt.out(state, from, from + 1, from, buffer.data(), buffer.data() + 4, end_of_buffer)) return false;
+    // 1-byte ASCII (codepoints U+0000 to U+007F)
+    if (cp <= 0x007F) {
+        buffer[0] = static_cast<char>(cp);
+        count     = 1;
+    }
+    // 2-byte unicode (codepoints U+0080 to U+07FF)
+    else if (cp <= 0x07FF) {
+        buffer[0] = static_cast<char>(((cp >> 6) & 0x1F) | 0xC0);
+        buffer[1] = static_cast<char>(((cp >> 0) & 0x3F) | 0x80);
+        count     = 2;
+    }
+    // 3-byte unicode (codepoints U+0800 to U+FFFF)
+    else if (cp <= 0xFFFF) {
+        buffer[0] = static_cast<char>(((cp >> 12) & 0x0F) | 0xE0);
+        buffer[1] = static_cast<char>(((cp >> 6) & 0x3F) | 0x80);
+        buffer[2] = static_cast<char>(((cp >> 0) & 0x3F) | 0x80);
+        count     = 3;
+    }
+    // 4-byte unicode (codepoints U+010000 to U+10FFFF)
+    else if (cp <= 0x10FFFF) {
+        buffer[0] = static_cast<char>(((cp >> 18) & 0x07) | 0xF0);
+        buffer[1] = static_cast<char>(((cp >> 12) & 0x3F) | 0x80);
+        buffer[2] = static_cast<char>(((cp >> 6) & 0x3F) | 0x80);
+        buffer[3] = static_cast<char>(((cp >> 0) & 0x3F) | 0x80);
+        count     = 4;
+    }
+    // invalid codepoint
+    else {
+        return false;
+    }
 
-    destination.append(buffer.data(), end_of_buffer);
+    destination.append(buffer.data(), count);
     return true;
+}
+
+// JSON '\u' escapes use UTF-16 surrogate pairs to encode codepoints outside of basic multilingual plane,
+// see https://unicodebook.readthedocs.io/unicode_encodings.html
+//     https://en.wikipedia.org/wiki/UTF-16
+[[nodiscard]] constexpr std::uint32_t _utf16_pair_to_codepoint(std::uint16_t high, std::uint16_t low) noexcept {
+    return 0x10000 + ((high & 0x03FF) << 10) + (low & 0x03FF);
+}
+
+[[nodiscard]] std::string _utf8_replace_non_ascii(std::string str, char replacement_char) noexcept {
+    for (auto& e : str)
+        if (static_cast<std::uint8_t>(e) > 127) e = replacement_char;
+    return str;
 }
 
 [[nodiscard]] inline std::string _read_file_to_string(const std::string& path) {
@@ -89,7 +145,6 @@ inline bool _unicode_codepoint_to_utf8(std::string& destination, char32_t cp) {
 
     std::ifstream file(path, std::ios::ate); // open file and immediately seek to the end
     if (!file.good()) throw std::runtime_error("Could not open file {"s + path + "."s);
-    // NOTE: Add a way to return errors if file doesn't exist, exceptions aren't particularly good here
 
     const auto file_size = file.tellg(); // returns cursor pos, which is the end of file
     file.seekg(std::ios::beg);           // seek to the beginning
@@ -138,13 +193,20 @@ template <class T>
 
     res += '\n';
     res += line_prefix;
-    res += line_contents;
+    res += _utf8_replace_non_ascii(std::string(line_contents), '?');
     res += '\n';
     res.append(line_prefix.size(), ' ');
     res.append(cursor - line_start, '-');
     res += '^';
     res.append(line_end - cursor, '-');
     res += " [!]";
+
+    // Note:
+    // To properly align cursor in the error message we need to know count "visible characters" in a UTF-8
+    // string, properly iterating over grapheme clusters is a very complex task, usually done by a dedicated
+    // library. We could just count codepoints, but that wouldn't account for combining characters. To prevent
+    // error message from being misaligned we can just replace all non-ascii symbols with '?', this way errors
+    // might be less pretty, but they will reliably show the true location of the error.
 
     return res;
 }
@@ -210,7 +272,7 @@ constexpr bool _always_false_v = false;
 #define utl_json_map_0(f, x, peek, ...) f(x) utl_json_map_next(peek, utl_json_map_1)(f, peek, __VA_ARGS__)
 #define utl_json_map_1(f, x, peek, ...) f(x) utl_json_map_next(peek, utl_json_map_0)(f, peek, __VA_ARGS__)
 
-// Resulting macro, applies the function macro `f` to each of the remaining parameters
+// Resulting macro, applies the function macro 'f' to each of the remaining parameters
 #define utl_json_map(f, ...)                                                                                           \
     utl_json_eval(utl_json_map_1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0)) static_assert(true)
 
@@ -220,7 +282,7 @@ constexpr bool _always_false_v = false;
 
 template <class T>
 using _object_type_impl = std::map<std::string, T, std::less<>>;
-// 'std::less<>' declares map as transparent, which means we can `.find()` for `std::string_view` keys
+// 'std::less<>' makes map transparent, which means we can use 'find()' for 'std::string_view' keys
 template <class T>
 using _array_type_impl  = std::vector<T>;
 using _string_type_impl = std::string;
@@ -231,6 +293,26 @@ struct _null_type_impl {
         return true;
     } // so we can check 'Null == Null'
 };
+
+// Note:
+// It is critical that '_object_type_impl' can be instantiated with incomplete type 'T'. 
+// This allows us to declare recursive classes like this:
+//
+//    'struct Recursive { std::map<std::string, Recursive> data; }'
+//
+// Technically, there is nothing stopping any dynamically allocated container from supporting
+// incomplete types, since dynamic allocation inherently means pointer indirection at some point,
+// which makes 'sizeof(Container)' independent of 'T'.
+//
+// This requirement was only standardized for 'std::vector' and 'std::list' due to ABI breaking concerns.
+// 'std::map' is not required to support incomplete types by the standard, however in practice it does support them
+// on all compilers that I know of. Several other JSON libraries seem to rely on the same behaviour without any issues.
+// The same cannot be said about 'std::unordered_map', which is why we don't use it.
+//
+// We could make a more pedantic choise and add a redundant level of indirection, but that both complicates
+// implementation needlessly and reduces performance. A perfect solution would be to write our own map implementation
+// tailored for JSON use cases and providing explicit suppport for heterogenous lookup and incomplete types, but that
+// alone would be grander in scale that this entire parser for a mostly non-critical benefit.
 
 struct _dummy_type {};
 
@@ -305,7 +387,7 @@ utl_json_type_trait_conjunction(
         // ... or it's an object of convertible elements
         std::conjunction<is_object_like<T>, is_json_convertible<typename possible_mapped_type<T>::type>>>,
     // end recusion by short-circuiting conjunction with 'false' once we arrive to '_dummy_type',
-    // arriving here means the type isn't convertable to JSON
+    // arriving here means the type isn't convertible to JSON
     std::negation<std::is_same<T, _dummy_type>>);
 
 #undef utl_json_type_trait_conjunction
@@ -385,13 +467,13 @@ public:
         return std::get_if<T>(&this->data);
     }
 
-    // -- Object methods --
-    // --------------------
+    // -- Object methods ---
+    // ---------------------
 
     Node& operator[](std::string_view key) {
         // 'std::map<K, V>::operator[]()' and 'std::map<K, V>::at()' don't support
         // support heterogeneous lookup, we have to reimplement them manually
-        if (this->is_null()) this->data = object_type(); // only 'null' converts to object automatically on 'json[key]'
+        if (this->is_null()) this->data = object_type{}; // 'null' converts to objects automatically
         auto& object = this->get_object();
         auto  it     = object.find(key);
         if (it == object.end()) it = object.emplace(key, Node{}).first;
@@ -432,6 +514,27 @@ public:
         if (it != object.end()) return it->second.get<T>();
         return else_value;
         // same thing as 'this->contains(key) ? json.at(key).get<T>() : else_value' but without a second map lookup
+    }
+
+    // -- Array methods ---
+    // --------------------
+
+    [[nodiscard]] Node& operator[](std::size_t pos) { return this->get_array()[pos]; }
+
+    [[nodiscard]] const Node& operator[](std::size_t pos) const { return this->get_array()[pos]; }
+
+    [[nodiscard]] Node& at(std::size_t pos) { return this->get_array().at(pos); }
+
+    [[nodiscard]] const Node& at(std::size_t pos) const { return this->get_array().at(pos); }
+
+    void push_back(const Node& node) {
+        if (this->is_null()) this->data = array_type{}; // 'null' converts to arrays automatically
+        this->get_array().push_back(node);
+    }
+
+    void push_back(Node&& node) {
+        if (this->is_null()) this->data = array_type{}; // 'null' converts to arrays automatically
+        this->get_array().push_back(node);
     }
 
     // -- Assignment --
@@ -551,7 +654,6 @@ public:
     // -- Constructors --
     // ------------------
 
-    // TEMP:
     Node& operator=(const Node&) = default;
     Node& operator=(Node&&)      = default;
 
@@ -655,8 +757,8 @@ constexpr std::size_t _number_of_char_values = 256;
 //
 // Note:
 // It is important that we explicitly cast to 'uint8_t' when indexing, depending on the platform 'char' might
-// be either signed or unsigned, we don't want out array to be indexed at '-71'. While we can reasonably expect
-// ASCII encoding on the platfrom (which would put all char literals that we use into the 0-127 range) other chars
+// be either signed or unsigned, we don't want our array to be indexed at '-71'. While we can reasonably expect
+// ASCII encoding on the platform (which would put all char literals that we use into the 0-127 range) other chars
 // might still be negative. This shouldn't have any runtime cost as trivial int casts like this get compiled into
 // the same thing as 'reinterpret_cast<>' which means no runtime logic, the bits are just treated differently.
 //
@@ -780,8 +882,8 @@ struct _parser {
         // Object pair parser assumes it is starting at a '"'
 
         // Parse pair key
-        std::string key; // allocating a string here is fine since we will std::move() into a map key
-        std::tie(cursor, key) = this->parse_string(cursor); // may point 'this->current_node' to a new node
+        std::string key; // allocating a string here is fine since we will std::move() it into a map key
+        std::tie(cursor, key) = this->parse_string(cursor);
 
         // Handle stuff inbetween
         cursor = this->skip_nonsignificant_whitespace(cursor);
@@ -832,9 +934,9 @@ struct _parser {
         // not since that goes against the standard
 
         // Note 4:
-        // 'parent.emplace_hint(parent.end(), ...)' can drastically speed up parsing of sorted JSON object, however
+        // 'parent.emplace_hint(parent.end(), ...)' can drastically speed up parsing of sorted JSON objects, however
         // since most JSONs in the wild aren't sorted we will resort to a more generic option of regular '.emplace()'
-        parent.emplace(std::move(key), std::move(value));
+        parent.try_emplace(std::move(key), std::move(value));
 
         return cursor;
     }
@@ -955,27 +1057,94 @@ struct _parser {
                                  _pretty_error(cursor, this->chars));
     }
 
-    inline void parse_unicode_codepoint_from_hex(std::size_t cursor, std::string& string_value) {
+    inline std::size_t parse_escaped_unicode_codepoint(std::size_t cursor, std::string& string_value) {
         using namespace std::string_literals;
 
-        if (cursor >= this->chars.size() + 4)
-            throw std::runtime_error("JSON string node reached the end of buffer while"s +
-                                     "parsing a 5-character escape sequence at pos "s + std::to_string(cursor) + "."s +
-                                     _pretty_error(cursor, this->chars));
-        // Standard library is absolutely HORRIBLE when it comes to Unicode support.
-        // Literally every single encoding function in <cuchar>/<string>/<codecvt> is a
-        // crime against common sense, API safety and performace, which is why we do this
-        // inefficient nonsense and pray that there's not gonna be a lot of escaped unicode
-        // in the data. This also adds another 2 #include's just by itself. Supports UTF-8.
-        const std::string hex(this->chars.data() + cursor + 1, 4);
-        // standard functions only support std::string or null-terminated char*,
-        // there's no way (that I'm aware of) to view into the data and parse it without making a copy,
-        // thankfully a string of 4 characters should always fit into the SSO buffer
-        const char32_t    unicode_char = std::stoul(hex, nullptr, 16);
-        if (!_unicode_codepoint_to_utf8(string_value, unicode_char))
-            throw std::runtime_error("JSON string node could not parse unicode codepoint {"s + hex +
+        // Note 1:
+        // 4 hex digits can encode every character in a basic multilingual plane, to properly encode all valid unicode
+        // chars 6 digits are needed. If JSON was a bit better we would have a longer escape sequence like '\Uxxxxxx',
+        // (the way ECMAScript, Python and C++ do it), but for historical reasons longer codepoints are instead
+        // represented using a UTF-16 surrogate pair like this: '\uxxxx\uxxxx'. The way such pair can be distinguished
+        // from 2 independent codepoints is by checking a range of the first codepoint: values from 'U+D800' to 'U+DFFF'
+        // are reserved for surrogate pairs. This is abhorrent and makes implementation twice as cumbersome, but we
+        // gotta to do it in order to be standard-compliant.
+
+        // Note 2:
+        // 1st surrogate contains high bits, 2nd surrogate contains low bits.
+
+        const auto throw_parsing_error = [&](std::string_view hex) {
+            throw std::runtime_error("JSON string node could not parse unicode codepoint {"s + std::string(hex) +
                                      "} while parsing an escape sequence at pos "s + std::to_string(cursor) + "."s +
                                      _pretty_error(cursor, this->chars));
+        };
+
+        const auto throw_surrogate_error = [&](std::string_view hex) {
+            throw std::runtime_error("JSON string node encountered invalid unicode escape sequence in " +
+                                     "secong half of UTF-16 surrogate pair starting at {"s + std::string(hex) +
+                                     "} while parsing an escape sequence at pos "s + std::to_string(cursor) + "."s +
+                                     _pretty_error(cursor, this->chars));
+        };
+
+        const auto throw_end_of_buffer_error = [&]() {
+            throw std::runtime_error("JSON string node reached the end of buffer while "s +
+                                     "parsing a unicode escape sequence at pos "s + std::to_string(cursor) + "."s +
+                                     _pretty_error(cursor, this->chars));
+        };
+
+        const auto throw_end_of_buffer_error_for_pair = [&]() {
+            throw std::runtime_error("JSON string node reached the end of buffer while "s +
+                                     "parsing a unicode escape sequence surrogate pair at pos "s +
+                                     std::to_string(cursor) + "."s + _pretty_error(cursor, this->chars));
+        };
+
+        const auto parse_utf16 = [&](std::string_view hex) -> std::uint16_t {
+            std::uint16_t utf16{};
+            const auto [end_ptr, error_code] = std::from_chars(hex.data(), hex.data() + hex.size(), utf16, 16);
+
+            const bool sequence_is_valid     = (error_code == std::errc{});
+            const bool sequence_parsed_fully = (end_ptr == hex.data() + hex.size());
+
+            if (!sequence_is_valid || !sequence_parsed_fully) throw_parsing_error(hex);
+
+            return utf16;
+        };
+
+        // | '\uxxxx\uxxxx' | '\uxxxx\uxxxx'   | '\uxxxx\uxxxx' | '\uxxxx\uxxxx'   | '\uxxxx\uxxxx'  |
+        // |   ^            |    ^             |       ^        |          ^       |             ^   |
+        // | start (+0)     | hex_1_start (+1) | hex_1_end (+4) | hex_2_start (+7) | hex_2_end (+10) |
+        constexpr std::size_t hex_1_start     = 1;
+        constexpr std::size_t hex_1_end       = 4;
+        constexpr std::size_t hex_2_backslash = 5;
+        constexpr std::size_t hex_2_prefix    = 6;
+        constexpr std::size_t hex_2_start     = 7;
+        constexpr std::size_t hex_2_end       = 10;
+
+        const auto start = this->chars.data() + cursor;
+
+        if (cursor + hex_1_end >= this->chars.size()) throw_end_of_buffer_error();
+
+        const std::string_view hex_1(start + hex_1_start, 4);
+        const std::uint16_t    utf16_1 = parse_utf16(hex_1);
+
+        // Surrogate pair case
+        if (0xD800 <= utf16_1 && utf16_1 <= 0xDFFF) {
+            if (cursor + hex_2_end >= this->chars.size()) throw_end_of_buffer_error_for_pair();
+            if (start[hex_2_backslash] != '\\') throw_surrogate_error(hex_1);
+            if (start[hex_2_prefix] != 'u') throw_surrogate_error(hex_1);
+
+            const std::string_view hex_2(start + hex_2_start, 4);
+            const std::uint16_t    utf16_2 = parse_utf16(hex_2);
+
+            const std::uint32_t codepoint = _utf16_pair_to_codepoint(utf16_1, utf16_2);
+            if (!_codepoint_to_utf8(string_value, codepoint)) throw_parsing_error(hex_1);
+            return cursor + hex_2_end;
+        }
+        // Regular case
+        else {
+            const std::uint32_t codepoint = static_cast<std::uint32_t>(utf16_1);
+            if (!_codepoint_to_utf8(string_value, codepoint)) throw_parsing_error(hex_1);
+            return cursor + hex_1_end;
+        }
     }
 
     std::pair<std::size_t, String> parse_string(std::size_t cursor) {
@@ -1018,10 +1187,11 @@ struct _parser {
                                                  std::to_string(cursor) + "."s + _pretty_error(cursor, this->chars));
                     string_value += replacement_char;
                 }
-                // 6-character escape sequences (escaped unicode HEX codepoints)
+                // 6/12-character escape sequences (escaped unicode HEX codepoints)
                 else if (escaped_char == 'u') {
-                    parse_unicode_codepoint_from_hex(cursor, string_value);
-                    cursor += 4; // move past first 'uXXX' symbols, last symbol will be covered by the loop '++cursor'
+                    cursor = this->parse_escaped_unicode_codepoint(cursor, string_value);
+                    // moves past first 'uXXX' symbols, last symbol will be covered by the loop '++cursor',
+                    // in case of paired hexes moves past the second hex too
                 } else {
                     throw std::runtime_error("JSON string node encountered unexpected character {"s + escaped_char +
                                              "} while parsing an escape sequence at pos "s + std::to_string(cursor) +
@@ -1059,7 +1229,7 @@ struct _parser {
         // std::from_chars() converts the first complete number it finds in the string,
         // for example "42 meters" would be converted to 42. We rely on that behaviour here.
 
-        if (error_code != std::errc()) {
+        if (error_code != std::errc{}) {
             // std::errc(0) is a valid enumeration value that represents success
             // even though it does not appear in the enumerator list (which starts at 1)
             if (error_code == std::errc::invalid_argument)
@@ -1289,7 +1459,7 @@ inline void _serialize_json_recursion(const Node& node, std::string& chars, unsi
         const auto [number_end_ptr, error_code] =
             std::to_chars(buffer.data(), buffer.data() + buffer.size(), number_value);
 
-        if (error_code != std::errc())
+        if (error_code != std::errc{})
             throw std::runtime_error(
                 "JSON serializing encountered std::to_chars() formatting error while serializing value {"s +
                 std::to_string(number_value) + "}."s);

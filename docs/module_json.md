@@ -4,15 +4,15 @@
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/json.hpp)
 
-**json** module aims to provide an intuitive JSON manipulation API similar to [nlohmann_json](https://github.com/nlohmann/json) while being a bit more lightweight and explicit about the underlying type conversions. The few key features & differences are:
+**json** module aims to provide an intuitive JSON manipulation API similar to [nlohmann_json](https://github.com/nlohmann/json) while being a bit more lightweight and providing better performance. The few key features & differences are:
 
 - `utl::json` doesn't introduce any invasive macros or operators
 - Objects support transparent comparators (which means `std::string_view` and `const char*` can be used for lookup)
 - [Decent performance](#benchmarks) without relying on compiler intrinsics
 - All JSON types map to standard library containers, no need to learn custom APIs
-- Simple integration (single header, barely over `1k` lines)
+- Simple integration (single header, less than `1k` lines of code)
 - [Nice error messages](#error-handling)
-- [Full support for class reflection](#complex-structure-reflection)
+- [Full support for class reflection](#structure-reflection)
 
 > [!Note]
 > Despite rather competitive performance, considerably faster parsing can be achieved with custom formatters, SIMD and unordered key optimizations (see [simdjson](https://github.com/simdjson/simdjson), [Glaze](https://github.com/stephenberry/glaze), [RapidJSON](https://github.com/Tencent/rapidjson)  and [yyjson](https://github.com/ibireme/yyjson)), this, however often comes at the expense of user convenience (like with *RapidJSON*) or features (such as missing escape sequence handling in *simdjson* and *yyjson*, *Glaze* has it all, but requires [C++23](https://en.cppreference.com/w/cpp/23)).
@@ -29,8 +29,8 @@
 | JSON Formatting | ✔ |  |
 | JSON Validation | ✔ | Almost complete[¹](#tests) validation with proper error messages through exceptions |
 | Unicode Support | ✔ | Supports UTF-8 |
-| Control Character Escape Sequence Support | ✔ |  |
-| Unicode HEX Sequence Support | ✔ | Supports UTF-8 |
+| Control Character Escape Sequences | ✔ |  |
+| Unicode Escape Sequences | ✔ | Full support including UTF-16 surrogate pairs |
 | Trait-based Type Conversions | ✔ |  |
 | Structure Reflection | ✔ | Arbitrary reflection including nested types and containers[²](#complex-structure-reflection) |
 | Compile-time JSON Schema | ✘ | Outside the project scope, can be emulated with reflection |
@@ -87,20 +87,17 @@ class Node {
     Node      &         at(std::string_view key);
     const Node&         at(std::string_view key) const;
     
-    std::pair<iterator, bool> insert(const Node&  node); // TODO:
-    std::pair<iterator, bool> insert(      Node&& node); // TODO:
-    
     bool              contains(std::string_view key) const;
     template<class T> value_or(std::string_view key, const T &else_value);
     
     // - Array methods -
-    Node      & operator[](std::size_t pos);       // TODO:
-    const Node& operator[](std::size_t pos) const; // TODO:
-    Node      &         at(std::size_t pos);       // TODO:
-    const Node&         at(std::size_t pos) const; // TODO:
+    Node      & operator[](std::size_t pos);
+    const Node& operator[](std::size_t pos) const;
+    Node      &         at(std::size_t pos);
+    const Node&         at(std::size_t pos) const;
     
-    void push_back(const Node&  node); // TODO:
-    void push_back(      Node&& node); // TODO:
+    void push_back(const Node&  node);
+    void push_back(      Node&& node);
     
     // - Assignment -
     Node& operator=(const Node&) = default;
@@ -199,11 +196,11 @@ Returns whether JSON node contains a value of a type `T`.
 
 > ```cpp
 > bool is_object() const;
-> bool is_array() const;
+> bool is_array()  const;
 > bool is_string() const;
 > bool is_number() const;
-> bool is_bool() const;
-> bool is_null() const;
+> bool is_bool()   const;
+> bool is_null()   const;
 > ```
 
 Shortcut versions of `T& is<T>()` for all possible value types.
@@ -227,7 +224,9 @@ Returns a `T*` pointer to the value stored at the JSON node, if stored value has
 > const Node& operator[](std::string_view key) const;
 > ```
 
-Returns a reference to the node corresponding to a given `key` in the JSON object, performs an insertion if such key does not already exist. 
+Returns a reference to the node corresponding to a given `key` in the JSON object, performs an insertion if such key does not already exist.
+
+**Note:** If current node is `null_type` overload **(1)** will convert it `object_type` and perform an insertion. This allows for a more natural syntax.
 
 > ```cpp
 > Node      & at(std::string_view key);
@@ -249,6 +248,34 @@ Returns whether JSON object node contains an entry with given `key`.
 Returns value stored at given `key` in the JSON object, if no such key can be found returns `else_value`.
 
 **Note:** Logically equivalent to `object.contains(key) ? object.at(key).get<T>() : else_value`, but faster.
+
+#### Array methods
+
+> [!Important]
+> Array methods can only be called for nodes that contain an array, incorrect node type will cause methods below to throw an exception.
+
+> ```cpp
+> Node      & operator[](std::size_t pos);
+> const Node& operator[](std::size_t pos) const;
+> ```
+
+Returns a reference to the node at given `pos`. 
+
+> ```cpp
+> Node      &         at(std::size_t pos);
+> const Node&         at(std::size_t pos) const;
+> ```
+
+Returns a reference to the node at given `pos`, throws an exception if index is out of bounds.
+
+> ```cpp
+> void push_back(const Node&  node);
+> void push_back(      Node&& node);
+> ```
+
+Inserts a new node at the end of JSON array.
+
+**Note:** If current node is `null_type` the method will convert it `object_type` and perform an insertion. This allows for a more natural syntax.
 
 #### Assignment & Constructors
 
@@ -826,11 +853,11 @@ Parsing and serialization also satisfies [C++ `<charconv>`](https://en.cpprefere
 
 ### Some thoughts on implementation
 
-The main weak-point of `utl::json` from the performance point of view is parsing of large JSON dictionaries.
+The main weakpoint of `utl::json` from the performance point of view is parsing  of object-heavy JSONs.
 
-Unfortunately, the issue is mostly caused by `std::map` insertion, which dominates the runtime. A truly suitable for the purpose container doesn't really exist in the standard library, and would need a custom implementation like in `RapidJSON`, which would reduce the standard library interoperability thus going against the main purpose of this library which is simplicity of use.
+Unfortunately, the issue is mostly caused by `std::map` insertion & iteration, which dominates the runtime. A truly suitable for the purpose container doesn't really exist in the standard library, and would need a custom implementation like in `RapidJSON`, which would reduce the standard library interoperability thus going against the main purpose of this library which is simplicity of use.
 
-Flat maps and async maps seem like the way to go, slotting in a custom flat map implementation into `json::_object_type_impl` allowed `utl::json` to beat `RapidJSON` on all serializing tasks and brought `database.json` parsing a more or less even ground:
+Flat maps and async maps seem like the way to go, slotting in a custom flat map implementation into `json::_object_type_impl` allowed `utl::json` to beat `RapidJSON` on all serializing tasks and significantly closed the gap of `database.json` parsing:
 
 ```
 // Using associative API wrapper for std::vector of pairs instead of std::map we can bridge the performance gap

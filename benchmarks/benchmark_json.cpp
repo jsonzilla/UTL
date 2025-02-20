@@ -168,16 +168,12 @@ int main() {
         utl::json::Node(numbers).to_file("benchmarks/data/numbers.json");
     }
     
-    //auto json = json::from_file("benchmarks/data/database.json");
-    //std::cout << json.contains("comment_1") << '\n';
-    
     // Benchmark on different datasets
     benchmark_on_data("benchmarks/data/strings.json");
     benchmark_on_data("benchmarks/data/numbers.json");
     benchmark_on_data("benchmarks/data/database.json");
-    
-    // UTL_PROFILER("Total") {
-    //     auto json = json::from_file("benchmarks/data/database.json");
-    //     DO_NOT_OPTIMIZE_AWAY(json);
-    // }
+    // benchmark_on_data("benchmarks/data/twitter.json");
+    // benchmark_on_data("benchmarks/data/random.json");
+    // benchmark_on_data("benchmarks/data/canada.json");
+    // benchmark_on_data("benchmarks/data/apache_builds.json");
 }
