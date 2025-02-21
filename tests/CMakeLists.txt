@@ -17,6 +17,7 @@ macro(add_utl_test filename)
 endmacro()
 
 # Tests
+add_utl_test(test_enum_reflect)
 add_utl_test(test_integral)
 add_utl_test(test_json)
 add_utl_test(test_log)
@@ -24,3 +25,4 @@ add_utl_test(test_math)
 add_utl_test(test_mvl)
 add_utl_test(test_random)
 add_utl_test(test_stre)
+add_utl_test(test_struct_reflect)

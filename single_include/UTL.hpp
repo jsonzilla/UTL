@@ -19,9 +19,9 @@
 #include <stdexcept>   // out_of_range
 #include <string>      // string
 #include <string_view> // string_view
+#include <tuple>       // tuple_size_v<>
 #include <type_traits> // underlying_type_t<>, enable_if_t<>, is_enum_v<>
 #include <utility>     // pair<>
-#include <tuple>       // tuple_size_v<>
 
 // ____________________ DEVELOPER DOCS ____________________
 
@@ -39,8 +39,7 @@
 // compiler-specific '__PRETTY_FUNCTION__' and '__FUNCSIG__', it has a benefit of not requiring the reflection
 // macro however it hammers compile times and improses restrictions on enum values. Some issues such as binary
 // bloat and bitflag-enums can be worked around through proper implementation and some conditional metadata
-// templates, however such approach seems to be quite complex and unreliable (due to being compiler-specific),
-// better leave it to continuously supported libs like 'magic_enum'.
+// templates, however such approach tends to be quite complex.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -97,9 +96,9 @@ namespace utl::enum_reflect {
 template <class>
 constexpr bool _always_false_v = false;
 
-template <class E>
+template <class Enum>
 struct _meta {
-    static_assert(_always_false_v<E>,
+    static_assert(_always_false_v<Enum>,
                   "Provided enum does not have a defined reflection. Use 'UTL_ENUM_REFLECT' macro to define one.");
     // makes instantiation of this template a compile-time error
 };
@@ -107,13 +106,12 @@ struct _meta {
 // Helper macros for codegen
 #define utl_erfl_make_value(arg_) type::arg_
 #define utl_erfl_make_name(arg_) std::string_view(#arg_)
-#define utl_erfl_make_entry(arg_)                                                                                      \
-    std::pair { std::string_view(#arg_), type::arg_ }
+#define utl_erfl_make_entry(arg_) std::make_pair(std::string_view(#arg_), type::arg_)
 
 #define UTL_ENUM_REFLECT(enum_name_, ...)                                                                              \
     template <>                                                                                                        \
     struct utl::enum_reflect::_meta<enum_name_> {                                                                      \
-        using type            = enum_name_;                                                                            \
+        using type = enum_name_;                                                                                       \
                                                                                                                        \
         constexpr static std::string_view type_name = #enum_name_;                                                     \
                                                                                                                        \
@@ -125,50 +123,50 @@ struct _meta {
 // --- Public API ---
 // ------------------
 
-template <class E>
-constexpr auto type_name = _meta<E>::type_name;
+template <class Enum>
+constexpr auto type_name = _meta<Enum>::type_name;
 
-template <class E>
-constexpr auto names = _meta<E>::names;
+template <class Enum>
+constexpr auto names = _meta<Enum>::names;
 
-template <class E>
-constexpr auto values = _meta<E>::values;
+template <class Enum>
+constexpr auto values = _meta<Enum>::values;
 
-template <class E>
-constexpr auto entries = _meta<E>::entries;
+template <class Enum>
+constexpr auto entries = _meta<Enum>::entries;
 
-template <class E>
-constexpr auto size = std::tuple_size_v<decltype(values<E>)>;
+template <class Enum>
+constexpr auto size = std::tuple_size_v<decltype(values<Enum>)>;
 
-template <class E, std::enable_if_t<std::is_enum_v<E>, bool> = true>
-[[nodiscard]] constexpr auto to_underlying(E value) noexcept {
-    return static_cast<std::underlying_type_t<E>>(value);
+template <class Enum, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
+[[nodiscard]] constexpr auto to_underlying(Enum value) noexcept {
+    return static_cast<std::underlying_type_t<Enum>>(value);
     // doesn't really require reflection, but might as well have it here,
     // in C++23 gets replaced by builtin 'std::to_underlying'
 }
 
-template <class E>
-[[nodiscard]] constexpr bool is_valid(E value) noexcept {
-    for (const auto& e : values<E>)
+template <class Enum>
+[[nodiscard]] constexpr bool is_valid(Enum value) noexcept {
+    for (const auto& e : values<Enum>)
         if (value == e) return true;
     return false;
 }
 
-template <class E>
-[[nodiscard]] constexpr std::string_view to_string(E val) {
-    for (const auto& [name, value] : entries<E>)
+template <class Enum>
+[[nodiscard]] constexpr std::string_view to_string(Enum val) {
+    for (const auto& [name, value] : entries<Enum>)
         if (val == value) return name;
 
-    throw std::out_of_range("enum_reflect::to_string<" + std::string(type_name<E>) + ">(): value " +
+    throw std::out_of_range("enum_reflect::to_string<" + std::string(type_name<Enum>) + ">(): value " +
                             std::to_string(to_underlying(val)) + " is not a part of enumeration.");
 }
 
-template <class E>
-[[nodiscard]] constexpr E from_string(std::string_view str) {
-    for (const auto& [name, value] : entries<E>)
+template <class Enum>
+[[nodiscard]] constexpr Enum from_string(std::string_view str) {
+    for (const auto& [name, value] : entries<Enum>)
         if (str == name) return value;
 
-    throw std::out_of_range("enum_reflect::from_string<" + std::string(type_name<E>) + ">(): name \"" +
+    throw std::out_of_range("enum_reflect::from_string<" + std::string(type_name<Enum>) + ">(): name \"" +
                             std::string(str) + "\" is not a part of enumeration.");
 }
 
@@ -10395,9 +10393,9 @@ constexpr std::pair<T1, T2&&> _make_entry(T1&& a, T2&& b) noexcept {
 template <class>
 inline constexpr bool _always_false_v = false;
 
-template <class E>
+template <class S>
 struct _meta {
-    static_assert(_always_false_v<E>,
+    static_assert(_always_false_v<S>,
                   "Provided struct does not have a defined reflection. Use 'UTL_STRUCT_REFLECT' macro to define one.");
     // makes instantiation of this template a compile-time error
 };
@@ -10417,7 +10415,7 @@ struct _meta {
     struct utl::struct_reflect::_meta<struct_name_> {                                                                  \
         constexpr static std::string_view type_name = #struct_name_;                                                   \
                                                                                                                        \
-        constexpr static auto names = std::array{utl_erfl_map_list(utl_erfl_make_name, __VA_ARGS__)};                  \
+        constexpr static auto names = std::array{utl_srfl_map_list(utl_srfl_make_name, __VA_ARGS__)};                  \
                                                                                                                        \
         template <class S>                                                                                             \
         constexpr static auto field_view(S&& val) noexcept {                                                           \
@@ -10478,8 +10476,7 @@ constexpr auto size = std::tuple_size_v<decltype(names<S>)>;
 
 template <std::size_t I, class S>
 constexpr auto get(S&& value) noexcept {
-    using struct_type = typename std::decay_t<S>;
-    return std::get<I>(_meta<struct_type>::field_view(std::forward<S>(value)));
+    return std::get<I>(field_view(std::forward<S>(value)));
 }
 
 template <class S, class Func>

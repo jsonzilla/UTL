@@ -98,9 +98,9 @@ constexpr std::pair<T1, T2&&> _make_entry(T1&& a, T2&& b) noexcept {
 template <class>
 inline constexpr bool _always_false_v = false;
 
-template <class E>
+template <class S>
 struct _meta {
-    static_assert(_always_false_v<E>,
+    static_assert(_always_false_v<S>,
                   "Provided struct does not have a defined reflection. Use 'UTL_STRUCT_REFLECT' macro to define one.");
     // makes instantiation of this template a compile-time error
 };
@@ -120,7 +120,7 @@ struct _meta {
     struct utl::struct_reflect::_meta<struct_name_> {                                                                  \
         constexpr static std::string_view type_name = #struct_name_;                                                   \
                                                                                                                        \
-        constexpr static auto names = std::array{utl_erfl_map_list(utl_erfl_make_name, __VA_ARGS__)};                  \
+        constexpr static auto names = std::array{utl_srfl_map_list(utl_srfl_make_name, __VA_ARGS__)};                  \
                                                                                                                        \
         template <class S>                                                                                             \
         constexpr static auto field_view(S&& val) noexcept {                                                           \
@@ -181,8 +181,7 @@ constexpr auto size = std::tuple_size_v<decltype(names<S>)>;
 
 template <std::size_t I, class S>
 constexpr auto get(S&& value) noexcept {
-    using struct_type = typename std::decay_t<S>;
-    return std::get<I>(_meta<struct_type>::field_view(std::forward<S>(value)));
+    return std::get<I>(field_view(std::forward<S>(value)));
 }
 
 template <class S, class Func>

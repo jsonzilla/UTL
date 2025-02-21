@@ -1,4 +1,4 @@
-# utl::integral
+# utl::integral **(experimental)**
 
 [<- to README.md](..)
 
