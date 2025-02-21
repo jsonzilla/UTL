@@ -10,7 +10,7 @@
 
 # Simple reflection using a map-macro
 
-Recently I've come across a very curios macro, let's call it `MAP`:
+Recently I've come across a [very curios macro](#map-macro-implementation), let's call it `MAP`:
 ```cpp
 #define MAP(f, ...) /* <some preprocessor magic> */
 ```
@@ -62,7 +62,7 @@ A map macro makes this almost trivial! All we need is to register enum with a ma
 ```cpp
 REFLECT_ENUM(Side, LEFT, RIGHT)
 ```
-and have that macro forward our stringified `__VA_ARG__` into arrays of names and values. While we're at it let's also create array of name-value pairs — this will make iteration convenient.
+and have that macro forward our stringified `__VA_ARGS__` into arrays of names and values. While we're at it let's also create array of name-value pairs — this will make iteration more convenient.
 
 Using template specialization as a mechanism for registering types we can do following:
 ```cpp
@@ -91,13 +91,13 @@ At this point the trickiest part of the task is basically done — string conver
 ```cpp
 template<class Enum>
 constexpr to_string(Enum e) {
-    for (auto&& [name, val] : meta<Enum>::entries) if (e == val) return name;
+    for (const auto& [name, val] : meta<Enum>::entries) if (e == val) return name;
     throw std::out_of_range("Value is not a part of enum.")
 }
 
 template<class Enum>
 constexpr from_string(std::string_view str) {
-    for (auto&& [name, val] : meta<Enum>::entries) if (str == name) return val;
+    for (const auto& [name, val] : meta<Enum>::entries) if (str == name) return val;
     throw std::out_of_range("String does not corresond to a value in enum.")
 }
 ```
@@ -145,7 +145,7 @@ static_assert( names<Config>[2] == "coef" );
 Config cfg = { "2025.03.21", 127, 0.5 };
 
 std::cout << "struct contents = \n";
-for_each(cfg, [](auto&& field){ std::cout << field << '\n'; });
+for_each(cfg, [](const auto& field){ std::cout << field << '\n'; });
 
 // Access struct like a tuple
 assert( get<0>(cfg) == "2025.03.21" );
@@ -156,9 +156,9 @@ assert( std::get<0>(tuple) == "2025.03.21" );
 ```
 
 > [!Note]
-> The are obliviously some other convenient things we would want such as `entry_view()` for name-value pairs, ability to use `for_each()` to define binary operators and etc. All of this will be provided in the implementation linked at the end.
+> The are obliviously some other convenient things we would want such as `entry_view()` for name-value pairs, ability to use `for_each()` to define binary operators, predicates and etc. All of this will be provided in the implementation linked at the end.
 
-Same as with `enum`, we can forward stringified `__VA_ARG__` from register macro and use them to build up a partial specialization with some metadata:
+Same as with `enum`, we can forward stringified `__VA_ARGS__` from register macro and use them to build up a partial specialization with some metadata:
 
 ```cpp
 // Declare base template that cannot be instantiated
