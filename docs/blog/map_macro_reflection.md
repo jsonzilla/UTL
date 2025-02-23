@@ -78,13 +78,13 @@ struct meta {
 #define MAKE_ENTRY(arg) std::pair{ std::string_view(#arg), type::arg }
 
 // Declare specialized template with enum metadata
-#define REFLECT_ENUM(enum_name, ...) \
-template<>
-struct meta<enum_name> {
-    using type             = enum_name_;
-    constexpr auto names   = std::array{ MAP_LIST(MAKE_NAME,  __VA_ARGS__) };
-    constexpr auto values  = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) };
-    constexpr auto entries = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) };
+#define REFLECT_ENUM(enum_name, ...)                                          \
+template <>                                                                   \
+struct meta<enum_name> {                                                      \
+    using type             = enum_name_;                                      \
+    constexpr auto names   = std::array{ MAP_LIST(MAKE_NAME,  __VA_ARGS__) }; \
+    constexpr auto values  = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) }; \
+    constexpr auto entries = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) }; \
 }
 ```
 At this point the trickiest part of the task is basically done — string conversion is just a matter of doing an array lookup for a corresponding type:
@@ -173,20 +173,20 @@ struct meta {
 #define CALL_FUNC( arg) func(std::forward<Struct>(value).arg_);
 
 // Declare specialized template with struct metadata
-#define REFLECT_STRUCT(struct_name, ...) \
-template<>
-struct meta<struct_name> {
-    constexpr auto names   = std::array{ MAP_LIST(MAKE_NAME, __VA_ARGS__) };
-    
-    template <class Struct>
-    constexpr static auto field_view(Struct&& value) noexcept {
-        return std::forward_as_tuple( MAP_LIST(MAKE_VALUE, __VA_ARGS__) );
-    }
-    
-    template <class Struct, class Func>                                                                                 \
-    constexpr static void for_each(Struct&& value, Func&& func) {
-        MAP(CALL_FUNC, __VA_ARGS__)
-    }
+#define REFLECT_STRUCT(struct_name, ...)                                   \
+template <>                                                                \
+struct meta<struct_name> {                                                 \
+    constexpr auto names = std::array{ MAP_LIST(MAKE_NAME, __VA_ARGS__) }; \
+                                                                           \
+    template <class Struct>                                                \
+    constexpr static auto field_view(Struct&& value) noexcept {            \
+        return std::forward_as_tuple(MAP_LIST(MAKE_VALUE, __VA_ARGS__));   \
+    }                                                                      \
+                                                                           \
+    template <class Struct, class Func>                                    \
+    constexpr static void for_each(Struct&& value, Func&& func) {          \
+        MAP(CALL_FUNC, __VA_ARGS__)                                        \
+    }                                                                      \
 }
 ```
 
