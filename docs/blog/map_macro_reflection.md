@@ -3,6 +3,8 @@
 - [Some neat tricks](#some-neat-tricks)
   * [Debug printing](#debug-printing)
   * [Binary operators](#binary-operators)
+- [Why use this over `Boost.PFR` or `Boost.Describe`](#why-use-this-over-boost.pfr or-boost.describe)
+- [Why use `Boost.PFR` or `Boost.Describe` over this](#why-use-boost.pfr-or-boost.describe-over-this)
 - [Map-macro implementation](#map-macro-implementation)
 - [Alternative approaches for `enum` reflection](#alternative-approaches-for-enum-reflection)
 - [Alternative approaches for `struct` reflection](#alternative-approaches-for-struct-reflection)
@@ -309,6 +311,20 @@ static_assert( squared_vector_norm(Vec4{1, 2, 3, 4}) == 30 );
 
 Real-world applications, of course, extend far beyond the toy problems listed above and would be too verbose to fully present here, for example, this exact principle was used to implement reflection for a [utl::json](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_json.md) parser which knows both how to parse and how to serialize reflected structs with any level of nesting (which means reflected structs can include other reflected structs, nested containers with them and etc.). 
 
+## Why use this over `Boost.PFR` or `Boost.Describe`
+
+- Simpler API
+- Supports up to 256 enum elements, `Boost.Describe` is limited to 50
+- Everything is `constexpr`, `boost::pfr::for_each_field()` is not
+- Single headers (1 for enums, 1 for structs), no dependencies
+
+## Why use `Boost.PFR` or `Boost.Describe` over this
+
+- More features
+- Mature libraries
+- Works with C++14, `utl` is a C++17 library
+- `Boost.PFR` doesn't require registration macros
+
 ## Map-macro implementation
 
 ```cpp
@@ -346,6 +362,9 @@ Real-world applications, of course, extend far beyond the toy problems listed ab
 // Applies function-macro 'F' to all '__VA_ARGS___' and add separator commas
 #define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 ```
+
+> [!Note]
+> The macro supports up to **364** arguments, in practice this is gonna be limited by compiler evaluation depth which usually caps out at **256**.
 
 ## Alternative approaches for `enum` reflection
 An alternative approach is taken by [magic_enum](https://github.com/Neargye/magic_enum) and some other libraries, it involves compile-time parsing of strings returned by compiler intrinsics `__PRETTY_FUNCTION__`, `__FUNCSIG__` and C++20 [std::source_location](https://en.cppreference.com/w/cpp/utility/source_location). As a result it is possible to extract enum names without requiring a registration macro, which is quite convenient. This, however, comes at a price of relying on implementation-dependent behavior and introduces some limitations on reflected enums. Compile times also tend suffer through there are some ways to reduce that impact. This approach has its footguns, but is completely viable as showcased by a multitude of libraries implementing it properly.
