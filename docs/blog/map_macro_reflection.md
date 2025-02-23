@@ -42,6 +42,9 @@ Now, one could spend plenty of time figuring out all the preprocessor magic behi
 > [!Note]
 > Strictly speaking, we will be dealing with a way of providing types with non-intrusive introspection metadata, rather than a proper reflection. A battle-tested implementation of this mechanism is provided [Boost.Desribe](https://github.com/boostorg/describe), since the end goals are the same the term "reflection" will be used for conciseness.
 
+> [!Note]
+> Ultimately, proper reflection can only be supported at the language level, everything we do before C++26 is trying to bolt-in a language feature using various work-arounds.
+
 ## `enum` reflection
 
 Let's first establish what do we even want from an `enum` reflection. The main things people usually wish for are:
