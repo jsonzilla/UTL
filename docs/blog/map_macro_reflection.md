@@ -35,9 +35,9 @@ Using a similar principle, it is also possible to make a `MAP_LIST` macro which 
 F(a), F(b), F(c), F(d)
 ```
 
-A rather nice explanation of how to implement such macro can be found in [this repo](https://github.com/swansontec/map-macro), but for our purposes it can be summed up as "30 lines of smart preprocessor recursion".
+The implementation of this macro is attached at the [end](#map-macro-implementation), a rather nice explanation of how it works can be found in [this repo](https://github.com/swansontec/map-macro).
 
-A much more interesting question is **how can we use it**. While its general uses for codegen are surely interesting, what I think deserves a separate mention is how it can be used to implement trivially simple reflection for both `enum`'s and `struct`'s.
+Now, one could spend plenty of time figuring out all the preprocessor magic behind the macro, but what I believe is a more important question is: **"What does this give us?"**. From my perspective — an almost perfect tool to implement codegen macros for reflection.
 
 ## `enum` reflection
 
@@ -46,7 +46,7 @@ Let's first establish what do we even want from an `enum` reflection. The main t
 - Enum <-> string conversion
 - Ability to access enumeration elements like an array
 
-This means that minimally we want to achieve something like this:
+This means that minimally we want to achieve an API like this:
 ```cpp
 enum class Side { LEFT, RIGHT };
 
@@ -134,7 +134,7 @@ struct Config {
 
 REFLECT_STRUCT(Config, date, size, coef);
 
-// Try reflection
+// Name reflection
 static_assert( size<Config> == 3 );
 
 static_assert( names<Config>[0] == "date" );
@@ -185,7 +185,7 @@ struct meta<struct_name> {
     
     template <class Struct, class Func>                                                                                 \
     constexpr static void for_each(Struct&& value, Func&& func) {
-        MAP(CALL_FUNC, __VA_ARGS__);
+        MAP(CALL_FUNC, __VA_ARGS__)
     }
 }
 ```
@@ -273,6 +273,10 @@ constexpr bool operator==(const Quaternion& lhs, const Quaternion &rhs) noexcept
 static_assert( Quaternion{1, 2, 3, 4} + Quaternion{5, 6, 7, 8} == Quaternion{6, 8, 10, 12} );
 ```
 
+### Advanced examples
+
+Real-world applications of course extend far beyond the toy problems listed above and would be too verbose to fully present here, for example, this exact principle was used to implement reflection for a [utl::json](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_json.md) parser which knows both how to parse and how to serialize reflected structs with any level of nesting (aka reflected structs can include other reflected structs, nested containers with them and etc.). 
+
 ## Map-macro implementation
 
 ```cpp
@@ -305,14 +309,14 @@ static_assert( Quaternion{1, 2, 3, 4} + Quaternion{5, 6, 7, 8} == Quaternion{6, 
 #define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
 
 // Applies function-macro 'F' to all '__VA_ARGS___'
-#define MAP(F, ...) EVAL(MAP1(F, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
 // Applies function-macro 'F' to all '__VA_ARGS___' and add separator commas
-#define MAP_LIST(F, ...) EVAL(MAP_LIST1(F, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 ```
 
 ## Alternative approaches for `enum` reflection
-An alternative approach is taken by [magic_enum](https://github.com/Neargye/magic_enum) and some other libraries, it involves compile-time parsing of strings returned by compiler intrinsics `__PRETTY_FUNCTION__`, `__FUNCSIG__` and C++20 `std::source_location`. As a result it is possible to extract enum names without requiring a registration macro, which is quite convenient. This, however, comes at a price of compiler-dependent implementation and introduces some limitations on reflected enums. Compile times also tend suffer through there are some ways to reduce that impact.
+An alternative approach is taken by [magic_enum](https://github.com/Neargye/magic_enum) and some other libraries, it involves compile-time parsing of strings returned by compiler intrinsics `__PRETTY_FUNCTION__`, `__FUNCSIG__` and C++20 [std::source_location](https://en.cppreference.com/w/cpp/utility/source_location). As a result it is possible to extract enum names without requiring a registration macro, which is quite convenient. This, however, comes at a price of relying on implementation-dependent behavior and introduces some limitations on reflected enums. Compile times also tend suffer through there are some ways to reduce that impact. This approach has its footguns, but is completely viable as showcased by a multitude of libraries implementing it properly.
 
 ## Alternative approaches for `struct` reflection
 
@@ -331,3 +335,8 @@ Some other libraries implement reflection using template metadata fields, inheri
 | [Glaze](https://github.com/stephenberry/glaze)               | C++23 serialization library that also includes reflection   | "Pretty function" parsing |
 | [reflectcpp](https://github.com/getml/reflect-cpp)           | C++20 serialization library that also includes reflection   | "Pretty function" parsing |
 | [Boost.Hana](https://www.boost.org/doc/libs/1_61_0/libs/hana/doc/html/index.html) | C++14 metaprogramming library that also includes reflection | Macros & template meta    |
+
+| Library                                              | Description                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------ |
+| [map-macro](https://github.com/swansontec/map-macro) | A clean implementation of the map-macro that inspired this post in the first place |
+
