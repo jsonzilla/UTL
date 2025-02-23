@@ -219,7 +219,7 @@ A "clean" implementation including all of this and some other convenient functio
 
 ## Some examples
 
-Below are some a few small examples showcasing how such reflection can be used.
+Below are a few small examples showcasing how such reflection can be used.
 
 ### Debug printing
 
