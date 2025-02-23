@@ -113,7 +113,7 @@ template <class Enum> constexpr auto entries = meta<Enum>::entries;
 > [!Note]
 > A more performant option for large enums would be to build a static map in addition to arrays and use it to perform `O(1)` lookup during string conversion, however that falls under "implementation details". Using a map also makes it more difficult to provide functions as `constexpr`.
 
-A "clean" implementation including all of this and some other convenient functions is provided by **utl::enum_reflect** header which can be found [here](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/enum_reflect.hpp).
+A "clean" implementation including all of this and some other convenient functions is provided by **utl::enum_reflect** header which can be found [here](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_enum_reflect.md).
 
 ## `struct` reflection
 
@@ -215,11 +215,11 @@ constexpr auto get(Struct&& value) noexcept {
 
 An there it is, we have all the basic building blocks of a proper reflection!
 
-A "clean" implementation including all of this and some other convenient functions is provided by **utl::struct_reflect** header which can be found [here](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/struct_reflect.hpp).
+A "clean" implementation including all of this and some other convenient functions is provided by **utl::struct_reflect** header which can be found [here](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_struct_reflect.md).
 
-## Some neat tricks
+## Some examples
 
-Below are some of the "neat examples" showcasing how such reflection can be used.
+Below are some a few small examples showcasing how such reflection can be used.
 
 ### Debug printing
 
@@ -273,9 +273,35 @@ constexpr bool operator==(const Quaternion& lhs, const Quaternion &rhs) noexcept
 static_assert( Quaternion{1, 2, 3, 4} + Quaternion{5, 6, 7, 8} == Quaternion{6, 8, 10, 12} );
 ```
 
+### Generic functions that operate on struct members
+
+```cpp
+// Define structs & reflection
+struct Vec2 { double x, y; };
+struct Vec3 { double x, y, z; };
+struct Vec4 { double x, y, z, w; };
+
+UTL_STRUCT_REFLECT(Vec2, x, y);
+UTL_STRUCT_REFLECT(Vec3, x, y, z);
+UTL_STRUCT_REFLECT(Vec4, x, y, z, w);
+
+// Generic function
+template<class T>
+constexpr double squared_vector_norm(const T &vec) noexcept {
+    double res = 0;
+    utl::struct_reflect::for_each(vec, [&](const auto& coord){ res += coord * coord; });
+    return res;
+}
+
+// Test the function
+static_assert( squared_vector_norm(Vec2{1, 2})       ==  5 );
+static_assert( squared_vector_norm(Vec3{1, 2, 3})    == 14 );
+static_assert( squared_vector_norm(Vec4{1, 2, 3, 4}) == 30 );
+```
+
 ### Advanced examples
 
-Real-world applications of course extend far beyond the toy problems listed above and would be too verbose to fully present here, for example, this exact principle was used to implement reflection for a [utl::json](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_json.md) parser which knows both how to parse and how to serialize reflected structs with any level of nesting (aka reflected structs can include other reflected structs, nested containers with them and etc.). 
+Real-world applications, of course, extend far beyond the toy problems listed above and would be too verbose to fully present here, for example, this exact principle was used to implement reflection for a [utl::json](https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_json.md) parser which knows both how to parse and how to serialize reflected structs with any level of nesting (which means reflected structs can include other reflected structs, nested containers with them and etc.). 
 
 ## Map-macro implementation
 
