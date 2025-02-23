@@ -81,7 +81,7 @@ struct meta {
 #define REFLECT_ENUM(enum_name, ...)                                          \
 template <>                                                                   \
 struct meta<enum_name> {                                                      \
-    using type             = enum_name_;                                      \
+    using type             = enum_name;                                       \
     constexpr auto names   = std::array{ MAP_LIST(MAKE_NAME,  __VA_ARGS__) }; \
     constexpr auto values  = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) }; \
     constexpr auto entries = std::array{ MAP_LIST(MAKE_VALUE, __VA_ARGS__) }; \
@@ -169,8 +169,8 @@ struct meta {
 
 // Define macros that we're gonna apply with MAP
 #define MAKE_NAME( arg) std::string_view(arg)
-#define MAKE_VALUE(arg) std::forward<Struct>(value).arg_
-#define CALL_FUNC( arg) func(std::forward<Struct>(value).arg_);
+#define MAKE_VALUE(arg) std::forward<Struct>(value).arg
+#define CALL_FUNC( arg) func(std::forward<Struct>(value).arg);
 
 // Declare specialized template with struct metadata
 #define REFLECT_STRUCT(struct_name, ...)                                   \
