@@ -535,14 +535,11 @@ std::mt19937 gen{rd()}; // seed with too little state
 This is not nearly enough entropy for a huge state of `std::mt19937`, a "proper" way of seeding would be using more entropy and "spreading" it to the state using `std::seed_seq`:
 
 ```cpp
-std::array<std::mt19937::result_type, std::mt19937::state_size> state;
-
-std::random_device rd; // create source of entropy
-
-std::seed_seq seq({rd(), rd(), rd(), rd()}); // create seeding sequence
-seq.generate(state.begin(), state.end());
-
-std::mt19937 gen(seq); // seed mt19937 properly
+std::random_device rd;
+std::array<std::mt19937::result_type, std::mt19937::state_size> seed;
+std::generate_n(seed.data(), seed.size(), std::ref(rd));
+std::seed_seq seq(seed.begin(), seed.end());
+std::mt19937 gen(seq);
 ```
 
 Such approach however is beyond cumbersome and is rarely used in practice, which is why it is sensible to pick generators that work well with a single-number seeding as a default option.
