@@ -167,15 +167,13 @@ Computes [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_
 > template <class Integer> constexpr Integer kronecker_delta(Integer i, Integer j) noexcept;
 > ```
 
-Computes [Kronecker delta](https://en.wikipedia.org/wiki/Kronecker_delta) symbol:
-
-$\begin{equation}\delta_{ii} = \begin{cases} 1, \quad i = j \\ 0, \quad i \neq j. \end{cases}\end{equation}$
+Computes [Kronecker delta](https://en.wikipedia.org/wiki/Kronecker_delta) symbol: `1` if `i == j`, `0` otherwise.
 
 > ```cpp
 > template <class Integer> constexpr Integer levi_civita(Integer i, Integer j, Integer k) noexcept;
 > ```
 
-Computes [Levi-Civita](https://en.wikipedia.org/wiki/Levi-Civita_symbol) symbol.
+Computes [Levi-Civita](https://en.wikipedia.org/wiki/Levi-Civita_symbol) symbol: `1` if `(i, j, k)` form an [even permutation](https://en.wikipedia.org/wiki/Parity_of_a_permutation), `-1` if `(i, j, k)` form an odd permutation, and `0` if any the adjacent letters are equal.
 
 ### Degrees and radians
 
