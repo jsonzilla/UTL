@@ -3674,14 +3674,14 @@ inline Sink& add_file_sink(const std::string& filename, OpenMode open_mode = Ope
 
 // _______________________ INCLUDES _______________________
 
+#include <algorithm>        // sort(), is_permutation(), reverse()
 #include <cassert>          // assert()
+#include <cmath>            // cos
 #include <cstddef>          // size_t
-#include <functional>       // function<>
-#include <type_traits>      // enable_if_t<>, void_t<>, is_floating_point<>, is_arithmetic<>,
-                            // conditional_t<>, is_integral<>, true_type, false_type
-#include <algorithm>        // sort()
 #include <initializer_list> // initializer_list<>
-#include <utility>          // declval<>(), move()
+#include <tuple>            // get<>(), tuple_size_v<>, apply<>()
+#include <type_traits>      // enable_if_t<>, is_floating_point<>, is_arithmetic<>, conditional_t<>, is_integral<>, ...
+#include <utility>          // declval<>(), move(), forward<>()
 #include <vector>           // vector<>
 
 // ____________________ DEVELOPER DOCS ____________________
@@ -3726,127 +3726,261 @@ inline Sink& add_file_sink(const std::string& filename, OpenMode open_mode = Ope
 
 namespace utl::math {
 
-// =================
-// --- Constants ---
-// =================
+// ============================
+// --- Implementation Utils ---
+// ============================
 
-constexpr double PI           = 3.14159265358979323846;
-constexpr double PI_TWO       = 2. * PI;
-constexpr double PI_HALF      = 0.5 * PI;
-constexpr double E            = 2.71828182845904523536;
-constexpr double GOLDEN_RATIO = 1.6180339887498948482;
+// Make SFINAE a bit nicer
+template <bool Cond>
+using _require = std::enable_if_t<Cond, bool>; // makes SFINAE a bit less cumbersome
+
+template <class T>
+using _require_arithmetic = _require<std::is_arithmetic_v<T>>;
+
+template <class T>
+using _require_integral = _require<std::is_integral_v<T>>;
+
+template <class T>
+using _require_uint = _require<std::is_integral_v<T> && std::is_unsigned_v<T>>;
+
+template <class T>
+using _require_float = _require<std::is_floating_point_v<T>>;
+
+template <class Return, class T, class... Args>
+using _require_invocable_r = _require<std::is_invocable_r_v<Return, T, Args...>>;
+
+template <class T, class... Args>
+using _require_invocable = _require<std::is_invocable_v<T, Args...>>;
 
 // ===================
 // --- Type Traits ---
 // ===================
 
-template <class Type, class = void>
-struct is_addable_with_itself : std::false_type {};
+#define utl_math_define_trait(trait_name_, ...)                                                                        \
+    template <class T, class = void>                                                                                   \
+    struct trait_name_ : std::false_type {};                                                                           \
+                                                                                                                       \
+    template <class T>                                                                                                 \
+    struct trait_name_<T, std::void_t<decltype(__VA_ARGS__)>> : std::true_type {};                                     \
+                                                                                                                       \
+    template <class T>                                                                                                 \
+    constexpr bool trait_name_##_v = trait_name_<T>::value;
 
-template <class Type>
-struct is_addable_with_itself<Type, std::void_t<decltype(std::declval<Type>() + std::declval<Type>())>
-                              // perhaps check that resulting type is same as 'Type', but that can cause issues
-                              // with classes like Eigen::MatrixXd that return "foldables" that convert back to
-                              // objects in the end
-                              > : std::true_type {};
+utl_math_define_trait(has_size, std::declval<T>().size());
+utl_math_define_trait(has_capacity, std::declval<T>().capacity());
+utl_math_define_trait(has_data, std::declval<T>().data());
+utl_math_define_trait(has_value_type, std::declval<typename T::value_type>());
+utl_math_define_trait(has_node_type, std::declval<typename T::node_type>());
+utl_math_define_trait(has_allocator_type, std::declval<typename T::allocator_type>());
+utl_math_define_trait(has_tuple_size, std::tuple_size<T>::value);
+utl_math_define_trait(has_get, std::get<0>(std::declval<T>()));
 
-template <class Type, class = void>
-struct is_multipliable_by_scalar : std::false_type {};
+#undef utl_math_define_trait
 
-template <class Type>
-struct is_multipliable_by_scalar<Type, std::void_t<decltype(std::declval<Type>() * std::declval<double>())>>
-    : std::true_type {};
+// =================
+// --- Constants ---
+// =================
 
-template <class Type, class = void>
-struct is_sized : std::false_type {};
+namespace constants {
 
-template <class Type>
-struct is_sized<Type, std::void_t<decltype(std::declval<Type>().size())>> : std::true_type {};
+constexpr double pi      = 3.14159265358979323846;
+constexpr double two_pi  = 2. * pi;
+constexpr double half_pi = 0.5 * pi;
+constexpr double e       = 2.71828182845904523536;
+constexpr double phi     = 1.6180339887498948482; // golden ration
 
-template <class FuncType, class Signature>
-using is_function_with_signature = std::is_convertible<FuncType, std::function<Signature>>;
+} // namespace constants
 
-// ======================
-// --- Math functions ---
-// ======================
+// =======================
+// --- Basic functions ---
+// =======================
 
-template <class Type, std::enable_if_t<std::is_scalar<Type>::value, bool> = true>
-[[nodiscard]] constexpr Type abs(Type x) {
-    return (x > Type(0)) ? x : -x;
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T abs(T x) noexcept {
+    return (x > T(0)) ? x : -x;
 }
 
-template <class Type, std::enable_if_t<std::is_scalar<Type>::value, bool> = true>
-[[nodiscard]] constexpr Type sign(Type x) {
-    return (x > Type(0)) ? Type(1) : Type(-1);
-}
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T sign(T x) noexcept {
+    if constexpr (std::is_unsigned_v<T>) return (x > T(0)) ? T(1) : T(0);
+    else return (x > T(0)) ? T(1) : (x < T(0)) ? T(-1) : T(0);
+} // returns -1 / 0 / 1
 
-template <class Type, std::enable_if_t<std::is_arithmetic<Type>::value, bool> = true>
-[[nodiscard]] constexpr Type sqr(Type x) {
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T bsign(T x) noexcept {
+    if constexpr (std::is_unsigned_v<T>) return T(1);
+    else return (x >= T(0)) ? T(1) : T(-1);
+} // returns -1 / 1 (1 gets priority in x == 0)
+
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T sqr(T x) noexcept {
     return x * x;
 }
 
-template <class Type, std::enable_if_t<std::is_arithmetic<Type>::value, bool> = true>
-[[nodiscard]] constexpr Type cube(Type x) {
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T cube(T x) noexcept {
     return x * x * x;
 }
 
-template <class Type, std::enable_if_t<utl::math::is_addable_with_itself<Type>::value, bool> = true,
-          std::enable_if_t<utl::math::is_multipliable_by_scalar<Type>::value, bool> = true>
-[[nodiscard]] constexpr Type midpoint(Type a, Type b) {
-    return (a + b) * 0.5;
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T inv(T x) noexcept {
+    return 1. / x; // integers will be cast to float then rounded
 }
 
-template <class IntegerType, std::enable_if_t<std::is_integral<IntegerType>::value, bool> = true>
-[[nodiscard]] constexpr int kronecker_delta(IntegerType i, IntegerType j) {
-    // 'IntegerType' here is necessary to prevent enforcing static_cast<int>(...) on the callsite
-    return (i == j) ? 1 : 0;
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T pow(T x, std::size_t p) noexcept {
+    if (p == 0) return T(1);
+    if (p == 1) return x;
+    const T half_pow = pow(x, p / 2);
+    return (p % 2 == 0) ? half_pow * half_pow : half_pow * half_pow * x;
 }
 
-template <class IntegerType, std::enable_if_t<std::is_integral<IntegerType>::value, bool> = true>
-[[nodiscard]] constexpr int power_of_minus_one(IntegerType power) {
-    return (power % IntegerType(2)) ? -1 : 1; // is there a faster way of doing it?
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T midpoint(T a, T b) noexcept {
+    return (a + b) * 0.5; // integers will be cast to float then rounded
 }
 
-
-// --- deg/rad conversion ---
-template <class FloatType, std::enable_if_t<std::is_floating_point<FloatType>::value, bool> = true>
-[[nodiscard]] constexpr FloatType deg_to_rad(FloatType degrees) {
-    constexpr FloatType FACTOR = FloatType(PI / 180.);
-    return degrees * FACTOR;
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T absdiff(T a, T b) noexcept {
+    return (a > b) ? (a - b) : (b - a);
 }
 
-template <class FloatType, std::enable_if_t<std::is_floating_point<FloatType>::value, bool> = true>
-[[nodiscard]] constexpr FloatType rad_to_deg(FloatType radians) {
-    constexpr FloatType FACTOR = FloatType(180. / PI);
-    return radians * FACTOR;
+[[nodiscard]] constexpr int signpow(int p) noexcept { return (p % 2 == 0) ? 1 : -1; }
+
+// ===========================
+// --- Indicator functions ---
+// ===========================
+
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T heaviside(T x) noexcept {
+    return static_cast<T>(x > T(0));
+}
+
+template <class T, _require_integral<T> = true>
+[[nodiscard]] constexpr T kronecker_delta(T i, T j) noexcept {
+    return (i == j) ? T(1) : T(0);
+}
+
+template <class T, _require_integral<T> = true>
+[[nodiscard]] constexpr T levi_civita(T i, T j, T k) noexcept {
+    if (i == j || j == k || k == i) return T(0);
+    const std::size_t inversions = (i > j) + (i > k) + (j > k);
+    return (inversions % 2 == 0) ? T(1) : T(-1);
+}
+
+// ===========================
+// --- Degrees and radians ---
+// ===========================
+
+// Degree <-> radian conversion
+template <class T, _require_float<T> = true>
+[[nodiscard]] constexpr T deg_to_rad(T degrees) noexcept {
+    constexpr T factor = T(constants::pi / 180.);
+    return degrees * factor;
+}
+
+template <class T, _require_float<T> = true>
+[[nodiscard]] constexpr T rad_to_deg(T radians) noexcept {
+    constexpr T factor = T(180. / constants::pi);
+    return radians * factor;
+}
+
+// ===========================
+// --- Sequence operations ---
+// ===========================
+
+template <class Idx, class Func, _require_invocable<Func, Idx> = true>
+[[nodiscard]] constexpr auto sum(Idx low, Idx high, Func&& func) noexcept(noexcept(func(Idx{}))) {
+    assert(low <= high);
+    std::invoke_result_t<Func, Idx> res = 0;
+    for (Idx i = low; i <= high; ++i) res += func(i);
+    return res;
+}
+
+template <class Idx, class Func, _require_invocable<Func, Idx> = true>
+[[nodiscard]] constexpr auto prod(Idx low, Idx high, Func&& func) noexcept(noexcept(func(Idx{}))) {
+    assert(low <= high);
+    std::invoke_result_t<Func, Idx> res = 1;
+    for (Idx i = low; i <= high; ++i) res *= func(i);
+    return res;
+}
+
+// ==================
+// --- Indexation ---
+// ==================
+
+// Same thing as C++20 ssize()
+template <class T, _require<has_size_v<T>> = true>
+[[nodiscard]] constexpr auto ssize(const T& container) {
+    using return_type = std::common_type_t<std::ptrdiff_t, std::make_signed_t<decltype(container.size())>>;
+    return static_cast<return_type>(container.size());
+}
+
+// Utility used to reverse indexation logic, mostly useful when working with unsigned indeces
+template <class T, _require_integral<T> = true>
+[[nodiscard]] constexpr T reverse_idx(T idx, T size) noexcept {
+    return size - T(1) - idx;
 }
 
 // ====================
-// --- Memory Units ---
+// --- Permutations ---
 // ====================
 
-// Workaround for 'static_assert(false)' making program ill-formed even
-// when placed inide an 'if constexpr' branch that never compiles.
-// 'static_assert(_always_false_v<T>)' on the the other hand doesn't,
-// which means we can use it to mark branches that should never compile.
-template <class>
-inline constexpr bool _always_false_v = false;
+template <class Array>
+bool is_permutation(const Array& array) {
+    std::vector<std::size_t> p(array.size()); // Note: "non-allocating range adapter" would fit like a glove here
+    for (std::size_t i = 0; i < p.size(); ++i) p[i] = i;
 
-enum class MemoryUnit { BYTE, KiB, MiB, GiB, TiB, KB, MB, GB, TB };
+    return std::is_permutation(array.begin(), array.end(), p.begin()); // I'm surprised it exists in the standard
+}
 
-template <class T, MemoryUnit units = MemoryUnit::MiB>
-[[nodiscard]] constexpr double memory_size(std::size_t count) {
-    const double size_in_bytes = count * sizeof(T); // cast to double is critical here
-    if constexpr (units == MemoryUnit::BYTE) return size_in_bytes;
-    else if constexpr (units == MemoryUnit::KiB) return size_in_bytes / 1024.;
-    else if constexpr (units == MemoryUnit::MiB) return size_in_bytes / 1024. / 1024.;
-    else if constexpr (units == MemoryUnit::GiB) return size_in_bytes / 1024. / 1024. / 1024.;
-    else if constexpr (units == MemoryUnit::TiB) return size_in_bytes / 1024. / 1024. / 1024. / 1024.;
-    else if constexpr (units == MemoryUnit::KB) return size_in_bytes / 1000.;
-    else if constexpr (units == MemoryUnit::MB) return size_in_bytes / 1000. / 1000.;
-    else if constexpr (units == MemoryUnit::GB) return size_in_bytes / 1000. / 1000. / 1000.;
-    else if constexpr (units == MemoryUnit::TB) return size_in_bytes / 1000. / 1000. / 1000. / 1000.;
-    else static_assert(_always_false_v<T>, "Function is a non-exhaustive visitor of enum class {MemoryUnit}.");
+template <class Array, class Permutation = std::initializer_list<std::size_t>>
+void apply_permutation(Array& array, const Permutation& permutation) {
+    Array res(array.size());
+
+    typename Array::size_type emplace_idx = 0;
+    for (auto i : permutation) res[emplace_idx++] = std::move(array[i]);
+    array = std::move(res);
+}
+
+template <class Array, class Cmp = std::less<>>
+std::vector<std::size_t> sorting_permutation(const Array& array, Cmp cmp = Cmp()) {
+    std::vector<std::size_t> permutation(array.size());
+    for (std::size_t i = 0; i < permutation.size(); ++i) permutation[i] = i;
+
+    std::sort(permutation.begin(), permutation.end(),
+              [&](const auto& lhs, const auto& rhs) { return cmp(array[lhs], array[rhs]); });
+
+    return permutation;
+}
+
+template <class Array, class... SyncedArrays>
+void sort_together(Array& array, SyncedArrays&... synced_arrays) {
+    // Get permutation that would make the 1st array sorted
+    const auto permutation = sorting_permutation(array);
+
+    // Apply permutation to all arrays to "sort them in sync"
+    apply_permutation(array, permutation);
+    (apply_permutation(synced_arrays, permutation), ...);
+}
+
+// ==========================
+// --- Branchless ternary ---
+// ==========================
+
+template <class T, _require_arithmetic<T> = true>
+[[nodiscard]] constexpr T ternary_branchless(bool condition, T return_if_true, T return_if_false) noexcept {
+    return (condition * return_if_true) + (!condition * return_if_false);
+}
+
+template <class T, _require_integral<T> = true>
+[[nodiscard]] constexpr T ternary_bitselect(bool condition, T return_if_true, T return_if_false) noexcept {
+    return (return_if_true & -T(condition)) | (return_if_false & ~(-T(condition)));
+}
+
+template <class T, _require_integral<T> = true>
+[[nodiscard]] constexpr T ternary_bitselect(bool condition, T return_if_true /* returns 0 if false*/) noexcept {
+    return return_if_true & -T(condition);
 }
 
 // ===============
@@ -3859,137 +3993,159 @@ struct Points {
     std::size_t count;
 
     Points() = delete;
-    explicit Points(std::size_t count) : count(count) {}
+    constexpr explicit Points(std::size_t count) noexcept : count(count) {}
 };
 
 struct Intervals {
     std::size_t count;
 
     Intervals() = delete;
-    explicit Intervals(std::size_t count) : count(count) {}
-    Intervals(Points points) : count(points.count - 1) {}
+    constexpr explicit Intervals(std::size_t count) noexcept : count(count) {}
+    constexpr Intervals(Points points) noexcept : count(points.count > 0 ? points.count - 1 : 0) {}
 };
 
-template <class FloatType, std::enable_if_t<std::is_floating_point<FloatType>::value, bool> = true>
-[[nodiscard]] std::vector<FloatType> linspace(FloatType L1, FloatType L2, Intervals N) {
+// Linear 1D mesh
+template <class T, _require_float<T> = true>
+[[nodiscard]] std::vector<T> linspace(T L1, T L2, Intervals N) {
     assert(L1 < L2);
     assert(N.count >= 1);
 
-    const FloatType step = (L2 - L1) / N.count;
-
-    std::vector<FloatType> res(N.count + 1);
-
-    res[0] = L1;
-    for (std::size_t i = 1; i < res.size(); ++i) res[i] = res[i - 1] + step;
-
+    std::vector<T> res(N.count + 1);
+    for (std::size_t i = 0; i < res.size(); ++i) res[i] = i * (L2 - L1) / N.count;
     return res;
 }
 
-template <class FloatType, class FuncType, std::enable_if_t<std::is_floating_point<FloatType>::value, bool> = true,
-          std::enable_if_t<is_function_with_signature<FuncType, FloatType(FloatType)>::value, bool> = true>
-[[nodiscard]] FloatType integrate_trapezoidal(FuncType f, FloatType L1, FloatType L2, Intervals N) {
+// Chebyshev 1D mesh
+template <class T, _require_float<T> = true>
+[[nodiscard]] std::vector<T> chebspace(T L1, T L2, Intervals N) {
     assert(L1 < L2);
     assert(N.count >= 1);
 
-    const FloatType step = (L2 - L1) / N.count;
+    std::vector<T> res(N.count + 1);
+    res.front() = L2;
+    for (std::size_t i = 1; i < res.size() - 1; ++i) {
+        const std::size_t n  = res.size() - 2;
+        const T           c1 = T(0.5) * (L2 + L1);
+        const T           c2 = T(0.5) * (L2 - L1);
+        const T           c3 = constants::pi * (2 * i - 1) / (2 * n);
+        res[i]               = c1 + c2 * std::cos(c3);
+    }
+    res.back() = L1;
 
-    FloatType sum = 0;
-    FloatType x   = L1;
+    std::reverse(res.begin(), res.end()); // standard formula goes from '1' to '-1', we want things sorted
+    return res;
+}
+
+template <class T, class Func, _require_float<T> = true, _require_invocable_r<T, Func, T> = true>
+[[nodiscard]] T integrate_trapezoidal(Func&& f, T L1, T L2, Intervals N) {
+    assert(L1 < L2);
+    assert(N.count >= 1);
+
+    const T step = (L2 - L1) / N.count;
+
+    T sum = 0;
+    T x   = L1;
 
     for (std::size_t i = 0; i < N.count; ++i, x += step) sum += f(x) + f(x + step);
 
-    return FloatType(0.5) * sum * step;
+    return T(0.5) * sum * step;
 }
 
 // ====================
-// --- Permutations ---
+// --- Memory usage ---
 // ====================
 
-// template<class Idx = std::size_t>
-// class Range {
-//     Idx low;
-//     Idx high;
+// Below are a few methods to do inaccurate but nonintrusive estimates of containers
+// memory usage, we can't really count anything accurately without intrusively knowing implementation
+// or providing a custom allocator that gathers statistics, nor can we distinguish heap usage from
+// stack usage, however we can get "good enough" estimates to know if something is relatively "big" or
+// "small" which is often quite handy for testing & debugging.
+//
+// Note 1: Node-based containers can be slightly inaccurate due to specifics of node allocation.
+//
+// Note 2: Contiguous containers should be accurate.
+//
+// Note 3:
+// Estimates for 'std::list', 'std::queue', 'std::dequeue', 'std::priority_queue' are quite inaccurate since unlike
+// node-based containers they don't expose the underlying node type to the user, we can only count actual content.
 
-//     constexpr Range(Idx low, Idx high) : low(low), high(high) {}
+enum class MemoryUnit { BYTE, KiB, MiB, GiB, TiB, KB, MB, GB, TB };
 
-//     [[nodiscard]] constexpr Idx front() const noexcept { return this->low; }
-//     [[nodiscard]] constexpr Idx back() const noexcept { return this->high; }
-//     [[nodiscard]] constexpr Idx size() const noexcept { return this->high - this->low; }
-//     [[nodiscard]] constexpr Idx operator[](Idx pos) const noexcept { return this->low + pos; }
+// Workaround for 'static_assert(false)' making program ill-formed even when placed inside an 'if constexpr' branch
+// that never compiles. 'static_assert(_always_false_v<T>)' on the the other hand delays its evaluation and works as
+// we would want. This is super-well known, this comment just explains the basics should I have amnesia in the future.
+template <MemoryUnit units>
+constexpr bool _always_false_mem_v = false;
 
-//     // Iterator stuff
-// };
-
-template <class ArrayType>
-bool is_permutation(const ArrayType& array) {
-    std::vector<std::size_t> p(array.size()); // Note: "non-allocating range adapter" would fit like a glove here
-    for (std::size_t i = 0; i < p.size(); ++i) p[i] = i;
-
-    return std::is_permutation(array.begin(), array.end(), p.begin()); // I'm surprised it exists in the standard
+template <class T, class Func>
+constexpr void _tuple_for_each(T&& tuple, Func&& func) {
+    std::apply([&func](auto&&... args) { (func(std::forward<decltype(args)>(args)), ...); }, std::forward<T>(tuple));
 }
 
-template <class ArrayType, class PermutationType = std::initializer_list<std::size_t>>
-void apply_permutation(ArrayType& vector, const PermutationType& permutation) {
-    ArrayType res(vector.size());
-
-    typename ArrayType::size_type emplace_idx = 0;
-    for (auto i : permutation) res[emplace_idx++] = std::move(vector[i]);
-    vector = std::move(res);
+template <MemoryUnit units = MemoryUnit::MiB>
+[[nodiscard]] constexpr double to_memory_units(std::size_t bytes) noexcept {
+    if constexpr (units == MemoryUnit::BYTE) return bytes;
+    else if constexpr (units == MemoryUnit::KiB) return bytes / 1024.;
+    else if constexpr (units == MemoryUnit::MiB) return bytes / 1024. / 1024.;
+    else if constexpr (units == MemoryUnit::GiB) return bytes / 1024. / 1024. / 1024.;
+    else if constexpr (units == MemoryUnit::TiB) return bytes / 1024. / 1024. / 1024. / 1024.;
+    else if constexpr (units == MemoryUnit::KB) return bytes / 1000.;
+    else if constexpr (units == MemoryUnit::MB) return bytes / 1000. / 1000.;
+    else if constexpr (units == MemoryUnit::GB) return bytes / 1000. / 1000. / 1000.;
+    else if constexpr (units == MemoryUnit::TB) return bytes / 1000. / 1000. / 1000. / 1000.;
+    else static_assert(_always_false_mem_v<units>, "Function is a non-exhaustive visitor of enum class {MemoryUnit}.");
 }
 
-template <class ArrayType, class Compare = std::less<>>
-std::vector<std::size_t> get_sorting_permutation(const ArrayType& array, Compare comp = Compare()) {
-    std::vector<std::size_t> permutation(array.size());
-    for (std::size_t i = 0; i < permutation.size(); ++i) permutation[i] = i;
+// Quick memory usage estimate, doesn't iterate containers and doesn't try to expand
+// recursively, gives the best guess it can get by just querying the size
+template <MemoryUnit units = MemoryUnit::MiB, class T>
+[[nodiscard]] constexpr double quick_memory_estimate(const T& value) {
+    std::size_t bytes{};
 
-    std::sort(permutation.begin(), permutation.end(),
-              [&](const auto& lhs, const auto& rhs) { return comp(array[lhs], array[rhs]); });
+    // Node-based containers with size
+    // (like 'std::map', 'std::unordered_map', 'std::set', 'std::unordered_set')
+    if constexpr (has_size_v<T> && has_node_type_v<T>) {
+        bytes += sizeof(T);
+        bytes += value.size() * sizeof(typename T::node_type);
+    }
+    // Contiguous containers with static size
+    // (like 'std::array')
+    else if constexpr (has_data_v<T> && has_tuple_size_v<T> && has_value_type_v<T>) {
+        // counting 'sizeof(T)' here would likely lead to double-counting the same elements
+        bytes += std::tuple_size_v<T> * sizeof(typename T::value_type);
+    }
+    // Contiguous containers with dynamic capacity
+    // (like 'std::vector', 'std::string' and most custom ones)
+    else if constexpr (has_data_v<T> && has_capacity_v<T> && has_value_type_v<T>) {
+        bytes += sizeof(T);
+        bytes += value.capacity() * sizeof(typename T::value_type);
+    }
+    // Contiguous containers with dynamic size
+    // (like 'std::list', 'std::queue', 'std::dequeue', 'std::priority_queue')
+    else if constexpr (has_data_v<T> && has_size_v<T> && has_value_type_v<T>) {
+        bytes += sizeof(T);
+        bytes += value.size() * sizeof(typename T::value_type);
+    }
+    // Tuple-like types
+    // (like 'std::tuple', 'std::pair')
+    else if constexpr (has_tuple_size_v<T> && has_get_v<T>) {
+        _tuple_for_each(value, [&](auto&& e) { bytes += quick_memory_estimate(e); });
+    }
+    // Non-contiguous sized containers
+    // (like 'std::list', 'std::queue', 'std::dequeue', 'std::priority_queue')
+    else if constexpr (has_size_v<T> && has_value_type_v<T>) {
+        bytes += value.size() * sizeof(typename T::value_type);
+    }
+    // Everyting else
+    else {
+        bytes += sizeof(T);
+    };
 
-    return permutation;
+    return to_memory_units<units>(bytes);
 }
 
-template <class Array, class... SyncedArrays>
-void sort_together(Array& array, SyncedArrays&... synced_arrays) {
-    // Get permutation that would make the 1st array sorted
-    auto permutation = get_sorting_permutation(array);
-
-    // Apply permutation to all arrays to "sort them in sync"
-    apply_permutation(array, permutation);
-    (apply_permutation(synced_arrays, permutation), ...);
-}
-
-// ====================
-// --- Misc helpers ---
-// ====================
-
-template <class UintType, std::enable_if_t<std::is_integral<UintType>::value, bool> = true>
-[[nodiscard]] constexpr UintType uint_difference(UintType a, UintType b) {
-    // Cast to widest type if there is a change values don't fit into a regular 'int'
-    using WiderIntType = std::conditional_t<(sizeof(UintType) >= sizeof(int)), int64_t, int>;
-
-    return static_cast<UintType>(utl::math::abs(static_cast<WiderIntType>(a) - static_cast<WiderIntType>(b)));
-}
-
-template <class SizedContainer, std::enable_if_t<utl::math::is_sized<SizedContainer>::value, bool> = true>
-[[nodiscard]] int ssize(const SizedContainer& container) {
-    return static_cast<int>(container.size());
-}
-
-template <class ArithmeticType, std::enable_if_t<std::is_arithmetic<ArithmeticType>::value, bool> = true>
-[[nodiscard]] constexpr ArithmeticType ternary_branchless(bool condition, ArithmeticType return_if_true,
-                                                          ArithmeticType return_if_false) {
-    return (condition * return_if_true) + (!condition * return_if_false);
-}
-
-template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, bool> = true>
-[[nodiscard]] constexpr IntType ternary_bitselect(bool condition, IntType return_if_true, IntType return_if_false) {
-    return (return_if_true & -IntType(condition)) | (return_if_false & ~(-IntType(condition)));
-}
-
-template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, bool> = true>
-[[nodiscard]] constexpr IntType ternary_bitselect(bool condition, IntType return_if_true) {
-    return return_if_true & -IntType(condition);
-}
+// TODO:
+// recursive_memory_estimate()
 
 } // namespace utl::math
 

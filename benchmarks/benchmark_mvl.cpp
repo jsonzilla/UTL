@@ -357,12 +357,14 @@ void benchmark_matmul() {
     DenseMat A(N_i, N_k, [] { return random::rand_double(-0.1, 0.1); });
     DenseMat B(N_k, N_j, [] { return random::rand_double(-0.1, 0.1); });
     DenseMat C(N_i, N_j, 0.);
+    
+    const auto total_size = A.size() + B.size() + C.size();
 
     log::println("\n\n====== BENCHMARKING ON: dense/dense matmul ======\n");
     log::println("N_i               -> ", N_i);
     log::println("N_k               -> ", N_k);
     log::println("N_j               -> ", N_j);
-    log::println("Data memory usage -> ", math::memory_size<double>(A.size() + B.size() + C.size()), " MiB");
+    log::println("Data memory usage -> ", math::to_memory_units(total_size * sizeof(double)), " MiB");
 
     bench.minEpochIterations(1)
         .timeUnit(1ms, "ms")
@@ -456,7 +458,7 @@ void benchmark_stringify() {
 
     log::println("\n\n====== BENCHMARKING ON: float stringify ======\n");
     log::println("N                 -> ", N);
-    log::println("Data memory usage -> ", math::memory_size<double>(A.size()), " MiB");
+    log::println("Data memory usage -> ", math::to_memory_units(A.size() * sizeof(double)), " MiB");
 
     bench.minEpochIterations(4)
         .timeUnit(1ms, "ms")

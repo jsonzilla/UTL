@@ -50,7 +50,8 @@ void benchmark_prngs() {
 
     log::println("\n\n====== BENCHMARKING: PRNG invocation ======\n");
     log::println("N                 -> ", data_size);
-    log::println("Data memory usage -> ", math::memory_size<double>(data_size), " MiB");
+    log::println("Max memory usage -> ", math::to_memory_units(data_size * sizeof(std::uint64_t)), " MiB");
+    log::println("Min memory usage -> ", math::to_memory_units(data_size * sizeof(std::uint16_t)), " MiB");
 
     bench.title(std::to_string(data_size) + " invocations of PRNG")
         .timeUnit(1ms, "ms")
@@ -89,7 +90,7 @@ void benchmark_prngs() {
 
 
 // clang-format off
-template<class T> struct wider { static_assert(math::_always_false_v<T>, "Missing specialization"); };
+template<class T> struct wider { static_assert(json::_always_false_v<T>, "Missing specialization"); };
 
 template<> struct wider<std::uint8_t > { using type = std::uint16_t; };
 template<> struct wider<std::uint16_t> { using type = std::uint32_t; };
@@ -98,7 +99,7 @@ template<> struct wider<std::int8_t  > { using type =  std::int16_t; };
 template<> struct wider<std::int16_t > { using type =  std::int32_t; };
 template<> struct wider<std::int32_t > { using type =  std::int64_t; };
 
-template<class T> struct narrower_t { static_assert(math::_always_false_v<T>, "Missing specialization"); };
+template<class T> struct narrower_t { static_assert(json::_always_false_v<T>, "Missing specialization"); };
 
 
 template<> struct narrower_t< std::uint8_t> { using type =          void; };
@@ -308,14 +309,14 @@ void benchmark_distributions() {
     log::println("\n\n====== BENCHMARKING: distributions ======\n");
     log::println("N                          -> ", data_size);
     log::println("uint range                 -> [", uint_min, ", ", uint_max, "]");
-    log::println("Memory usage (uint64)      -> ", math::memory_size<std::uint64_t>(data_size), " MiB");
-    log::println("Memory usage (uint32)      -> ", math::memory_size<std::uint32_t>(data_size), " MiB");
-    log::println("Memory usage (uint16)      -> ", math::memory_size<std::uint16_t>(data_size), " MiB");
-    log::println("Memory usage (uint8 )      -> ", math::memory_size<std::uint8_t>(data_size), " MiB");
+    log::println("Memory usage (uint64)      -> ", math::to_memory_units(data_size * sizeof(std::uint64_t)), " MiB");
+    log::println("Memory usage (uint32)      -> ", math::to_memory_units(data_size * sizeof(std::uint32_t)), " MiB");
+    log::println("Memory usage (uint16)      -> ", math::to_memory_units(data_size * sizeof(std::uint32_t)), " MiB");
+    log::println("Memory usage (uint8 )      -> ", math::to_memory_units(data_size * sizeof(std::uint8_t)), " MiB");
     log::println("real range                 -> [", real_min, ", ", real_max, "]");
-    log::println("Memory usage (long double) -> ", math::memory_size<long double>(data_size), " MiB");
-    log::println("Memory usage (double     ) -> ", math::memory_size<double>(data_size), " MiB");
-    log::println("Memory usage (float      ) -> ", math::memory_size<float>(data_size), " MiB");
+    log::println("Memory usage (long double) -> ", math::to_memory_units(data_size * sizeof(long double)), " MiB");
+    log::println("Memory usage (double     ) -> ", math::to_memory_units(data_size * sizeof(double)), " MiB");
+    log::println("Memory usage (float      ) -> ", math::to_memory_units(data_size * sizeof(float)), " MiB");
 
     benchmark_distributions_for_prng<std::minstd_rand>("std::minstd_rand");
     benchmark_distributions_for_prng<std::mt19937>("std::mt19937");
