@@ -167,7 +167,9 @@ Computes [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_
 > template <class Integer> constexpr Integer kronecker_delta(Integer i, Integer j) noexcept;
 > ```
 
-Computes [Kronecker delta](https://en.wikipedia.org/wiki/Kronecker_delta) symbol: $\delta_{ii} = \begin{cases}1, \quad i = j \\ 0, \quad i \neq j\end{cases}$.
+Computes [Kronecker delta](https://en.wikipedia.org/wiki/Kronecker_delta) symbol:
+
+$\begin{equation}\delta_{ii} = \begin{cases} 1, \quad i = j \\ 0, \quad i \neq j. \end{cases}\end{equation}$
 
 > ```cpp
 > template <class Integer> constexpr Integer levi_civita(Integer i, Integer j, Integer k) noexcept;
