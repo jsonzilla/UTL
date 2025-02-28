@@ -207,7 +207,7 @@ Equivalent to C++20 [`std::ssize()`](https://en.cppreference.com/w/cpp/iterator/
 > template <class T> constexpr T reverse_idx(T idx, T size) noexcept;
 > ```
 
-Returns `size - 1 - idx` which corresponds a reverse index `idx`.
+Returns `size - 1 - idx` which corresponds to a reverse index `idx`.
 
 Useful for reversing indexation, especially when working with unsigned indices.
 
