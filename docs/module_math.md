@@ -8,8 +8,9 @@
 
 -  `constexpr` versions of some [`<cmath>`](https://en.cppreference.com/w/cpp/header/cmath) functions
 - Expressive functions to make code look closer to the mathematical notation
-- Some frequently needed, buy annoying to implement utils (such as sorting multiple arrays in sync, meshing, 1D integration and etc.)
-- Constrained versions of some math functions that allow for a faster implementation
+- Some frequently needed, buy annoying to implement utils (such as sorting multiple arrays in sync, index casting and etc.)
+- Constrained versions of some math functions that allow faster implementation
+- Index permutations
 - Basic meshing & integration
 - Rough estimates for container memory usage
 
