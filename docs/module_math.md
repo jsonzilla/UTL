@@ -4,11 +4,14 @@
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/math.hpp)
 
-**math** module adds various math that help express code in mathematical notation, main features are:
+**math** module adds various math-related functions, main features are:
 
 -  `constexpr` versions of some [`<cmath>`](https://en.cppreference.com/w/cpp/header/cmath) functions
 - Expressive functions to make code look closer to the mathematical notation
 - Some frequently needed, buy annoying to implement utils (such as sorting multiple arrays in sync, meshing, 1D integration and etc.)
+- Constrained versions of some math functions that allow for a faster implementation
+- Basic meshing & integration
+- Rough estimates for container memory usage
 
 ## Definitions
 
