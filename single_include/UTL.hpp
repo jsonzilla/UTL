@@ -8610,49 +8610,18 @@ public:
 #include <initializer_list> // initializer_list<>
 #include <limits>           // numeric_limits<>::digits, numeric_limits<>::min(), numeric_limits<>::max()
 #include <mutex>            // mutex, lock_guard<>
-#include <random>           // random_device, std::uniform_int_distribution<>,
-                            // std::uniform_real_distribution<>, generate_canonical<>
+#include <random>           // random_device, uniform_.._distribution<>, generate_canonical<>, seed_seq<>
 #include <type_traits>      // is_integral_v<>
 #include <utility>          // declval<>()
 #include <vector>           // vector<>, hash<>
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Implements a proper modern PRNG engine, compatible with std <random>.
-// Adds 'sensible std <random> wrappers' for people who aren't fond of writing
-// 3 lines code just to get a simple rand value.
+// Several <random> compatible PRNGs, slightly improved reimplementations of uniform distributions,
+// "better" entropy sources and several convenience wrappers for rng.
 //
-// # XorShift64StarGenerator #
-// Random 'std::uint64_t' generator that satisfies uniform random number generator requirements
-// from '<random>' (see https://en.cppreference.com/w/cpp/named_req/UniformRandomBitGenerator).
-// Implementation "XorShift64* suggested by Marsaglia G. in 2003 "Journal of Statistical Software"
-// (see https://www.jstatsoft.org/article/view/v008i14).
-// Slightly faster than 'std::rand()', while providing higher quality random.
-// Significantly faster than 'std::mt19937'.
-// State consists of a single 'std::uint64_t', requires seed >= 1.
-//
-// # xorshift64star #
-// Global instance of XorShift64StarGenerator.
-//
-// # ::seed(), ::seed_with_time(), ::seed_with_random_device() #
-// Seeds random with value/current_time/random_device.
-// Random device is a better source of entropy, however it's more expensive to initialize
-// than just taking current time with <ctime>, in some cases a "worse by lightweigh" can
-// be prefered.
-//
-// # ::rand_int(), ::rand_uint(), ::rand_float(), ::rand_double() #
-// Random value in [min, max] range.
-// Floats with no parameters assume range [0, 1].
-//
-// # ::rand_bool() #
-// Randomly chooses 0 or 1.
-//
-// # ::rand_choice() #
-// Randomly chooses a value from initializer list.
-//
-// # ::rand_linear_combination() #
-// Produces "c A + (1-c) B" with random "0 < c < 1" assuming objects "A", "B" support arithmetic operations.
-// Useful for vector and color operations.
+// Everything implemented here should be portable assuming reasonable assumptions (like existance of
+// uint32_t, uint64_t, 8-bit bytes, 32-bit floats, 64-bit doubles and etc.) which hold for most platforms
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -8795,7 +8764,7 @@ template <class T, std::size_t N>
     return true;
 }
 
-template<class ResultType>
+template <class ResultType>
 [[nodiscard]] constexpr ResultType _mix_seed(ResultType seed) {
     std::uint64_t state = (static_cast<std::uint64_t>(seed) + 0x9E3779B97f4A7C15);
     state               = (state ^ (state >> 30)) * 0xBF58476D1CE4E5B9;
@@ -8864,9 +8833,9 @@ public:
 
     constexpr void seed(result_type seed) noexcept {
         this->s = (seed & 0x1fffffffu) + 1156979152u; // accepts 29 seed-bits
-        
+
         for (std::size_t i = 0; i < 10; ++i) this->operator()();
-        // naively seeded RomuMono produces correlating patterns on the first iterations 
+        // naively seeded RomuMono produces correlating patterns on the first iterations
         // for successive seeds, we can do a few iterations to escape that
     }
 
@@ -8924,7 +8893,7 @@ public:
     constexpr void seed(result_type seed) noexcept {
         this->s = _mix_seed(seed);
         // naively seeded SplitMix32 has a horrible correlation between successive seeds, we can mostly alleviate
-        // the issue by pre-mixing the seed with a single iteration of a "better" 64-bit algorithm 
+        // the issue by pre-mixing the seed with a single iteration of a "better" 64-bit algorithm
     }
 
     template <class SeedSeq, _is_seed_seq_enable_if<SeedSeq> = true>
