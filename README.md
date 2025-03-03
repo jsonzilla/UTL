@@ -29,24 +29,25 @@ Secondary design goals also include:
 
 ## Modules & documentation
 
-| Module | Short description |
-| - | - |
-| [**utl::enum_reflect**](./docs/module_enum_reflect.md) | Enum reflection |
-| [**utl::json**](./docs/module_json.md) | JSON parsing and serializing |
-| [**utl::log**](./docs/module_log.md) | Logging library |
-| [**utl::math**](./docs/module_math.md) | Math-related utilities |
-| [**utl::mvl**](./docs/module_mvl.md) | Flexible API for vector and matrix operations |
-| [**utl::parallel**](./docs/module_parallel.md) | Thread pool, async tasks, parallel for, parallel reductions and etc. |
-| [**utl::predef**](./docs/module_predef.md) | Detection of architectures, compilers, platforms and etc. |
-| [**utl::profiler**](./docs/module_profiler.md) | Scope & expression profiling macros |
-| [**utl::progressbar**](./docs/module_progressbar.md) | Progress bars for CLI apps |
-| [**utl::random**](./docs/module_random.md) | PRNGs & random number generation |
-| [**utl::shell**](./docs/module_shell.md) | Shell commands and temporary files |
-| [**utl::sleep**](./docs/module_sleep.md) | Precise sleep implementations |
-| [**utl::stre**](./docs/module_stre.md) | Efficient implementations of common string utils |
-| [**utl::struct_reflect**](./docs/module_struct_reflect.md) | Struct reflection |
-| [**utl::table**](./docs/module_table.md) | ASCII table rendering tools |
-| [**utl::timer**](./docs/module_timer.md) | Timing methods |
+| Module                                                     | Short description                                                    |
+| ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| [**utl::bit**](./docs/module_bit.md)                       | Bit-twiddling, enum bitflags                                         |
+| [**utl::enum_reflect**](./docs/module_enum_reflect.md)     | Enum reflection                                                      |
+| [**utl::json**](./docs/module_json.md)                     | JSON parsing and serializing                                         |
+| [**utl::log**](./docs/module_log.md)                       | Logging library                                                      |
+| [**utl::math**](./docs/module_math.md)                     | Math-related utilities                                               |
+| [**utl::mvl**](./docs/module_mvl.md)                       | Flexible API for vector and matrix operations                        |
+| [**utl::parallel**](./docs/module_parallel.md)             | Thread pool, async tasks, parallel for, parallel reductions and etc. |
+| [**utl::predef**](./docs/module_predef.md)                 | Detection of architectures, compilers, platforms and etc.            |
+| [**utl::profiler**](./docs/module_profiler.md)             | Scope & expression profiling macros                                  |
+| [**utl::progressbar**](./docs/module_progressbar.md)       | Progress bars for CLI apps                                           |
+| [**utl::random**](./docs/module_random.md)                 | PRNGs & random number generation                                     |
+| [**utl::shell**](./docs/module_shell.md)                   | Shell commands and temporary files                                   |
+| [**utl::sleep**](./docs/module_sleep.md)                   | Precise sleep implementations                                        |
+| [**utl::stre**](./docs/module_stre.md)                     | Efficient implementations of common string utils                     |
+| [**utl::struct_reflect**](./docs/module_struct_reflect.md) | Struct reflection                                                    |
+| [**utl::table**](./docs/module_table.md)                   | ASCII table rendering tools                                          |
+| [**utl::timer**](./docs/module_timer.md)                   | Timing methods                                                       |
 
 ## See also
 
