@@ -474,6 +474,7 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
     // Non-contiguous sized containers
     // (like 'std::list', 'std::queue', 'std::dequeue', 'std::priority_queue')
     else if constexpr (has_size_v<T> && has_value_type_v<T>) {
+        bytes += sizeof(T);
         bytes += value.size() * sizeof(typename T::value_type);
     }
     // Everyting else

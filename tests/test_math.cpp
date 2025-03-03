@@ -151,20 +151,20 @@ TEST_CASE("(math::memory_size<T, size_t> == ...) for T = ") {
     constexpr auto byte = math::MemoryUnit::BYTE;
     
     constexpr std::array<int, 17> arr{};
-    static_assert(math::quick_memory_estimate<byte>(arr) == 17 * sizeof(int));
+    static_assert(math::quick_memory_estimate<byte>(arr) == sizeof(arr));
     
     const std::vector<double> vec(765);
-    CHECK(math::quick_memory_estimate<byte>(vec) == 765 * sizeof(double) + 2 * sizeof(std::size_t));
+    CHECK(math::quick_memory_estimate<byte>(vec) == 765 * sizeof(double) + sizeof(decltype(vec)));
     
     const std::string str(45, 'x');
-    CHECK(math::quick_memory_estimate<byte>(str) == 45 * sizeof(char) + 2 * sizeof(std::size_t));
+    CHECK(math::quick_memory_estimate<byte>(str) == 45 * sizeof(char) + sizeof(decltype(str)));
     
     const std::list<std::uint16_t> list = { 1, 2, 3, 4, 5, 6, 7 };
-    CHECK(math::quick_memory_estimate<byte>(list) >= 7 * sizeof(std::uint16_t));
+    CHECK(math::quick_memory_estimate<byte>(list) >= 7 * sizeof(std::uint16_t) + sizeof(decltype(list)));
     
     const std::unordered_set<std::uint64_t> set = { 1, 2, 3, 4, 5 };
-    CHECK(math::quick_memory_estimate<byte>(set) >= 5 * sizeof(std::uint64_t));
+    CHECK(math::quick_memory_estimate<byte>(set) >= 5 * sizeof(std::uint64_t) + sizeof(decltype(set)));
     
     const std::unordered_map<std::uint64_t, std::uint64_t> map = { { 1, 1 }, { 2, 2 }, { 3, 3 } };
-    CHECK(math::quick_memory_estimate<byte>(map) >= 5 * 2 * sizeof(std::uint64_t));
+    CHECK(math::quick_memory_estimate<byte>(map) >= 3 * 2 * sizeof(std::uint64_t) + sizeof(decltype(map)));
 }

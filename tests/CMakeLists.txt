@@ -17,6 +17,7 @@ macro(add_utl_test filename)
 endmacro()
 
 # Tests
+add_utl_test(test_bit)
 add_utl_test(test_enum_reflect)
 add_utl_test(test_integral)
 add_utl_test(test_json)
