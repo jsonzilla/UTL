@@ -4,29 +4,31 @@
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/timer.hpp)
 
-**timer** contains a number of methods for time measurement. Intended mainly for measuring code execution time without [std::chrono](https://en.cppreference.com/w/cpp/chrono) boilerplate. Outputs time as a string, prints formatted local time and date.
+**timer** module implements a very concise global-state timer.
+
+Useful to quickly time code segments without all the boilerplate of [`<chrono>`](https://en.cppreference.com/w/cpp/chrono).
 
 ## Definitions
 
 ```cpp
 // Time measurement
-void start(); // starts measurement
+void start() noexcept;
 
-double elapsed_ms();
-double elapsed_sec();
-double elapsed_min();
-double elapsed_hours();
+double elapsed_ms()    noexcept;
+double elapsed_sec()   noexcept;
+double elapsed_min()   noexcept;
+double elapsed_hours() noexcept;
 
 std::string elapsed_string_ms();
 std::string elapsed_string_sec();
 std::string elapsed_string_min();
 std::string elapsed_string_hours();
 
-std::string elapsed_string_fullform(); // format: "%H hours %M min %S sec %MS ms"
+std::string elapsed_string_fullform();
 
 // Local datetime
-std::string datetime_string();    // format: "%y-%m-%d %H:%M:%S"
-std::string datetime_string_id(); // format: "%y-%m-%d-%H-%M-%S", works in filenames
+std::string datetime_string();
+std::string datetime_string_id();
 ```
 
 ## Methods
@@ -34,31 +36,31 @@ std::string datetime_string_id(); // format: "%y-%m-%d-%H-%M-%S", works in filen
 ### Time measurement
 
 > ```cpp
-> timer::start();
+> void start() noexcept;
 > ```
 
 Sets internal start timepoint for elapsed measurements.
 
 > ```cpp
-> double timer::elapsed_ms();
-> double timer::elapsed_sec();
-> double timer::elapsed_min();
-> double timer::elapsed_hours();
+> double elapsed_ms()    noexcept;
+> double elapsed_sec()   noexcept;
+> double elapsed_min()   noexcept;
+> double elapsed_hours() noexcept;
 > ```
 
 Returns elapsed time as `double`. Internally time is measured in nanoseconds.
 
 > ```cpp
-> std::string timer::elapsed_string_ms();
-> std::string timer::elapsed_string_sec();
-> std::string timer::elapsed_string_min();
-> std::string timer::elapsed_string_hours();
+> std::string elapsed_string_ms();
+> std::string elapsed_string_sec();
+> std::string elapsed_string_min();
+> std::string elapsed_string_hours();
 > ```
 
 Returns elapsed time as `std::string` with units.
 
 > ```cpp
-> std::string timer::elapsed_string_fullform();
+> std::string elapsed_string_fullform();
 > ```
 
 Returns elapsed time in format `%H hours %M min %S sec %MS ms`.
@@ -66,11 +68,13 @@ Returns elapsed time in format `%H hours %M min %S sec %MS ms`.
 ### Datetime
 
 > ```cpp
-> std::string timer::datetime_string();
-> std::string timer::datetime_string_id();
+> std::string datetime_string();
+> std::string datetime_string_id();
 > ```
 
-Returns current local date and time in format `%y-%m-%d %H:%M:%S` or `%y-%m-%d-%H-%M-%S`. Since first format is contains characters illegal in filenames, second format can be used instead.
+Returns current local date and time in format `%y-%m-%d %H:%M:%S` or `%y-%m-%d-%H-%M-%S`.
+
+**Note:** First format looks better, but contains characters illegal in filenames, which is why a second filename-compatible format is provided.
 
 ## Examples
 

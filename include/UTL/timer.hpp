@@ -29,25 +29,9 @@
 // be no portable way of getting local time before C++20 (which adds "Calendar" part of <chrono>)
 // is rather bizzare, but not unmanageable.
 //
-// # ::start() #
-// Starts the timer.
-// Note: If start() wasn't called system will use uninitialized value as a start.
-//
-// # ::elapsed_ms(), ::elapsed_sec(), ::elapsed_min(), ::elapsed_hours() #
-// Elapsed time as double.
-//
-// # ::elapsed_string_ms(), ::elapsed_string_sec(), ::elapsed_string_min(), ::elapsed_string_hours() #
-// Elapsed time as std::string.
-//
-// # ::elapsed_string:fullform() #
-// Elapsed time in format "%H hours %M min %S sec %MS ms".
-//
-// # ::datetime_string() #
-// Current local date and time in format "%y-%m-%d %H:%M:%S".
-//
-// # ::datetime_string_id() #
-// Current local date and time in format "%y-%m-%d-%H-%M-%S".
-// Less readable that usual format, but can be used in filenames which prohibit ":" usage.
+// This implementation will probably be improved later to provide a more generic API with local
+// timers and accumulators, but I haven't figured out a way to do it without increasing verbosity
+// in a simple use case.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -57,8 +41,8 @@ namespace utl::timer {
 // --- Internals ---
 // =================
 
-using _clock     = std::chrono::steady_clock;
-using _chrono_ns = std::chrono::nanoseconds;
+using _clock = std::chrono::steady_clock;
+using _ns    = std::chrono::nanoseconds;
 
 constexpr double _ns_in_ms = 1e6;
 
@@ -68,12 +52,12 @@ constexpr long long _ms_in_hour = 60 * _ms_in_min;
 
 inline _clock::time_point _start_timepoint;
 
-[[nodiscard]] inline double _elapsed_time_as_ms() {
-    const auto elapsed = std::chrono::duration_cast<_chrono_ns>(_clock::now() - _start_timepoint).count();
+[[nodiscard]] inline double _elapsed_time_as_ms() noexcept {
+    const auto elapsed = std::chrono::duration_cast<_ns>(_clock::now() - _start_timepoint).count();
     return static_cast<double>(elapsed) / _ns_in_ms;
 }
 
-inline void start() { _start_timepoint = _clock::now(); }
+inline void start() noexcept { _start_timepoint = _clock::now(); }
 
 // ==============================
 // --- Elapsed Time Functions ---
@@ -82,10 +66,12 @@ inline void start() { _start_timepoint = _clock::now(); }
 // --- Elapsed Time as 'double' ---
 // --------------------------------
 
-[[nodiscard]] inline double elapsed_ms() { return _elapsed_time_as_ms(); }
-[[nodiscard]] inline double elapsed_sec() { return _elapsed_time_as_ms() / static_cast<double>(_ms_in_sec); }
-[[nodiscard]] inline double elapsed_min() { return _elapsed_time_as_ms() / static_cast<double>(_ms_in_min); }
-[[nodiscard]] inline double elapsed_hours() { return _elapsed_time_as_ms() / static_cast<double>(_ms_in_hour); }
+[[nodiscard]] inline double elapsed_ms() noexcept { return _elapsed_time_as_ms(); }
+[[nodiscard]] inline double elapsed_sec() noexcept { return _elapsed_time_as_ms() / static_cast<double>(_ms_in_sec); }
+[[nodiscard]] inline double elapsed_min() noexcept { return _elapsed_time_as_ms() / static_cast<double>(_ms_in_min); }
+[[nodiscard]] inline double elapsed_hours() noexcept {
+    return _elapsed_time_as_ms() / static_cast<double>(_ms_in_hour);
+}
 
 // --- Elapsed Time as 'std::string' ---
 // -------------------------------------
