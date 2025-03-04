@@ -79,7 +79,7 @@ namespace utl::json {
 // (each letter in a codepoint is a hex corresponding to 4 bits, 6 positions => 24 bits of info).
 // In terms of C++ 'U+ABCDEF' codepoints can be expressed as an integer hex-literal '0xABCDEF'.
 //
-bool _codepoint_to_utf8(std::string& destination, std::uint32_t cp) {
+inline bool _codepoint_to_utf8(std::string& destination, std::uint32_t cp) {
     // returns success so we can handle the error message inside the parser itself.
 
     std::array<char, 4> buffer;
@@ -127,7 +127,7 @@ bool _codepoint_to_utf8(std::string& destination, std::uint32_t cp) {
     return 0x10000 + ((high & 0x03FF) << 10) + (low & 0x03FF);
 }
 
-[[nodiscard]] std::string _utf8_replace_non_ascii(std::string str, char replacement_char) noexcept {
+[[nodiscard]] inline std::string _utf8_replace_non_ascii(std::string str, char replacement_char) noexcept {
     for (auto& e : str)
         if (static_cast<std::uint8_t>(e) > 127) e = replacement_char;
     return str;
@@ -139,9 +139,9 @@ bool _codepoint_to_utf8(std::string& destination, std::uint32_t cp) {
     // This seems the to be the fastest way of reading a text file
     // into 'std::string' without invoking OS-specific methods
     // See this StackOverflow thread:
-    // [https://stackoverflow.com/questions/32169936/optimal-way-of-reading-a-complete-file-to-a-string-using-fstream]
+    // https://stackoverflow.com/questions/32169936/optimal-way-of-reading-a-complete-file-to-a-string-using-fstream
     // And attached benchmarks:
-    // [https://github.com/Sqeaky/CppFileToStringExperiments]
+    // https://github.com/Sqeaky/CppFileToStringExperiments
 
     std::ifstream file(path, std::ios::ate); // open file and immediately seek to the end
     if (!file.good()) throw std::runtime_error("Could not open file {"s + path + "."s);
