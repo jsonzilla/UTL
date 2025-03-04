@@ -69,12 +69,12 @@ Secondary design goals also include:
 
 While the library itself consists of a single header with no embedded dependencies, it was built and tested using a number of third-party tools and libraries, some of which are embedded in a repo.
 
-| Tool                                                         | Version      | Used for                      |
-| ------------------------------------------------------------ | ------------ | ----------------------------- |
-| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | **v.14.0.0** | Automatic code formatting     |
-| [clangd](https://clangd.llvm.org)                            | **v.15.0.7** | Language server functionality |
-| [CMake](https://cmake.org)                                   | **v.3.2.11** | Build and test automation     |
-| [valgrind](https://valgrind.org)                             | **v.3.18.1** | Memory leak detection         |
+| Tool                                                         | Version      | Used for                                                     |
+| ------------------------------------------------------------ | ------------ | ------------------------------------------------------------ |
+| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | **v.14.0.0** | Automatic code formatting                                    |
+| [clangd](https://clangd.llvm.org)                            | **v.15.0.7** | Language server functionality                                |
+| [CMake](https://cmake.org)                                   | **v.3.2.11** | Build system, [CTest](https://cmake.org/cmake/help/latest/manual/ctest.1.html) testing facilities |
+| [GCC](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) | **v.11.4.0** | [ASan](https://github.com/google/sanitizers/wiki/AddressSanitizer) and [UBSan](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) instrumentation for the test environment |
 
 | Library                                                | Version            | License                                                                        | Used for                   | Embedded in repo |
 | ------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------ | -------------------------- | ---------------- |
