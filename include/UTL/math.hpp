@@ -26,41 +26,8 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Coordinate transformations, mathematical constants and technical helper functions.
-// A bit of a mix-bag-of-everything, but in the end pretty useful.
-//
-// # ::PI, ::PI_TWO, ::PI_HALF, ::E, ::GOLDEN_RATION #
-// Constants.
-//
-// # ::is_addable_with_itself<Type> #
-// Integral constant, returns in "::value" whether Type supports 'operator()+' with itself.
-//
-// # ::is_multipliable_by_scalar<Type> #
-// Integral constant, returns in "::value" whether Type supports 'operator()*' with double.
-//
-// # ::is_sized<Type> #
-// Integral constant, returns in "::value" whether Type supports '.size()' method.
-//
-// # ::abs(), ::sign(), ::sqr(), ::cube(), ::midpoint(), deg_to_rad(), rad_to_deg() #
-// Constexpr templated math functions, useful when writing expressions with a "textbook form" math.
-//
-// # ::uint_difference() #
-// Returns abs(uint - uint) with respect to uint size and possible overflow.
-//
-// # ::linspace() #
-// Tabulates [min, max] range with N evenly spaced points and returns it as a vector.
-//
-// # ::ssize() #
-// Returns '.size()' of the argument casted to 'int'.
-// Essentially a shortcut for verbose 'static_cast<int>(container.size())'.
-//
-// # ::ternary_branchless() #
-// Branchless ternary operator. Slightly slower that regular ternary on most CPUs.
-// Should not be used unless branchess qualifier is necessary (like in GPU computation).
-//
-// # ::ternary_bitselect() #
-// Faster branchless ternary for integer types.
-// If 2nd return is ommited, 0 is assumed, which allows for significant optimization.
+// With C++20 following functions will be added into the standard:
+// - midpoint()
 
 // ____________________ IMPLEMENTATION ____________________
 

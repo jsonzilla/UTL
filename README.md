@@ -33,7 +33,8 @@ Secondary design goals also include:
 | ---------------------------------------------------------- | -------------------------------------------------------------------- |
 | [**utl::bit**](./docs/module_bit.md)                       | Bit-twiddling, enum bitflags                                         |
 | [**utl::enum_reflect**](./docs/module_enum_reflect.md)     | Enum reflection                                                      |
-| [**utl::json**](./docs/module_json.md)                     | JSON parsing and serializing                                         |
+| [**utl::integral**](./docs/module_integral.md)             | Saturated math, safe integer casts, literals, rounding and etc.      |
+| [**utl::json**](./docs/module_json.md)                     | JSON parsing, serializing & reflection                               |
 | [**utl::log**](./docs/module_log.md)                       | Logging library                                                      |
 | [**utl::math**](./docs/module_math.md)                     | Math-related utilities                                               |
 | [**utl::mvl**](./docs/module_mvl.md)                       | Flexible API for vector and matrix operations                        |
@@ -68,32 +69,31 @@ Secondary design goals also include:
 
 While the library itself consists of a single header with no embedded dependencies, it was built and tested using a number of third-party tools and libraries, some of which are embedded in a repo.
 
-| Tool | Version | Used for |
-| - | - | - |
-| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | **v.14.0.0** | Automatic code formatting |
-| [clangd](https://clangd.llvm.org) | **v.15.0.7** | Language server functionality |
-| [CMake](https://cmake.org) | **v.3.2.11** | Build and test automation |
-| [valgrind](https://valgrind.org) | **v.3.18.1** | Memory leak detection |
+| Tool                                                         | Version      | Used for                      |
+| ------------------------------------------------------------ | ------------ | ----------------------------- |
+| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | **v.14.0.0** | Automatic code formatting     |
+| [clangd](https://clangd.llvm.org)                            | **v.15.0.7** | Language server functionality |
+| [CMake](https://cmake.org)                                   | **v.3.2.11** | Build and test automation     |
+| [valgrind](https://valgrind.org)                             | **v.3.18.1** | Memory leak detection         |
 
-| Library | Version | License | Used for | Embedded in repo |
-| - | - | - | - | - |
-| [doctest](https://github.com/doctest/doctest) | **v.2.4.11** | [MIT](https://github.com/doctest/doctest/blob/master/LICENSE.txt) | Unit testing | ✔ |
-| [nanobench](https://github.com/martinus/nanobench) | **v.4.3.11** | [MIT](https://github.com/martinus/nanobench/blob/master/LICENSE) | Benchmarking | ✔ |
-| [nlohmann json](https://github.com/nlohmann/json) | **v.3.11.3** | [MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT) | Benchmark comparison | ✔ |
-| [PicoJSON](https://github.com/kazuho/picojson) | **v.1.3.0** | [BSD-2](https://github.com/kazuho/picojson/blob/master/LICENSE) | Benchmark comparison | ✔ |
-| [RapidJSON](https://github.com/Tencent/rapidjson) | **v.1.1.0** | [MIT, BSD, JSON](https://github.com/Tencent/rapidjson/blob/master/license.txt) | Benchmark comparison | ✔ |
-| [JSONTestSuite](https://github.com/nst/JSONTestSuite/) | **commit 1ef36fa** | [MIT](https://github.com/nst/JSONTestSuite/blob/master/LICENSE) | JSON Validation test suite | ✔ |
+| Library                                                | Version            | License                                                                        | Used for                   | Embedded in repo |
+| ------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------ | -------------------------- | ---------------- |
+| [doctest](https://github.com/doctest/doctest)          | **v.2.4.11**       | [MIT](https://github.com/doctest/doctest/blob/master/LICENSE.txt)              | Unit testing               | ✔                |
+| [nanobench](https://github.com/martinus/nanobench)     | **v.4.3.11**       | [MIT](https://github.com/martinus/nanobench/blob/master/LICENSE)               | Benchmarking               | ✔                |
+| [nlohmann json](https://github.com/nlohmann/json)      | **v.3.11.3**       | [MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT)               | Benchmark comparison       | ✔                |
+| [PicoJSON](https://github.com/kazuho/picojson)         | **v.1.3.0**        | [BSD-2](https://github.com/kazuho/picojson/blob/master/LICENSE)                | Benchmark comparison       | ✔                |
+| [RapidJSON](https://github.com/Tencent/rapidjson)      | **v.1.1.0**        | [MIT, BSD, JSON](https://github.com/Tencent/rapidjson/blob/master/license.txt) | Benchmark comparison       | ✔                |
+| [JSONTestSuite](https://github.com/nst/JSONTestSuite/) | **commit 1ef36fa** | [MIT](https://github.com/nst/JSONTestSuite/blob/master/LICENSE)                | JSON Validation test suite | ✔                |
 
 ## Work in progress
 
-* Deprecation/refactoring of following modules: `utl::voidstream`;
+* Old module reworks (`utl::timer` and `utl::table`);
+* Examples for `utl::math`;
 * Small API improvements for `utl::log`;
 * Vector support for `utl::mvl`;
 * Matrix concat functions for `utl::mvl`;
 * Index span API for `utl::mvl`;
 * Binary operator refactors for `utl::mvl`;
-* Coordinate transformations in `utl::math`;
-* More type traits in `utl::math`;
 * Test coverage statistics.
 
 ## License

@@ -1,3 +1,4 @@
+#include "UTL/bit.hpp"
 #include "UTL/enum_reflect.hpp"
 #include "UTL/integral.hpp"
 #include "UTL/json.hpp"

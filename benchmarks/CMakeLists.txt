@@ -5,7 +5,6 @@ macro(add_utl_benchmark filename)
     target_compile_options(${filename} PRIVATE -O2 -Wall -Wextra -Wpedantic -Werror -fno-unroll-loops -fmax-errors=10)
 endmacro()
 
-add_utl_benchmark(benchmark_integral)
 add_utl_benchmark(benchmark_json)
 add_utl_benchmark(benchmark_log)
 add_utl_benchmark(benchmark_mvl)

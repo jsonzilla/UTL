@@ -14,13 +14,12 @@
 
 // _______________________ INCLUDES _______________________
 
-#include <array>            // array<>
 #include <cassert>          // assert()
 #include <climits>          // CHAR_BIT
 #include <cstddef>          // size_t
 #include <initializer_list> // initializer_list<>
 #include <limits>           // numeric_limits<>::digits
-#include <type_traits>      // enable_if_t<>, is_integral_v<>, is_unsigned_v<>, is_enum_v<>
+#include <type_traits>      // enable_if_t<>, is_integral_v<>, is_enum_v<>
 
 // ____________________ DEVELOPER DOCS ____________________
 
@@ -167,18 +166,6 @@ constexpr T flip(T value, std::size_t bit) noexcept {
     return value ^ lshift(T(1), bit);
 }
 
-// MARK:
-template <class T, _require_integral<T> = true>
-[[nodiscard]] auto to_bits(T value) {
-    const auto                 bits = size_of<T>;
-    std::array<char, bits + 1> str{};
-    // +1 for the null terminator, not very idiomatic but makes it easily convertable to C-string,
-    // which is necessary to have basic convenience of usage, unfortunately C++ lacks good constexpr
-    for (std::size_t i = 0; i < bits; ++i) str[i] = get(bits - value - 1, i) ? '1' : '0';
-    return str;
-}
-// MARK:
-
 // =====================
 // --- Enum Bitflags ---
 // =====================
@@ -234,23 +221,6 @@ public:
     [[nodiscard]] constexpr bool operator> (Flags other) noexcept { return this->data >  other.data; }
     // clang-format on
 };
-
-// TEMP: Tests
-enum class Mode { IN = 1 << 0, OUT = 1 << 1, TEXT = 1 << 2 };
-
-constexpr Flags in    = Flags(Mode::IN);
-constexpr Flags out   = Flags(Mode::OUT);
-constexpr Flags text  = Flags(Mode::TEXT);
-constexpr Flags inout = Flags{Mode::IN, Mode::OUT};
-
-static_assert(inout.contains(in));
-static_assert(inout.contains(out));
-static_assert(!inout.contains(text));
-
-static_assert(inout.contains(Mode::IN));
-static_assert(inout.contains(Mode::OUT));
-static_assert(!inout.contains(Mode::TEXT));
-// TEMP:
 
 } // namespace utl::bit
 
