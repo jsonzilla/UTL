@@ -158,7 +158,7 @@ void _append_decorated_value(std::ostream& os, const T& value) {
 inline void cell(){};
 
 template <class T, class... Types>
-void cell(T value, const Types... other_values) {
+void cell(const T& value, const Types&... other_values) {
     const auto left_delimer  = _latex_mode ? "" : "|";
     const auto delimer       = _latex_mode ? " & " : "|";
     const auto right_delimer = _latex_mode ? " \\\\\n" : "|\n";
