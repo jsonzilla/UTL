@@ -1,4 +1,4 @@
-# utl::integral **(experimental)**
+# utl::integral
 
 [<- to README.md](..)
 
@@ -83,14 +83,14 @@ namespace literals {
 
 Returns the result of integer division with a given rounding mode.
 
-| Function      | Rounding mode           |
-| ------------- | ----------------------- |
-| `div_floor()` | Towards a larger value  |
-| `div_ceil()`  | Towards a smaller value |
-| `div_down()`  | Towards `0`             |
-| `div_up()`    | Away from `0`           |
+| Function      | Rounding mode         |
+| ------------- | --------------------- |
+| `div_floor()` | Towards larger value  |
+| `div_ceil()`  | Towards smaller value |
+| `div_down()`  | Towards `0`           |
+| `div_up()`    | Away from `0`         |
 
-**Note:** There is a lot of blatantly erroneous implementations for this published online since the task is surprisingly tricky. Here signed values are properly handled and overflow behaves as it should.
+**Note:** There is a lot of partial or even blatantly erroneous implementations for this published online, the task is surprisingly tricky. Here signed values are properly handled and overflow behaves as it should.
 
 ### Saturated math
 
@@ -130,6 +130,12 @@ Functions that compare the values of two integers `lhs` and `rhs`. Unlike regula
 For example, `-1 > 0u` is `true` due to non-value-preserving integer conversion, while `cmp_greater(-1, 0u)` is `false` (as it should be mathematically).
 
 **Note:** This gets standardized in **C++26** as [intcmp](https://en.cppreference.com/w/cpp/utility/intcmp).
+
+> ```cpp
+> template <class To, class From> constexpr bool in_range(From value) noexcept;
+> ```
+
+Returns whether `value` is in `[std::numeric_limits<To>::min(), std::numeric_limits<To>::max()]` range using heterogeneous comparison.
 
 ### Casts
 
