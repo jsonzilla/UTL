@@ -36,8 +36,8 @@ template<class T> std::string replace_all_occurences(T&& str, std::string_view f
 std::vector<std::string> split_by_delimiter(std::string_view str, std::string_view delimiter, bool keep_empty_tokens = false);
 
 // Other utils
-std::string repeat_char(              char  ch, size_t repeats);
-std::string repeat_string(std::string_view str, size_t repeats);
+std::string repeat_char(              char  ch, std::size_t repeats);
+std::string repeat_string(std::string_view str, std::size_t repeats);
 
 std::string escape_control_chars(std::string_view str);
 
@@ -122,8 +122,8 @@ By default `keep_empty_tokens` is `false` and `""` is not considered to be a val
 ### Other utils
 
 > ```cpp
-> std::string repeat_char(              char  ch, size_t repeats);
-> std::string repeat_string(std::string_view str, size_t repeats);
+> std::string repeat_char(              char  ch, std::size_t repeats);
+> std::string repeat_string(std::string_view str, std::size_t repeats);
 > ```
 
 Repeats given character or string a given number of times and returns as a string.

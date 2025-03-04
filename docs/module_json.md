@@ -226,7 +226,7 @@ Returns a `T*` pointer to the value stored at the JSON node, if stored value has
 
 Returns a reference to the node corresponding to a given `key` in the JSON object, performs an insertion if such key does not already exist.
 
-**Note:** If current node is `null_type` overload **(1)** will convert it `object_type` and perform an insertion. This allows for a more natural syntax.
+**Note:** If current node is `null_type` overload **(1)** will convert it to `object_type` and perform an insertion. This allows for a more natural syntax.
 
 > ```cpp
 > Node      & at(std::string_view key);
@@ -275,7 +275,7 @@ Returns a reference to the node at given `pos`, throws an exception if index is 
 
 Inserts a new node at the end of JSON array.
 
-**Note:** If current node is `null_type` the method will convert it `object_type` and perform an insertion. This allows for a more natural syntax.
+**Note:** If current node is `null_type` the method will convert it to `array_type` and perform an insertion. This allows for a more natural syntax.
 
 #### Assignment & Constructors
 

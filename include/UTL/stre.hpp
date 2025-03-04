@@ -17,72 +17,15 @@
 #include <algorithm>   // transform()
 #include <cctype>      // tolower(), toupper()
 #include <cstddef>     // size_t
-#include <exception>   // exception
-#include <iomanip>     // setfill(), setw()
-#include <ostream>     // ostream
-#include <sstream>     // ostringstream
 #include <stdexcept>   // invalid_argument
 #include <string>      // string
 #include <string_view> // string_view
-#include <tuple>       // tuple<>, get<>()
-#include <type_traits> // false_type, true_type, void_t<>, is_convertible<>, enable_if_t<>
-#include <utility>     // declval<>(), index_sequence<>
 #include <vector>      // vector<>
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// String utility extensions, mainly a template ::to_str() method which works with all STL containers,
-// including maps, sets and tuples with any level of mutual nesting.
-//
-// Also includes some expansions of <type_traits> header, since we need them anyways to implement a generic ::to_str().
-//
-// # ::is_printable<Type> #
-// Integral constant, returns in "::value" whether Type can be printed through std::cout.
-// Criteria: Existance of operator 'ANY_TYPE operator<<(std::ostream&, Type&)'
-//
-// # ::is_iterable_through<Type> #
-// Integral constant, returns in "::value" whether Type can be iterated through.
-// Criteria: Existance of .begin() and .end() with applicable operator()++
-//
-// # ::is_const_iterable_through<Type> #
-// Integral constant, returns in "::value" whether Type can be const-iterated through.
-// Criteria: Existance of .cbegin() and .cend() with applicable operator()++
-//
-// # ::is_tuple_like<Type> #
-// Integral constant, returns in "::value" whether Type has a tuple-like structure.
-// Tuple-like structure include std::tuple, std::pair, std::array, std::ranges::subrange (since C++20)
-// Criteria: Existance of applicable std::get<0>() and std::tuple_size()
-//
-// # ::is_string<Type> #
-// Integral constant, returns in "::value" whether Type is a char string.
-// Criteria: Type can be decayed to std::string or a char* pointer
-//
-// # ::is_to_str_convertible<Type> #
-// Integral constant, returns in "::value" whether Type can be converted to string through ::to_str().
-// Criteria: Existance of a valid utl::stre::to_str() overload
-//
-// # ::to_str() #
-// Converts any standard container or a custom container with necessary member functions to std::string.
-// Works with tuples and tuple-like classes.
-// Works with nested containers/tuples through recursive template instantiation, which
-// resolves as long as types at the end of recursion have a valid operator<<() for ostreams.
-//
-// Not particularly fast, but it doesn't really have to be since this kind of thing is mostly
-// useful for debugging and other human-readable prints.
-//
-// # ::InlineStream #
-// Inline 'std::ostringstream' construction with implicit conversion to 'std::string'.
-// Rather unperformant, but convenient for using stream formating during string construction.
-// Example: std::string str = (stre::InlineStream() << "Value " << 3.14 << " is smaller than " << 6.28);
-//
-// In retrospective the usefulness of this seems rather dubious. Perhaps I'll deprecate it later.
-//
-// # ::repeat_symbol(), ::repeat_string() #
-// Repeats character/string a given number of times.
-//
-// # ::pad_with_zeroes() #
-// Pads given integer with zeroes untill a certain lenght.
-// Useful when saving data in files like 'data_0001.txt', 'data_0002.txt', '...' so they get properly sorted.
+// String utils. Nothing fancy, basic stuff, however there is a lot of really bad implementations
+// found online, which is why I'd rather put an effort get them right once and be done with it.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -257,9 +200,9 @@ template <class T>
 // --- Other utils ---
 // ===================
 
-[[nodiscard]] inline std::string repeat_char(char ch, size_t repeats) { return std::string(repeats, ch); }
+[[nodiscard]] inline std::string repeat_char(char ch, std::size_t repeats) { return std::string(repeats, ch); }
 
-[[nodiscard]] inline std::string repeat_string(std::string_view str, size_t repeats) {
+[[nodiscard]] inline std::string repeat_string(std::string_view str, std::size_t repeats) {
     std::string res;
     res.reserve(str.size() * repeats);
     while (repeats--) res += str;

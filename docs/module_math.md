@@ -8,7 +8,7 @@
 
 -  `constexpr` versions of some [`<cmath>`](https://en.cppreference.com/w/cpp/header/cmath) functions
 - Expressive functions to make code look closer to the mathematical notation
-- Some frequently needed, buy annoying to implement utils (such as sorting multiple arrays in sync, index casting and etc.)
+- Some frequently needed, but annoying to implement utils (such as sorting multiple arrays in sync, index casting and etc.)
 - Constrained versions of some math functions that allow faster implementation
 - Index permutations
 - Basic meshing & integration
@@ -110,9 +110,7 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
 constexpr double quick_memory_estimate(const T& value);
 ```
 
-All methods have appropriate `enable_if<>` conditions and `constexpr` qualifiers, which are omitted in documentation for reduced verbosity.
-
-Methods that deal with floating-point values require explicitly floating-point inputs for mathematical strictness.
+All methods have appropriate SFINAE-restrictions, which are omitted in documentation for reduced verbosity.
 
 ## Methods
 
@@ -128,7 +126,7 @@ Methods that deal with floating-point values require explicitly floating-point i
 > }
 > ```
 
-Basic mathematical constant. In **C++20** most of these get standardized as a part of [`<numbers>`](https://en.cppreference.com/w/cpp/numeric/constants) header.
+Basic mathematical constants. In **C++20** most of these get standardized as a part of [`<numbers>`](https://en.cppreference.com/w/cpp/numeric/constants) header.
 
 ### Basic functions
 
