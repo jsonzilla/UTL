@@ -25,9 +25,9 @@ public:
         bool show_time_estimate = true
     );
     
-    start();
-    set_progress(double percentage);
-    finish();
+    void start();
+    void set_progress(double percentage);
+    void finish();
 };
 
 // 'Ruler' progressbar
@@ -39,9 +39,9 @@ public:
         char done_char = '#'
     );
     
-    start();
-    set_progress(double percentage);
-    finish();
+    void start();
+    void set_progress(double percentage);
+    void finish();
 };
 ```
 
@@ -50,7 +50,7 @@ public:
 ### Configuration
 
 > ```cpp
-> progressbar::set_ostream()
+> void set_ostream()
 > ```
 
 Redirects output to given `std::ostream`. By default `std::cout` is used.
@@ -58,7 +58,7 @@ Redirects output to given `std::ostream`. By default `std::cout` is used.
 ### 'Percentage' progressbar
 
 > ```cpp
-> progressbar::Percentage::Percentage(
+> Percentage::Percentage(
 >      char done_char = '#',
 >      char not_done_char = '.',
 >      size_t bar_length = 30,
@@ -80,9 +80,9 @@ Construct progress bar object with following options:
 **Note 2:** for terminals that cannot fit progress bar into a single line & don't properly handle carriage return for wrapped lines, a less advanced `progressbar::Ruler` can be used. Such case is a rarity and depends on terminal implementation.
 
 > ```cpp
-> progressbar::Percentage::start();
-> progressbar::Percentage::set_progress(double percentage);
-> progressbar::Percentage::finish();
+> void Percentage::start();
+> void Percentage::set_progress(double percentage);
+> void Percentage::finish();
 > ```
 
 Start, update & finish progress bar display. Percentage is a value in $[0, 1]$ range, corresponding to a portion of total progress.
@@ -90,7 +90,7 @@ Start, update & finish progress bar display. Percentage is a value in $[0, 1]$ r
 ### 'Ruler' progressbar
 
 > ```cpp
-> progressbar::Ruler::Ruler(
+> Ruler::Ruler(
 >      char done_char = '#'
 > )
 > ```
@@ -100,9 +100,9 @@ Construct progress bar object with following options:
 - `done_char` - character used for "filled" part of the bar;
 
 > ```cpp
-> progressbar::Ruler::start();
-> progressbar::Ruler::set_progress(double percentage);
-> progressbar::Ruler::finish();
+> void Ruler::start();
+> void Ruler::set_progress(double percentage);
+> void Ruler::finish();
 > ```
 
 Start, update & finish progress bar display. Percentage is a value in $[0, 1]$ range, corresponding to a portion of total progress.

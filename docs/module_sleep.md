@@ -4,32 +4,32 @@
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/sleep.hpp)
 
-**sleep** implements 3 variations of sleep() function with a goal of providing improved precision.
+**sleep** implements 3 variations of `sleep()` function with a goal of providing improved precision.
 
 ## Definitions
 
 ```cpp
-void system(double ms);   // imprecise, uses CPU   0% of time, expected error ~0.1-5 ms
-void spinlock(double ms); //   precise, uses CPU 100% of time, expected error ~0.01 ms
-void hybrid(double ms);   //   precise, uses CPU  ~5% of time, expected error ~0.01 ms
+void system(  double ms); // imprecise, uses CPU   0% of time
+void spinlock(double ms); //   precise, uses CPU 100% of time
+void hybrid(  double ms); //   precise, uses CPU  ~5% of time
 ```
 
 ## Methods
 
 > ```cpp
-> sleep::system(double ms);
+> void system(double ms);
 > ```
 
 System sleep is an alias of [std::this_thread::sleep_for()](https://en.cppreference.com/w/cpp/thread/sleep_for), as such it's subjected to OS scheduler which wakes up approximately every ~3ms (usually, **true value depends on the system and may vary significantly**), with delays even more inconsistent for larger sleep times, which deems it unfit for such applications as real-time rendering.
 
 > ```cpp
-> sleep::spinlock(double ms);
+> void spinlock(double ms);
 > ```
 
 Spinlock sleep is a common way of implementing thread locks, it is based in a looped time check, which ends the loop once timer tuns out. While such approach allows for a much greater precision it has a downside of constantly using corresponding CPU thread.
 
 > ```cpp
-> sleep::hybrid(double ms);
+> void hybrid(double ms);
 > ```
 
 Hybrid version loops a short system sleep, estimating it's error mean and variance on the fly ([Welford's algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance)), and once remaining time gets below the mean plus a standard deviation switches to spinlock. This results in a precision almost as good as that of a pure spinlock, while keeping the CPU thread mostly free.

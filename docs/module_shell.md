@@ -49,7 +49,7 @@ Generates a temporary file with random unique name in the current folder (using 
 Internally module keeps track of all created temporary files so they can be later deleted with `clear_temp_files()`.
 
 > ```cpp
-> shell::clear_temp_files();
+> void clear_temp_files();
 > ```
 
 Deletes all temporary files created with `generate_temp_file()` during current runtime. **Called automatically when exiting the program if any files were created.**
@@ -57,7 +57,7 @@ Deletes all temporary files created with `generate_temp_file()` during current r
 **Note:** "Exiting" happens when program returns from `main()` or calls `std::exit()`.
 
 > ```cpp
-> shell::erase_temp_file(const std::string &file);
+> void erase_temp_file(const std::string &file);
 > ```
 
 Deletes a single temporary file. Used to make methods that can clean up internal temporary files without affecting the global state.
