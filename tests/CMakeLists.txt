@@ -15,7 +15,6 @@ macro(add_utl_test filename)
         -fno-sanitize-recover=all
         -fsanitize=undefined,address,leak
         -Wall -Wextra -Wpedantic -Werror
-        -fmax-errors=0
     )
     # '-O0  -fno-omit-frame-pointer'           => no optimization makes compilation a bit faster
     # '-g3'                                    => leave as much debug info as possible, use '-ggdb3'
@@ -26,7 +25,6 @@ macro(add_utl_test filename)
     #                                             when  triggered, default behaviour is to continue
     # '-fsanitize=undefined,address,leak'      => enable sanitizers
     # '-Wall -Wextra -Wpedantic -Werror'       => more warnings, treat warnings as errors
-    # '-fmax-errors=0'                         => print all compilation errors, don't stop early
     # see GCC docs: https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html
     #               https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
     

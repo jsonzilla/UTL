@@ -83,11 +83,11 @@ inline void start() noexcept { _start_timepoint = _clock::now(); }
 
 [[nodiscard]] inline std::string elapsed_string_fullform() {
     long long unaccounted_ms = static_cast<long long>(_elapsed_time_as_ms());
-
-    long long ms    = 0;
+    
+    long long hours = 0;
     long long min   = 0;
     long long sec   = 0;
-    long long hours = 0;
+    long long ms    = 0;
 
     if (unaccounted_ms > _ms_in_hour) {
         hours += unaccounted_ms / _ms_in_hour;

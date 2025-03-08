@@ -110,7 +110,7 @@ private:
 
         const std::string bar_string = ss.str();
 
-        // Add spaces at the end to overwrite the previous string if it was longer that current
+        // Add spaces at the end to overwrite the previous string if it was longer than current
         const int current_string_length = static_cast<int>(bar_string.length());
         const int string_length_diff    = this->previous_string_length - current_string_length;
 

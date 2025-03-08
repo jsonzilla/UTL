@@ -265,7 +265,7 @@ template <class To, class From, _require_integral<To> = true, _require_integral<
         }
     }
     // signed -> unsigned
-    if constexpr (std::is_signed_v<From> && std::is_unsigned_v<To>) {
+    else if constexpr (std::is_unsigned_v<To>) {
         // value negative => clamp to 0
         if (value < static_cast<From>(to_min)) return to_min;
         // value too big after casting => clamp to max
@@ -275,7 +275,7 @@ template <class To, class From, _require_integral<To> = true, _require_integral<
         else if (std::make_unsigned_t<From>(value) > to_max) return to_max;
     }
     // unsigned -> signed
-    if constexpr (std::is_signed_v<From> && std::is_unsigned_v<To>) {
+    else if constexpr (std::is_unsigned_v<From>) {
         // value too big => clamp to max
         // like before 'make_unsigned_t' is here to make both sides of comparison unsigned
         if (value > std::make_unsigned_t<To>(to_max)) return to_max;

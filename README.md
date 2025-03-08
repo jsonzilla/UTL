@@ -75,6 +75,7 @@ While the library itself consists of a single header with no embedded dependenci
 | [clangd](https://clangd.llvm.org)                            | **v.15.0.7** | Language server functionality                                |
 | [CMake](https://cmake.org)                                   | **v.3.2.11** | Build system, [CTest](https://cmake.org/cmake/help/latest/manual/ctest.1.html) testing facilities |
 | [GCC](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) | **v.11.4.0** | [ASan](https://github.com/google/sanitizers/wiki/AddressSanitizer) and [UBSan](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) instrumentation for the test environment |
+| [cppcheck](https://github.com/danmar/cppcheck)               | **v.2.7**    | Static analysis                                              |
 
 | Library                                                | Version            | License                                                                        | Used for                   | Embedded in repo |
 | ------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------ | -------------------------- | ---------------- |

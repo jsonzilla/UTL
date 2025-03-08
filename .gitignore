@@ -10,6 +10,7 @@
 !.clang-format
 !.clang-tidy
 !.clangd
+!.cppcheck
 # Whilelist allowed extensions
 # > Code
 !*.h
@@ -31,6 +32,7 @@
 
 # Ignore build & temporary directories regarless of their contents
 .cache/
+.cache-cppcheck/
 build/
 temp/
 snippets/

@@ -1846,7 +1846,7 @@ public:
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::DENSE &&
                  ownership ==
                      Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
-                                                                  const_reference value = value_type()) noexcept {
+                                                                  const_reference value = value_type()) {
         this->_rows = rows;
         this->_cols = cols;
         this->_data = std::move(_make_unique_ptr_array<value_type>(this->size()));
@@ -1940,7 +1940,7 @@ public:
                  ownership ==
                      Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols, size_type row_stride,
                                                                   size_type       col_stride,
-                                                                  const_reference value = value_type()) noexcept {
+                                                                  const_reference value = value_type()) {
         this->_rows       = rows;
         this->_cols       = cols;
         this->_row_stride = row_stride;

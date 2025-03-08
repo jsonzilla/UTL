@@ -295,7 +295,7 @@ struct _null_type_impl {
 };
 
 // Note:
-// It is critical that '_object_type_impl' can be instantiated with incomplete type 'T'. 
+// It is critical that '_object_type_impl' can be instantiated with incomplete type 'T'.
 // This allows us to declare recursive classes like this:
 //
 //    'struct Recursive { std::map<std::string, Recursive> data; }'
@@ -1193,9 +1193,9 @@ struct _parser {
                     // moves past first 'uXXX' symbols, last symbol will be covered by the loop '++cursor',
                     // in case of paired hexes moves past the second hex too
                 } else {
-                    throw std::runtime_error("JSON string node encountered unexpected character {"s + escaped_char +
-                                             "} while parsing an escape sequence at pos "s + std::to_string(cursor) +
-                                             "."s + _pretty_error(cursor, this->chars));
+                    throw std::runtime_error("JSON string node encountered unexpected character {"s +
+                                             std::string{escaped_char} + "} while parsing an escape sequence at pos "s +
+                                             std::to_string(cursor) + "."s + _pretty_error(cursor, this->chars));
                 }
 
                 // This covers all non-hex escape sequences according to ECMA-404 specification
@@ -1509,6 +1509,9 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
                                      std::to_string(cursor) + "."s + _pretty_error(cursor, chars));
 
     return std::move(node); // implicit tuple blocks copy elision, we have to move() manually
+    
+    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is not, 
+    // NOT having 'std::move()' on the other hand is a very performance issue
 }
 [[nodiscard]] inline Node from_file(const std::string& filepath) {
     const std::string chars = _read_file_to_string(filepath);

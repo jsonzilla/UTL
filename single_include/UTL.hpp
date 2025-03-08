@@ -681,7 +681,7 @@ template <class To, class From, _require_integral<To> = true, _require_integral<
         }
     }
     // signed -> unsigned
-    if constexpr (std::is_signed_v<From> && std::is_unsigned_v<To>) {
+    else if constexpr (std::is_unsigned_v<To>) {
         // value negative => clamp to 0
         if (value < static_cast<From>(to_min)) return to_min;
         // value too big after casting => clamp to max
@@ -691,7 +691,7 @@ template <class To, class From, _require_integral<To> = true, _require_integral<
         else if (std::make_unsigned_t<From>(value) > to_max) return to_max;
     }
     // unsigned -> signed
-    if constexpr (std::is_signed_v<From> && std::is_unsigned_v<To>) {
+    else if constexpr (std::is_unsigned_v<From>) {
         // value too big => clamp to max
         // like before 'make_unsigned_t' is here to make both sides of comparison unsigned
         if (value > std::make_unsigned_t<To>(to_max)) return to_max;
@@ -1042,7 +1042,7 @@ struct _null_type_impl {
 };
 
 // Note:
-// It is critical that '_object_type_impl' can be instantiated with incomplete type 'T'. 
+// It is critical that '_object_type_impl' can be instantiated with incomplete type 'T'.
 // This allows us to declare recursive classes like this:
 //
 //    'struct Recursive { std::map<std::string, Recursive> data; }'
@@ -1940,9 +1940,9 @@ struct _parser {
                     // moves past first 'uXXX' symbols, last symbol will be covered by the loop '++cursor',
                     // in case of paired hexes moves past the second hex too
                 } else {
-                    throw std::runtime_error("JSON string node encountered unexpected character {"s + escaped_char +
-                                             "} while parsing an escape sequence at pos "s + std::to_string(cursor) +
-                                             "."s + _pretty_error(cursor, this->chars));
+                    throw std::runtime_error("JSON string node encountered unexpected character {"s +
+                                             std::string{escaped_char} + "} while parsing an escape sequence at pos "s +
+                                             std::to_string(cursor) + "."s + _pretty_error(cursor, this->chars));
                 }
 
                 // This covers all non-hex escape sequences according to ECMA-404 specification
@@ -2256,6 +2256,9 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
                                      std::to_string(cursor) + "."s + _pretty_error(cursor, chars));
 
     return std::move(node); // implicit tuple blocks copy elision, we have to move() manually
+    
+    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is not, 
+    // NOT having 'std::move()' on the other hand is a very performance issue
 }
 [[nodiscard]] inline Node from_file(const std::string& filepath) {
     const std::string chars = _read_file_to_string(filepath);
@@ -5667,7 +5670,7 @@ public:
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::DENSE &&
                  ownership ==
                      Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
-                                                                  const_reference value = value_type()) noexcept {
+                                                                  const_reference value = value_type()) {
         this->_rows = rows;
         this->_cols = cols;
         this->_data = std::move(_make_unique_ptr_array<value_type>(this->size()));
@@ -5761,7 +5764,7 @@ public:
                  ownership ==
                      Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols, size_type row_stride,
                                                                   size_type       col_stride,
-                                                                  const_reference value = value_type()) noexcept {
+                                                                  const_reference value = value_type()) {
         this->_rows       = rows;
         this->_cols       = cols;
         this->_row_stride = row_stride;
@@ -8149,7 +8152,7 @@ private:
 
         const std::string bar_string = ss.str();
 
-        // Add spaces at the end to overwrite the previous string if it was longer that current
+        // Add spaces at the end to overwrite the previous string if it was longer than current
         const int current_string_length = static_cast<int>(bar_string.length());
         const int string_length_diff    = this->previous_string_length - current_string_length;
 
@@ -10579,11 +10582,11 @@ inline void start() noexcept { _start_timepoint = _clock::now(); }
 
 [[nodiscard]] inline std::string elapsed_string_fullform() {
     long long unaccounted_ms = static_cast<long long>(_elapsed_time_as_ms());
-
-    long long ms    = 0;
+    
+    long long hours = 0;
     long long min   = 0;
     long long sec   = 0;
-    long long hours = 0;
+    long long ms    = 0;
 
     if (unaccounted_ms > _ms_in_hour) {
         hours += unaccounted_ms / _ms_in_hour;
