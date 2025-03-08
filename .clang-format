@@ -1,8 +1,7 @@
 # Tested `clang-format` version: v.14.0.0
 #
 # Newer versions use slightly different set of flags,
-# if case of migration, following tool can prove rather helpful:
-# [https://clang-format-configurator.site]
+# if case of migration, following tool can prove rather helpful: https://clang-format-configurator.site
 ---
 BasedOnStyle: LLVM
 AccessModifierOffset: -4

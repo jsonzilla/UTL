@@ -2,7 +2,6 @@ include(CTest)
 enable_testing()
 
 # Macro for defining a test with proper doctest args
-# Note: Adding '--force-colors' to 'add_test()' allows doctest coloring in terminal but messes up CTest logs formatting
 macro(add_utl_test filename)
     add_executable(${filename} ${filename}.cpp)
     
@@ -38,6 +37,10 @@ macro(add_utl_test filename)
         # we want relative path to start at the top-level project directory '/',
         # by default CTest sets working directory to ${CMAKE_CURRENT_BINARY_DIR} which is '/build/tests/'
     )
+    
+    # Note:
+    # '--force-colors' makes doctest show colored output in the terminal, but makes up CTest logs save ANSI color
+    # codes. Without this flag doctest supresses color because it detects CTest writing output to the file.
     
 endmacro()
 
