@@ -134,12 +134,11 @@ using Bool   = Node::bool_type;
 using Null   = Node::null_type;
 
 // Parsing
-Node                    from_string(const std::string& chars   );
-Node                    from_file(  const std::string& filepath);
+Node                    from_string(const std::string& chars   , unsigned int recursion_limit = 1000);
+Node                    from_file  (const std::string& filepath, unsigned int recursion_limit = 1000);
 template <class T> Node from_struct(const           T& value   );
 
 Node literals::operator""_utl_json(const char* c_str, std::size_t c_str_size);
-void set_recursion_limit(int max_depth);
 
 // Reflection
 #define UTL_JSON_REFLECT(struct_name, ...)
@@ -320,13 +319,15 @@ Type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilatio
 ### Parsing
 
 > ```cpp
-> Node from_string(const std::string& buffer);
+> Node from_string(const std::string& buffer, unsigned int recursion_limit = 1000);
 > ```
 
 Parses JSON from a given string `buffer`.
 
+**Note:** JSON parsers need recursion depth limit to prevent malicious inputs (such as 100'000+ nested object opening braces) from causing stack overflows, instead we get a controllable `std::runtime_error`.
+
 > ```cpp
-> Node from_file(const std::string& filepath);
+> Node from_file(const std::string& filepath, unsigned int recursion_limit = 1000);
 > ```
 
 Parses JSON from the file at `filepath`.
@@ -344,14 +345,6 @@ Type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilatio
 > ```
 
 `json::Node` custom literals.
-
-> ```cpp
-> void set_recursion_limit(int max_depth) noexcept;
-> ```
-
-Sets max recursion depth during parsing, default value is `1000`.
-
-**Note:** JSON parsers need recursion depth limit to prevent malicious inputs (such as 100'000+ nested object opening braces) from causing stack overflows, instead we get a controllable `std::runtime_error`.
 
 ### Typedefs
 

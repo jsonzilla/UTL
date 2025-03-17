@@ -823,13 +823,14 @@ constexpr std::array<char, _number_of_char_values> _lookup_parsed_escaped_chars 
 // --- JSON Parsing impl. ---
 // ==========================
 
-inline int _recursion_limit = 1000;
-
-inline void set_recursion_limit(int max_depth) noexcept { _recursion_limit = max_depth; }
+constexpr unsigned int _default_recursion_limit = 1000;
+// this recursion limit applies only to parsing from text, conversions from
+// structs & containers are a separate thing and don't really need it as much
 
 struct _parser {
     const std::string& chars;
-    int                recursion_depth{};
+    unsigned int       recursion_limit;
+    unsigned int       recursion_depth = 0;
     // we track recursion depth to handle stack allocation errors
     // (this can be caused malicious inputs with extreme level of nesting, for example, 100k array
     // opening brackets, which would cause huge recursion depth causing the stack to overflow with SIGSEGV)
@@ -837,7 +838,7 @@ struct _parser {
     // dynamic allocation errors can be handled with regular exceptions through std::bad_alloc
 
     _parser() = delete;
-    _parser(const std::string& chars) : chars(chars) {}
+    _parser(const std::string& chars, unsigned int& recursion_limit) : chars(chars), recursion_limit(recursion_limit) {}
 
     // Parser state
     std::size_t skip_nonsignificant_whitespace(std::size_t cursor) {
@@ -904,9 +905,9 @@ struct _parser {
         cursor = this->skip_nonsignificant_whitespace(cursor);
 
         // Parse pair value
-        if (++this->recursion_depth > _recursion_limit)
+        if (++this->recursion_depth > this->recursion_limit)
             throw std::runtime_error("JSON parser has exceeded maximum allowed recursion depth of "s +
-                                     std::to_string(_recursion_limit) +
+                                     std::to_string(this->recursion_limit) +
                                      ". If stated depth wasn't caused by an invalid input, "s +
                                      "recursion limit can be increased with json::set_recursion_limit()."s);
 
@@ -1009,9 +1010,9 @@ struct _parser {
         // Array element parser assumes it is starting at the first symbol of some JSON node
 
         // Parse pair key
-        if (++this->recursion_depth > _recursion_limit)
+        if (++this->recursion_depth > this->recursion_limit)
             throw std::runtime_error("JSON parser has exceeded maximum allowed recursion depth of "s +
-                                     std::to_string(_recursion_limit) +
+                                     std::to_string(this->recursion_limit) +
                                      ". If stated depth wasn't caused by an invalid input, "s +
                                      "recursion limit can be increased with json::set_recursion_limit()."s);
 
@@ -1345,7 +1346,7 @@ inline void _serialize_json_recursion(const Node& node, std::string& chars, unsi
     //     ]
     // }
     //
-    
+
     // We handle 'prettify' segments through 'if constexpr'
     // to avoid  any "trace" overhead on non-prettified serializing
 
@@ -1506,14 +1507,15 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
 // --- JSON Parsing public API ---
 // ===============================
 
-[[nodiscard]] inline Node from_string(const std::string& chars) {
-    _parser           parser(chars);
+[[nodiscard]] inline Node from_string(const std::string& chars,
+                                      unsigned int       recursion_limit = _default_recursion_limit) {
+    _parser           parser(chars, recursion_limit);
     const std::size_t json_start = parser.skip_nonsignificant_whitespace(0); // skip leading whitespace
     auto [end_cursor, node]      = parser.parse_node(json_start); // starts parsing recursively from the root node
-    
+
     // Check for invalid trailing sumbols
     using namespace std::string_literals;
-    
+
     for (auto cursor = end_cursor; cursor < chars.size(); ++cursor)
         if (!_lookup_whitespace_chars[_u8(chars[cursor])])
             throw std::runtime_error("Invalid trailing symbols encountered after the root JSON node at pos "s +
@@ -1524,9 +1526,10 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
     // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is
     //       not, NOT having 'std::move()' on the other hand is very much a performance issue
 }
-[[nodiscard]] inline Node from_file(const std::string& filepath) {
+[[nodiscard]] inline Node from_file(const std::string& filepath,
+                                    unsigned int       recursion_limit = _default_recursion_limit) {
     const std::string chars = _read_file_to_string(filepath);
-    return from_string(chars);
+    return from_string(chars, recursion_limit);
 }
 
 namespace literals {
