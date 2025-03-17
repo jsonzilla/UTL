@@ -945,7 +945,7 @@ struct UniformIntDistribution {
         return _generate_uniform_int<result_type>(gen, p.min, p.max);
     } // for std-compatibility
 
-    constexpr result_type               reset() const noexcept {} // nothing to reset, provided for std-compatibility
+    constexpr void                      reset() const noexcept {} // nothing to reset, provided for std-compatibility
     [[nodiscard]] constexpr param_type  params() const noexcept { return this->pars; }
     constexpr void                      params(const param_type& p) noexcept { *this = UniformIntDistribution(p); }
     [[nodiscard]] constexpr result_type a() const noexcept { return this->pars.min; }
@@ -1105,7 +1105,7 @@ struct UniformRealDistribution {
         return p.min + generate_canonical<result_type>(gen) * (p.max - p.min);
     } // for std-compatibility
 
-    constexpr result_type reset() const noexcept {} // there is nothing to reset, provided for std-API compatibility
+    constexpr void        reset() const noexcept {} // there is nothing to reset, provided for std-API compatibility
     constexpr param_type  params() const noexcept { return this->pars; }
     constexpr void        params(const param_type& p) noexcept { *this = UniformRealDistribution(p); }
     constexpr result_type a() const noexcept { return this->pars.min; }

@@ -1,18 +1,25 @@
+[<img src ="images/icon_cpp_std_17.svg">](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+[<img src ="images/icon_license_mit.svg">](./LICENSE.md)
+[<img src ="images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
+[<img src ="images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
+
 # utl::json
 
 [<- to README.md](..)
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/json.hpp)
 
-**json** module aims to provide an intuitive JSON manipulation API similar to [nlohmann_json](https://github.com/nlohmann/json) while being a bit more lightweight and providing better performance. The few key features & differences are:
+**utl::json** module aims to provide an intuitive JSON manipulation API similar to [nlohmann_json](https://github.com/nlohmann/json) while being a bit more lightweight and providing better performance. Key features are:
 
-- `utl::json` doesn't introduce any invasive macros or operators
-- Objects support transparent comparators (which means `std::string_view` and `const char*` can be used for lookup)
-- [Decent performance](#benchmarks) without relying on compiler intrinsics
-- All JSON types map to standard library containers, no need to learn custom APIs
 - Simple integration (single header, less than `1k` lines of code)
+- Intuitive API
+- [Decent performance](#benchmarks)
 - [Nice error messages](#error-handling)
-- [Full support for class reflection](#structure-reflection)
+- [Recursive class reflection](#structure-reflection)
+- Doesn't introduce any invasive macros or operators
+- Objects support transparent comparators (which means `std::string_view`, `const char*` and etc. can be used for lookup)
+- All JSON types map to standard library containers (`std::map`, `std::vector`, etc.), no need to learn custom APIs
+- Assignment & reflection support custom container types
 
 > [!Note]
 > Despite rather competitive performance, considerably faster parsing can be achieved with custom formatters, SIMD and unordered key optimizations (see [simdjson](https://github.com/simdjson/simdjson), [Glaze](https://github.com/stephenberry/glaze), [RapidJSON](https://github.com/Tencent/rapidjson)  and [yyjson](https://github.com/ibireme/yyjson)), this, however often comes at the expense of user convenience (like with *RapidJSON*) or features (*simdjson* is parser-only, *yyjson* is `C` and doesn't include reflection, *Glaze* has it all, but requires [C++23](https://en.cppreference.com/w/cpp/23)).
@@ -857,7 +864,7 @@ The main weakpoint of `utl::json` from the performance point of view is parsing 
 
 Unfortunately, the issue is mostly caused by `std::map` insertion & iteration, which dominates the runtime. A truly suitable for the purpose container doesn't really exist in the standard library, and would need a custom implementation like in `RapidJSON`, which would reduce the standard library interoperability thus going against the main purpose of this library which is simplicity of use.
 
-Flat maps and async maps seem like the way to go, slotting in a custom flat map implementation into `json::_object_type_impl` allowed `utl::json` to beat `RapidJSON` on all serializing tasks and significantly closed the gap of `database.json` parsing:
+Flat maps maps seem like the way to go, slotting in a custom flat map implementation into `json::_object_type_impl` allowed `utl::json` to beat `RapidJSON` on all serializing tasks and significantly closed the gap of `database.json` parsing:
 
 ```
 // Using associative API wrapper for std::vector of pairs instead of std::map we can bridge the performance gap

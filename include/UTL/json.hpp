@@ -1509,8 +1509,8 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
                                      std::to_string(cursor) + "."s + _pretty_error(cursor, chars));
 
     return std::move(node); // implicit tuple blocks copy elision, we have to move() manually
-    
-    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is not, 
+
+    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is not,
     // NOT having 'std::move()' on the other hand is a very performance issue
 }
 [[nodiscard]] inline Node from_file(const std::string& filepath) {
@@ -1614,7 +1614,10 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
     for (std::size_t i = 0; i < array.size(); ++i) _assign_node_to_value_recursively(value[i], array[i]);
 }
 
-#define utl_json_to_struct_assign(fieldname_) _assign_node_to_value_recursively(val.fieldname_, this->at(#fieldname_));
+#define utl_json_to_struct_assign(fieldname_)                                                                          \
+    if (this->contains(#fieldname_)) _assign_node_to_value_recursively(val.fieldname_, this->at(#fieldname_));
+// JSON might not have an entry corresponding to each structure member,
+// such members will stay defaulted according to the struct constructor
 
 // --- Codegen ---
 // ---------------
