@@ -1446,9 +1446,17 @@ public:
 
     void to_file(const std::string& filepath, Format format = Format::PRETTY) const {
         const auto chars = this->to_string(format);
-        std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
+
+        const std::filesystem::path path = filepath;
+        if (path.has_parent_path() && std::filesystem::exists(path.parent_path()))
+            std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
+        // no need to do an OS call in a trivial case, some systems might also have limited permissions
+        // on directory creation and calling 'create_directories()' straight up will cause them to error
+        // even though when there is no need to actually perform directory creation when it already exists
+        
         // if user doesn't want to pay for 'create_directories()' call (which seems to be inconsequential on
         // my benchmarks) they can always use 'std::ofstream' and 'to_string()' to export manually
+
         std::ofstream(filepath).write(chars.data(), chars.size());
         // maybe a little faster than doing 'std::ofstream(filepath) << node.to_string(format)'
     }

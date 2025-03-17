@@ -857,6 +857,7 @@ Parsing and serialization also satisfies [C++ `<charconv>`](https://en.cpprefere
 |    44.4% |                3.60 |              277.81 |    0.4% |      0.18 | `PicoJSON`
 |    91.1% |                1.75 |              570.23 |    0.6% |      0.09 | `RapidJSON`
 
+
 ====== BENCHMARKING ON DATA: `apache_builds.json` ======
 
 | relative |               ms/op |                op/s |    err% |     total | Parsing minimized JSON
