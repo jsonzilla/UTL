@@ -1,10 +1,15 @@
+[<img src ="images/icon_cpp_std_17.svg">](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+[<img src ="images/icon_license_mit.svg">](./LICENSE.md)
+[<img src ="images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
+[<img src ="images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
+
 # utl::shell
 
 [<- to README.md](..)
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/shell.hpp)
 
-**shell** contains convenience functions for command line and system related operations.
+**utl::shell** contains convenience functions for command line and system related operations.
 
 ## Definitions
 

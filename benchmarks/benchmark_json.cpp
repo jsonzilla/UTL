@@ -172,8 +172,8 @@ int main() {
     benchmark_on_data("benchmarks/data/strings.json");
     benchmark_on_data("benchmarks/data/numbers.json");
     benchmark_on_data("benchmarks/data/database.json");
-    // benchmark_on_data("benchmarks/data/twitter.json");
-    // benchmark_on_data("benchmarks/data/random.json");
-    // benchmark_on_data("benchmarks/data/canada.json");
-    // benchmark_on_data("benchmarks/data/apache_builds.json");
+    benchmark_on_data("benchmarks/data/twitter.json");
+    benchmark_on_data("benchmarks/data/random.json");
+    benchmark_on_data("benchmarks/data/canada.json");
+    benchmark_on_data("benchmarks/data/apache_builds.json");
 }

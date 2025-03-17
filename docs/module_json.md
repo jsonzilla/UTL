@@ -39,7 +39,7 @@
 | Control Character Escape Sequences | ✔ |  |
 | Unicode Escape Sequences | ✔ | Full support including UTF-16 surrogate pairs |
 | Trait-based Type Conversions | ✔ |  |
-| Structure Reflection | ✔ | Arbitrary reflection including nested types and containers[²](#complex-structure-reflection) |
+| Structure Reflection | ✔ | Recursive reflection including nested types and containers[²](#complex-structure-reflection) |
 | Compile-time JSON Schema | ✘ | Outside the project scope, can be emulated with reflection |
 | Lazy Node Loading | ✘ | Outside the project scope |
 
@@ -307,7 +307,7 @@ Serializes JSON node to a string using a given `format`.
 
 Serializes JSON node to the file at `filepath` using a given `format`.
 
-Missing directories from `filepath` will be created automatically.
+**Note:** Missing directories from `filepath` will be created automatically.
 
 > ```cpp
 > template <class T> T to_struct() const;
@@ -315,7 +315,7 @@ Missing directories from `filepath` will be created automatically.
 
 Serializes JSON node to the structure / class object of type `T`.
 
-The type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilation fails with a proper assertion.
+Type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilation fails with a proper assertion.
 
 ### Parsing
 
@@ -337,7 +337,7 @@ Parses JSON from the file at `filepath`.
 
 Parses JSON from structure / class object `value`.
 
-The type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilation fails with a proper assertion.
+Type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compilation fails with a proper assertion.
 
 > ```cpp
 > Node literals::operator""_utl_json(const char* c_str, std::size_t c_str_size);
@@ -351,7 +351,7 @@ The type `T` must be reflected with `UTL_JSON_REFLECT()` macro, otherwise compil
 
 Sets max recursion depth during parsing, default value is `1000`.
 
-**Note:** JSON parsers need recursion depth limit to prevent malicious inputs (such as 100'000+ nested object opening braces) from causing stack overflows, instead we get a controllable error.
+**Note:** JSON parsers need recursion depth limit to prevent malicious inputs (such as 100'000+ nested object opening braces) from causing stack overflows, instead we get a controllable `std::runtime_error`.
 
 ### Typedefs
 
@@ -378,7 +378,7 @@ Declaring this macro defines methods `Node::to_struct<struct_name>()` and `from_
 
 **Note 1:** Reflection supports nested classes, each class should be reflected with a macro and `to_struct()` / `from_struct()` will call each other recursively whenever appropriate. Containers of reflected classes are also supported with any level of nesting. See [examples](#structure-reflection).
 
-**Note 2:** Reflection does not impose any strict limitations on member variable types, it uses the same set of type traits as other methods to deduce appropriate conversions. It is expected however, that array-like member variables should support `.resize()` ([std::vector](https://en.cppreference.com/w/cpp/container/vector) and [std::list](https://en.cppreference.com/w/cpp/container/list) satisfy that) or provide an API similar to [std::array](https://en.cppreference.com/w/cpp/container/array). For object-like types it is expected that new elements can be inserted with `operator[]` [std::map](https://en.cppreference.com/w/cpp/container/map) and [std::unordered_map](https://en.cppreference.com/w/cpp/container/unordered_map) satisfy that).
+**Note 2:** Reflection does not impose any strict limitations on member variable types, it uses the same set of type traits as other methods to deduce appropriate conversions. It is expected however, that array-like member variables should support `.resize()` ([std::vector](https://en.cppreference.com/w/cpp/container/vector) and [std::list](https://en.cppreference.com/w/cpp/container/list) satisfy that) or provide an API similar to [std::array](https://en.cppreference.com/w/cpp/container/array). For object-like types it is expected that new elements can be inserted with `operator[]` ([std::map](https://en.cppreference.com/w/cpp/container/map) and [std::unordered_map](https://en.cppreference.com/w/cpp/container/unordered_map) satisfy that).
 
 > ```cpp
 > template <class T> constexpr bool is_reflected_struct;
@@ -827,35 +827,65 @@ Parsing and serialization also satisfies [C++ `<charconv>`](https://en.cpprefere
 |    74.3% |               18.06 |               55.38 |    0.4% |      0.89 | `RapidJSON`
 
 
-====== BENCHMARKING ON DATA: `database.json` ======
+====== BENCHMARKING ON DATA: `twitter.json` ======
 
 | relative |               ms/op |                op/s |    err% |     total | Parsing minimized JSON
 |---------:|--------------------:|--------------------:|--------:|----------:|:-----------------------
-|   100.0% |               22.88 |               43.71 |    2.5% |      1.14 | `utl::json`
-|    43.6% |               52.44 |               19.07 |    2.7% |      2.55 | `nlohmann`
-|    71.7% |               31.89 |               31.35 |    3.5% |      1.69 | `PicoJSON`
-|   221.3% |               10.34 |               96.73 |    1.4% |      0.52 | `RapidJSON`
+|   100.0% |                2.48 |              402.89 |    0.5% |      0.12 | `utl::json`
+|    45.4% |                5.47 |              182.76 |    0.1% |      0.27 | `nlohmann`
+|    77.3% |                3.21 |              311.24 |    0.2% |      0.16 | `PicoJSON`
+|   221.6% |                1.12 |              892.87 |    1.3% |      0.05 | `RapidJSON`
 
 | relative |               ms/op |                op/s |    err% |     total | Parsing prettified JSON
 |---------:|--------------------:|--------------------:|--------:|----------:|:------------------------
-|   100.0% |               28.24 |               35.41 |    4.5% |      1.34 | `utl::json`
-|    48.9% |               57.78 |               17.31 |    2.3% |      2.84 | `nlohmann`
-|    69.0% |               40.91 |               24.44 |    3.4% |      2.01 | `PicoJSON`
-|   223.8% |               12.62 |               79.23 |    1.9% |      0.62 | `RapidJSON`
+|   100.0% |                2.80 |              356.62 |    0.5% |      0.14 | `utl::json`
+|    45.2% |                6.21 |              161.12 |    0.4% |      0.31 | `nlohmann`
+|    74.9% |                3.74 |              267.05 |    0.6% |      0.18 | `PicoJSON`
+|   207.1% |                1.35 |              738.54 |    1.5% |      0.07 | `RapidJSON`
 
 | relative |               ms/op |                op/s |    err% |     total | Serializing minimized JSON
 |---------:|--------------------:|--------------------:|--------:|----------:|:---------------------------
-|   100.0% |               12.38 |               80.80 |    2.4% |      0.61 | `utl::json`
-|    49.6% |               24.95 |               40.08 |    0.6% |      1.22 | `nlohmann`
-|    33.7% |               36.72 |               27.23 |    1.2% |      1.82 | `PicoJSON`
-|   124.9% |                9.91 |              100.94 |    2.4% |      0.48 | `RapidJSON`
+|   100.0% |                1.20 |              834.42 |    2.0% |      0.06 | `utl::json`
+|    52.8% |                2.27 |              440.27 |    2.0% |      0.13 | `nlohmann`
+|    29.0% |                4.14 |              241.62 |   21.3% |      0.20 | `PicoJSON`
+|    94.3% |                1.27 |              786.88 |    0.6% |      0.06 | `RapidJSON`
 
 | relative |               ms/op |                op/s |    err% |     total | Serializing prettified JSON
 |---------:|--------------------:|--------------------:|--------:|----------:|:----------------------------
-|   100.0% |               16.18 |               61.79 |    1.1% |      0.79 | `utl::json`
-|    62.0% |               26.09 |               38.33 |    0.4% |      1.29 | `nlohmann`
-|    42.9% |               37.72 |               26.51 |    0.5% |      1.85 | `PicoJSON`
-|   123.7% |               13.08 |               76.44 |    0.9% |      0.64 | `RapidJSON`
+|   100.0% |                1.60 |              626.16 |    0.4% |      0.08 | `utl::json`
+|    57.9% |                2.76 |              362.32 |    0.3% |      0.14 | `nlohmann`
+|    44.4% |                3.60 |              277.81 |    0.4% |      0.18 | `PicoJSON`
+|    91.1% |                1.75 |              570.23 |    0.6% |      0.09 | `RapidJSON`
+
+====== BENCHMARKING ON DATA: `apache_builds.json` ======
+
+| relative |               ms/op |                op/s |    err% |     total | Parsing minimized JSON
+|---------:|--------------------:|--------------------:|--------:|----------:|:-----------------------
+|   100.0% |                0.47 |            2,134.76 |    0.7% |      0.02 | `utl::json`
+|    41.3% |                1.14 |              881.03 |    1.6% |      0.06 | `nlohmann`
+|    77.4% |                0.61 |            1,652.53 |    0.6% |      0.03 | `PicoJSON`
+|   172.2% |                0.27 |            3,675.37 |    1.3% |      0.01 | `RapidJSON`
+
+| relative |               ms/op |                op/s |    err% |     total | Parsing prettified JSON
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------
+|   100.0% |                0.49 |            2,053.48 |    0.3% |      0.02 | `utl::json`
+|    38.7% |                1.26 |              794.02 |    1.4% |      0.06 | `nlohmann`
+|    71.5% |                0.68 |            1,468.49 |    0.7% |      0.03 | `PicoJSON`
+|   163.1% |                0.30 |            3,348.22 |    0.8% |      0.01 | `RapidJSON`
+
+| relative |               ms/op |                op/s |    err% |     total | Serializing minimized JSON
+|---------:|--------------------:|--------------------:|--------:|----------:|:---------------------------
+|   100.0% |                0.30 |            3,283.66 |    0.7% |      0.02 | `utl::json`
+|    57.5% |                0.53 |            1,889.72 |    0.8% |      0.03 | `nlohmann`
+|    46.2% |                0.66 |            1,518.06 |    0.6% |      0.03 | `PicoJSON`
+|   100.5% |                0.30 |            3,301.60 |    2.2% |      0.02 | `RapidJSON`
+
+| relative |               ms/op |                op/s |    err% |     total | Serializing prettified JSON
+|---------:|--------------------:|--------------------:|--------:|----------:|:----------------------------
+|   100.0% |                0.40 |            2,488.96 |    2.3% |      0.02 | `utl::json`
+|    61.9% |                0.65 |            1,540.09 |    1.5% |      0.03 | `nlohmann`
+|    53.8% |                0.75 |            1,338.57 |    1.6% |      0.04 | `PicoJSON`
+|    98.9% |                0.41 |            2,461.15 |    3.0% |      0.02 | `RapidJSON`
 ```
 
 ### Some thoughts on implementation
@@ -867,8 +897,9 @@ Unfortunately, the issue is mostly caused by `std::map` insertion & iteration, w
 Flat maps maps seem like the way to go, slotting in a custom flat map implementation into `json::_object_type_impl` allowed `utl::json` to beat `RapidJSON` on all serializing tasks and significantly closed the gap of `database.json` parsing:
 
 ```
-// Using associative API wrapper for std::vector of pairs instead of std::map we can bridge the performance gap
-// General-case usage however suffers, which is why this decision was ruled against
+// Using associative wrapper for std::vector of pairs instead of std::map we can bridge the performance gap.
+// General-case usage however suffers, which is why this decision was ruled against.
+// Measurement below was done a database very similar to 'twitter.json' but with even more objects & nesting.
 
 ====== BENCHMARKING ON DATA: `database.json` ======
 

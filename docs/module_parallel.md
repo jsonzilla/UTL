@@ -1,10 +1,15 @@
+[<img src ="images/icon_cpp_std_17.svg">](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+[<img src ="images/icon_license_mit.svg">](./LICENSE.md)
+[<img src ="images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
+[<img src ="images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
+
 # utl::parallel
 
 [<- to README.md](..)
 
 [<- to implementation.hpp](https://github.com/DmitriBogdanov/UTL/blob/master/include/UTL/parallel.hpp)
 
-**parallel** module is a lightweight threading library providing an API very similar to [Intel TBB](https://github.com/uxlfoundation/oneTBB).
+**utl::parallel** module is a lightweight threading library providing an API very similar to [Intel TBB](https://github.com/uxlfoundation/oneTBB).
 
 It implements classic building blocks of concurrent algorithms such as tasks, parallel for, reductions and etc. and provides a sane thread pool implementation for custom concurrency needs.
 
