@@ -763,10 +763,10 @@ namespace literals {
 
 #include <array>            // array<>
 #include <charconv>         // to_chars(), from_chars()
+#include <climits>          // CHAR_BIT
 #include <cmath>            // isfinite()
 #include <cstddef>          // size_t
 #include <cstdint>          // uint8_t, uint16_t, uint32_t
-#include <exception>        // exception
 #include <filesystem>       // create_directories()
 #include <fstream>          // ifstream, ofstream
 #include <initializer_list> // initializer_list<>
@@ -776,7 +776,7 @@ namespace literals {
 #include <string>           // string
 #include <string_view>      // string_view
 #include <system_error>     // errc
-#include <type_traits>      // enable_if_t<>, void_t, is_convertible_v<>, is_same_v<>,
+#include <type_traits>      // enable_if<>, void_t, is_convertible<>, is_same<>,
                             // conjunction<>, disjunction<>, negation<>
 #include <utility>          // move(), declval<>()
 #include <variant>          // variant<>
@@ -787,12 +787,13 @@ namespace literals {
 // Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
 // stuff. Unlike some other implementation, doesn't include the tokenizing step - we parse everything in a single 1D
 // scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is is
-// due to a nice quirk of JSON - parsing nodes, we can always determine node type based on a single first character,
-// see '_parser::parse_node()'.
+// due to a nice quirk of JSON: when parsing nodes, we can always determine node type based on a single first
+// character, see '_parser::parse_node()'.
 //
 // Struct reflection is implemented through macros - alternative way would be to use templates with __PRETTY_FUNCTION__
-// (or __FUNCSIG__) and do some constexpr string parsing to perform "magic" reflection without requiring, but that
-// relies on implementation-defined format of those strings and may trash the compile times, macros work everywhere.
+// (or __FUNCSIG__) and do some constexpr string parsing to perform "magic" reflection without requiring macros, but
+// that relies on the implementation-defined format of those strings and adds quite a lot more complexity.
+// 'nlohmann_json' provides similar macros but also has a way of specializing things manually.
 //
 // Proper type traits and 'if constexpr' recursive introspection are a key to making APIs that can convert stuff
 // between JSON and other types seamlessly, which is exactly what we do here, it even accounts for reflection.
@@ -807,8 +808,8 @@ namespace utl::json {
 
 // Codepoint convertion function. We could use <codecvt> to do the same in a few lines,
 // but <codecvt> was marked for deprecation in C++17 and fully removed in C++26, as of now
-// there is no standard library replacement so we have roll our own. This is likely to be
-// more performant too due to not having any redundant locale handling.
+// there is no standard library replacement so we have to roll our own. This is likely to
+// be more performant too due to not having any redundant locale handling.
 //
 // The function was tested for all valid codepoints (from U+0000 to U+10FFFF)
 // against the <codecvt> implementation and proved to be exactly the same.
@@ -949,7 +950,7 @@ template <class T>
     res += " [!]";
 
     // Note:
-    // To properly align cursor in the error message we need to know count "visible characters" in a UTF-8
+    // To properly align cursor in the error message we would need to count "visible characters" in a UTF-8
     // string, properly iterating over grapheme clusters is a very complex task, usually done by a dedicated
     // library. We could just count codepoints, but that wouldn't account for combining characters. To prevent
     // error message from being misaligned we can just replace all non-ascii symbols with '?', this way errors
@@ -987,10 +988,10 @@ utl_json_define_trait(_has_mapped_type, std::declval<typename std::decay_t<T>::m
 template <class>
 constexpr bool _always_false_v = false;
 
-// --- MAP macro ---
+// --- Map-macro ---
 // -----------------
 
-// This is an implementation of a classic MAP macro that applies some function macro
+// This is an implementation of a classic map-macro that applies some function macro
 // to all elements of __VA_ARGS__, it looks much uglier than usual because we have to prefix
 // everything with verbose 'utl_json_', but that's the price of avoiding name collisions.
 //
@@ -1059,7 +1060,7 @@ struct _null_type_impl {
 // We could make a more pedantic choise and add a redundant level of indirection, but that both complicates
 // implementation needlessly and reduces performance. A perfect solution would be to write our own map implementation
 // tailored for JSON use cases and providing explicit suppport for heterogenous lookup and incomplete types, but that
-// alone would be grander in scale that this entire parser for a mostly non-critical benefit.
+// alone would be grander in scale than this entire parser for a mostly non-critical benefit.
 
 struct _dummy_type {};
 
@@ -1452,10 +1453,10 @@ public:
             std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
         // no need to do an OS call in a trivial case, some systems might also have limited permissions
         // on directory creation and calling 'create_directories()' straight up will cause them to error
-        // even though when there is no need to actually perform directory creation when it already exists
-        
-        // if user doesn't want to pay for 'create_directories()' call (which seems to be inconsequential on
-        // my benchmarks) they can always use 'std::ofstream' and 'to_string()' to export manually
+        // even when there is no need to actually perform directory creation because it already exists
+
+        // if user doesn't want to pay for 'create_directories()' call (which seems to be inconsequential
+        // on my benchmarks) they can always use 'std::ofstream' and 'to_string()' to export manually
 
         std::ofstream(filepath).write(chars.data(), chars.size());
         // maybe a little faster than doing 'std::ofstream(filepath) << node.to_string(format)'
@@ -1495,8 +1496,9 @@ using Null   = Node::null_type;
 
 constexpr std::uint8_t _u8(char value) { return static_cast<std::uint8_t>(value); }
 
+static_assert(CHAR_BIT == 8); // we assume a sane platform, perhaps this isn't even necessary
+
 constexpr std::size_t _number_of_char_values = 256;
-// always true since 'sizeof(char) == 1' is guaranteed by the standard
 
 // Lookup table used to check if number should be escaped and get a replacement char on at the same time.
 // This allows us to replace multiple checks and if's with a single array lookup that.
@@ -1508,14 +1510,13 @@ constexpr std::size_t _number_of_char_values = 256;
 // we get:
 //    if (const char replacement = _lookup_serialized_escaped_chars[_u8(c)]) { chars += replacement; }
 //
-// which ends up being a bit faster.
+// which ends up being a bit faster and also nicer.
 //
 // Note:
 // It is important that we explicitly cast to 'uint8_t' when indexing, depending on the platform 'char' might
 // be either signed or unsigned, we don't want our array to be indexed at '-71'. While we can reasonably expect
 // ASCII encoding on the platform (which would put all char literals that we use into the 0-127 range) other chars
-// might still be negative. This shouldn't have any runtime cost as trivial int casts like this get compiled into
-// the same thing as 'reinterpret_cast<>' which means no runtime logic, the bits are just treated differently.
+// might still be negative. This shouldn't have any cost as trivial int casts like these involve no runtime logic.
 //
 constexpr std::array<char, _number_of_char_values> _lookup_serialized_escaped_chars = [] {
     std::array<char, _number_of_char_values> res{};
@@ -1662,7 +1663,7 @@ struct _parser {
         --this->recursion_depth;
 
         // Note 1:
-        // The question of wheter JSON allows duplicate keys is non-trivial but the resulting answer is NO.
+        // The question of whether JSON allows duplicate keys is non-trivial but the resulting answer is YES.
         // JSON is goverened by 2 standards:
         // 1) ECMA-404 https://ecma-international.org/wp-content/uploads/ECMA-404.pdf
         //    which doesn't say anything about duplicate kys
@@ -1776,7 +1777,7 @@ struct _parser {
 
         ++cursor; // move past the opening bracket '['
 
-        // Empty object that will accumulate child nodes as we parse them
+        // Empty array that will accumulate child nodes as we parse them
         Array array_value;
 
         // Handle 1st pair
@@ -1930,16 +1931,17 @@ struct _parser {
                 ++cursor; // move past the backslash '\'
 
                 string_value.append(this->chars.data() + segment_start, cursor - segment_start - 1);
-                // can't buffer more than that since we have to insert special characters now.
+                // can't buffer more than that since we have to insert special characters now
+
+                if (cursor >= this->chars.size())
+                    throw std::runtime_error("JSON string node reached the end of buffer while"s +
+                                             "parsing an escape sequence at pos "s + std::to_string(cursor) + "."s +
+                                             _pretty_error(cursor, this->chars));
 
                 const char escaped_char = this->chars[cursor];
 
                 // 2-character escape sequences
                 if (const char replacement_char = _lookup_parsed_escaped_chars[_u8(escaped_char)]) {
-                    if (cursor >= this->chars.size())
-                        throw std::runtime_error("JSON string node reached the end of buffer while"s +
-                                                 "parsing a 2-character escape sequence at pos "s +
-                                                 std::to_string(cursor) + "."s + _pretty_error(cursor, this->chars));
                     string_value += replacement_char;
                 }
                 // 6/12-character escape sequences (escaped unicode HEX codepoints)
@@ -2076,7 +2078,7 @@ inline void _serialize_json_recursion(const Node& node, std::string& chars, unsi
     constexpr std::size_t indent_level_size = 4;
     const std::size_t     indent_size       = indent_level_size * indent_level;
 
-    // first indent should be skipped when printing after a key
+    // First indent should be skipped when printing after a key
     //
     // Example:
     //
@@ -2090,9 +2092,9 @@ inline void _serialize_json_recursion(const Node& node, std::string& chars, unsi
     //     ]
     // }
     //
+    
     // We handle 'prettify' segments through 'if constexpr'
     // to avoid  any "trace" overhead on non-prettified serializing
-    //
 
     // Note:
     // The fastest way to append strings to a preallocated buffer seems to be with '+=':
@@ -2255,9 +2257,10 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
     _parser           parser(chars);
     const std::size_t json_start = parser.skip_nonsignificant_whitespace(0); // skip leading whitespace
     auto [end_cursor, node]      = parser.parse_node(json_start); // starts parsing recursively from the root node
+    
     // Check for invalid trailing sumbols
-
     using namespace std::string_literals;
+    
     for (auto cursor = end_cursor; cursor < chars.size(); ++cursor)
         if (!_lookup_whitespace_chars[_u8(chars[cursor])])
             throw std::runtime_error("Invalid trailing symbols encountered after the root JSON node at pos "s +
@@ -2265,8 +2268,8 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
 
     return std::move(node); // implicit tuple blocks copy elision, we have to move() manually
 
-    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is not,
-    // NOT having 'std::move()' on the other hand is a very performance issue
+    // Note: Some code analyzers detect 'return std::move(node)' as a performance issue, it is
+    //       not, NOT having 'std::move()' on the other hand is very much a performance issue
 }
 [[nodiscard]] inline Node from_file(const std::string& filepath) {
     const std::string chars = _read_file_to_string(filepath);
