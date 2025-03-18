@@ -63,7 +63,7 @@ template <class... Args> void print(  Args&&... args);
 template <class... Args> void println(Args&&... args);
 
 // Logging options
-enum class Verbosity { ERR, WARN, INFO, TRACE };
+enum class Verbosity { ERR, WARN, NOTE, INFO, DEBUG, TRACE };
 enum class OpenMode { REWRITE, APPEND };
 enum class Colors { ENABLE, DISABLE };
 
@@ -105,12 +105,16 @@ Sink& add_file_sink(
 // Logging macros
 #define UTL_LOG_ERR(...)
 #define UTL_LOG_WARN(...)
+#define UTL_LOG_NOTE(...)
 #define UTL_LOG_INFO(...)
+#define UTL_LOG_DEBUG(...)
 #define UTL_LOG_TRACE(...)
 
 #define UTL_LOG_DERR(...)
 #define UTL_LOG_DWARN(...)
+#define UTL_LOG_DNOTE(...)
 #define UTL_LOG_DINFO(...)
+#define UTL_LOG_DDEBUG(...)
 #define UTL_LOG_DTRACE(...)
 ```
 
@@ -174,15 +178,16 @@ Stringifies all `args...` and prints the result to `std::cout`.
 ### Logging options
 
 ```cpp
-enum class Verbosity { ERR, WARN, INFO, TRACE };
+enum class Verbosity { ERR, WARN, NOTE, INFO, DEBUG, TRACE };
 ```
 
 Enumeration that determines verbosity level of the logger sink. Sinks will only output messages that are at or above the their priority. Different levels have following priorities:
 
 | Verbosity level | Priority | Logging style  |
 | --------------- | -------- | -------------- |
-| `ERR`           | **1**    | 🔴 **Bold red** |
-| `WARN`          | **2**    | 🟡 Yellow       |
+| `ERR`           | **0**    | 🔴 **Bold red** |
+| `WARN`          | **1**    | 🟡 Yellow       |
+| `NOTE`          | **2**    | 🟣 Magenta      |
 | `INFO`          | **3**    | ⚪ White        |
 | `DEBUG`         | **4**    | 🟢 Green        |
 | `TRACE`         | **5**    | ⚫ Gray         |
@@ -270,7 +275,9 @@ Adds sink to the log file `filename` with a given set of options. Returns refere
 ```cpp
 #define UTL_LOG_ERR(...)
 #define UTL_LOG_WARN(...)
+#define UTL_LOG_NOTE(...)
 #define UTL_LOG_INFO(...)
+#define UTL_LOG_DEBUG(...)
 #define UTL_LOG_TRACE(...)
 ```
 
@@ -279,7 +286,9 @@ Stringifies arguments `...` and logs them at the corresponding verbosity level.
 ```cpp
 #define UTL_LOG_DERR(...)
 #define UTL_LOG_DWARN(...)
+#define UTL_LOG_DNOTE(...)
 #define UTL_LOG_DINFO(...)
+#define UTL_LOG_DDEBUG(...)
 #define UTL_LOG_DTRACE(...)
 ```
 

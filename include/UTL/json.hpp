@@ -38,8 +38,8 @@
 // ____________________ DEVELOPER DOCS ____________________
 
 // Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
-// stuff. Unlike some other implementation, doesn't include the tokenizing step - we parse everything in a single 1D
-// scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is is
+// stuff. Unlike some other implementations, doesn't include the tokenizing step - we parse everything in a single 1D
+// scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is
 // due to a nice quirk of JSON: when parsing nodes, we can always determine node type based on a single first
 // character, see '_parser::parse_node()'.
 //
@@ -921,7 +921,7 @@ struct _parser {
         // JSON is goverened by 2 standards:
         // 1) ECMA-404 https://ecma-international.org/wp-content/uploads/ECMA-404.pdf
         //    which doesn't say anything about duplicate kys
-        // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc2119
+        // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc8259
         //    which states "The names within an object SHOULD be unique.",
         //    however as defined in RFC-2119 https://www.rfc-editor.org/rfc/rfc2119:
         //       "SHOULD This word, or the adjective "RECOMMENDED", mean that there may exist valid reasons in

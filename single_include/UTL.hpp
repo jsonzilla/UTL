@@ -785,8 +785,8 @@ namespace literals {
 // ____________________ DEVELOPER DOCS ____________________
 
 // Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
-// stuff. Unlike some other implementation, doesn't include the tokenizing step - we parse everything in a single 1D
-// scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is is
+// stuff. Unlike some other implementations, doesn't include the tokenizing step - we parse everything in a single 1D
+// scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is
 // due to a nice quirk of JSON: when parsing nodes, we can always determine node type based on a single first
 // character, see '_parser::parse_node()'.
 //
@@ -1668,7 +1668,7 @@ struct _parser {
         // JSON is goverened by 2 standards:
         // 1) ECMA-404 https://ecma-international.org/wp-content/uploads/ECMA-404.pdf
         //    which doesn't say anything about duplicate kys
-        // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc2119
+        // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc8259
         //    which states "The names within an object SHOULD be unique.",
         //    however as defined in RFC-2119 https://www.rfc-editor.org/rfc/rfc2119:
         //       "SHOULD This word, or the adjective "RECOMMENDED", mean that there may exist valid reasons in
@@ -2458,13 +2458,13 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Reasonable performance and convenient logger.
+// Reasonably performant and convenient logger.
 //
-// The main highligh of this module (and the main performance win relative to 'std::ostream')
-// is a generic stringifier class that both convenient and quite fast at formatting multiple values.
+// The main highligh of this module (and the main performance win relative to 'std::ostream') is a
+// generic stringifier class that is both convenient and quite fast at formatting multiple values.
 //
-// This stringifier is copied as an implementation dependency in some other modules ('utl::mvl'
-// and 'utl::table') and customized with CRTP to format things in all kinds of specific ways.
+// This stringifier can be customized with CRTP to format things in all kinds of specific ways
+// and will likely come in handy in some other modules.
 //
 // The logger implementation itself is actually not that efficient (even though not completely
 // naive either), a proper performance-oriented approach would use following things:
@@ -2477,7 +2477,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
 //             for flushing the buffer, it generatly improves performance by ~30%, however I decided it
 //             is not worth the added complexity & cpu usage for that little gain
 //
-//    3. More platform-specific methods to query stuff like time & thread id with minimal overhead
+//    3. Platform-specific methods to query stuff like time & thread id with less overhead
 //
 //    4. A centralized formatting & info querying facility so multiple sinks don't have to repeat
 //       formatting & querying logic.
@@ -2485,7 +2485,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
 //       Such facility would have to decide the bare minimum of work possible base on all existing
 //       sink options, perform the formatting, and then just distribute string view to actual sinks.
 //
-//       This drastically complicated the logic and can be rather at odds with point (1) since unlike
+//       This drastically complicates the logic and can be rather at odds with point (1) since unlike
 //       the individual sinks, I don't see a way of making style checks here constexpr, but in the end
 //       that would be a proper solution.
 //
@@ -2512,15 +2512,16 @@ auto _available_localtime_impl(TimeMoment time_moment, TimeType timer)
 }
 
 inline std::size_t _get_thread_index(const std::thread::id id) {
-    static std::size_t next_index = 0;
+    static std::mutex     mutex;
+    const std::lock_guard lock(mutex);
 
-    static std::mutex                                       mutex;
     static std::unordered_map<std::thread::id, std::size_t> thread_ids;
-    const std::lock_guard                                   lock(mutex);
+    static std::size_t                                      next_id = 0;
 
     const auto it = thread_ids.find(id);
-    if (it == thread_ids.end()) return thread_ids[id] = next_index++;
+    if (it == thread_ids.end()) return thread_ids[id] = next_id++;
     return it->second;
+    // this map effectively "demangles" platfrom-specific IDs into human-redable IDs (0, 1, 2, ...)
 }
 
 template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, bool> = true>
@@ -2537,8 +2538,6 @@ unsigned int _integer_digit_count(IntType value) {
 }
 
 using clock = std::chrono::steady_clock;
-
-using ms = std::chrono::microseconds;
 
 inline const clock::time_point _program_entry_time_point = clock::now();
 
@@ -2703,7 +2702,7 @@ struct StringifierBase {
             throw std::runtime_error("Stringifier encountered std::to_chars() error while serializing an integer.");
         buffer.append(stbuff.data(), number_end_ptr - stbuff.data());
     }
-    
+
     template <class T>
     static void append_enum(std::string& buffer, const T& value) {
         derived::append_int(buffer, static_cast<std::underlying_type_t<T>>(value));
@@ -2937,7 +2936,7 @@ void println(Args&&... args) {
 // --- Options ---
 // ===============
 
-enum class Verbosity { ERR = 1, WARN = 2, INFO = 3, DEBUG = 4, TRACE = 5 };
+enum class Verbosity { ERR = 0, WARN = 1, NOTE = 2, INFO = 3, DEBUG = 4, TRACE = 5 };
 
 enum class OpenMode { REWRITE, APPEND };
 
@@ -3048,6 +3047,7 @@ constexpr std::string_view _color_reset   = color::reset;
 
 constexpr std::string_view _color_trace = color::bright_black;
 constexpr std::string_view _color_debug = color::green;
+constexpr std::string_view _color_note  = color::magenta;
 constexpr std::string_view _color_info  = color::white;
 constexpr std::string_view _color_warn  = color::yellow;
 constexpr std::string_view _color_err   = color::bold_red;
@@ -3148,6 +3148,7 @@ private:
         if (this->colors == Colors::ENABLE) switch (meta.verbosity) {
             case Verbosity::ERR: buffer += _color_err; break;
             case Verbosity::WARN: buffer += _color_warn; break;
+            case Verbosity::NOTE: buffer += _color_note; break;
             case Verbosity::INFO: buffer += _color_info; break;
             case Verbosity::DEBUG: buffer += _color_debug; break;
             case Verbosity::TRACE: buffer += _color_trace; break;
@@ -3268,6 +3269,7 @@ private:
         switch (level) {
         case Verbosity::ERR: buffer += "  ERR"; break;
         case Verbosity::WARN: buffer += " WARN"; break;
+        case Verbosity::NOTE: buffer += " NOTE"; break;
         case Verbosity::INFO: buffer += " INFO"; break;
         case Verbosity::DEBUG: buffer += "DEBUG"; break;
         case Verbosity::TRACE: buffer += "TRACE"; break;
@@ -3293,7 +3295,8 @@ struct _logger {
     // (reallocation requres a move-constructor, which 'std::mutex' doesn't have),
     // the added overhead of iterating a list is negligible
 
-    static inline Sink default_sink{std::cout, Verbosity::TRACE, Colors::ENABLE, ms(0), Columns{}};
+    static inline Sink default_sink{std::cout, Verbosity::TRACE, Colors::ENABLE, std::chrono::milliseconds(0),
+                                    Columns{}};
 
     static _logger& instance() {
         static _logger logger;
@@ -3315,14 +3318,22 @@ struct _logger {
 // --- Sink public API ---
 // =======================
 
-inline Sink& add_ostream_sink(std::ostream& os, Verbosity verbosity = Verbosity::INFO, Colors colors = Colors::ENABLE,
-                              clock::duration flush_interval = ms{}, const Columns& columns = Columns{}) {
+inline Sink& add_ostream_sink(std::ostream&   os,                                           //
+                              Verbosity       verbosity      = Verbosity::INFO,             //
+                              Colors          colors         = Colors::ENABLE,              //
+                              clock::duration flush_interval = std::chrono::milliseconds{}, //
+                              const Columns&  columns        = Columns{}                    //
+) {
     return _logger::instance().sinks.emplace_back(os, verbosity, colors, flush_interval, columns);
 }
 
-inline Sink& add_file_sink(const std::string& filename, OpenMode open_mode = OpenMode::REWRITE,
-                           Verbosity verbosity = Verbosity::TRACE, Colors colors = Colors::DISABLE,
-                           clock::duration flush_interval = ms{15}, const Columns& columns = Columns{}) {
+inline Sink& add_file_sink(const std::string& filename,                                       //
+                           OpenMode           open_mode      = OpenMode::REWRITE,             //
+                           Verbosity          verbosity      = Verbosity::TRACE,              //
+                           Colors             colors         = Colors::DISABLE,               //
+                           clock::duration    flush_interval = std::chrono::milliseconds{15}, //
+                           const Columns&     columns        = Columns{}                      //
+) {
     const auto ios_open_mode = (open_mode == OpenMode::APPEND) ? std::ios::out | std::ios::app : std::ios::out;
     return _logger::instance().sinks.emplace_back(std::ofstream(filename, ios_open_mode), verbosity, colors,
                                                   flush_interval, columns);
@@ -3338,6 +3349,9 @@ inline Sink& add_file_sink(const std::string& filename, OpenMode open_mode = Ope
 #define UTL_LOG_WARN(...)                                                                                              \
     utl::log::_logger::instance().push_message({__FILE__, __LINE__}, {utl::log::Verbosity::WARN}, __VA_ARGS__)
 
+#define UTL_LOG_NOTE(...)                                                                                              \
+    utl::log::_logger::instance().push_message({__FILE__, __LINE__}, {utl::log::Verbosity::NOTE}, __VA_ARGS__)
+
 #define UTL_LOG_INFO(...)                                                                                              \
     utl::log::_logger::instance().push_message({__FILE__, __LINE__}, {utl::log::Verbosity::INFO}, __VA_ARGS__)
 
@@ -3350,12 +3364,14 @@ inline Sink& add_file_sink(const std::string& filename, OpenMode open_mode = Ope
 #ifdef _DEBUG
 #define UTL_LOG_DERR(...) UTL_LOG_ERR(__VA_ARGS__)
 #define UTL_LOG_DWARN(...) UTL_LOG_WARN(__VA_ARGS__)
+#define UTL_LOG_DNOTE(...) UTL_LOG_NOTE(__VA_ARGS__)
 #define UTL_LOG_DINFO(...) UTL_LOG_INFO(__VA_ARGS__)
 #define UTL_LOG_DDEBUG(...) UTL_LOG_DEBUG(__VA_ARGS__)
 #define UTL_LOG_DTRACE(...) UTL_LOG_TRACE(__VA_ARGS__)
 #else
 #define UTL_LOG_DERR(...)
 #define UTL_LOG_DWARN(...)
+#define UTL_LOG_DNOTE(...)
 #define UTL_LOG_DINFO(...)
 #define UTL_LOG_DDEBUG(...)
 #define UTL_LOG_DTRACE(...)
