@@ -3,7 +3,7 @@
 [<img src ="images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
 [<img src ="images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
 
-# utl::timer **(will be deprecated in the future)**
+# utl::timer **(deprecated)**
 
 [<- to README.md](..)
 
@@ -12,6 +12,10 @@
 **utl::timer** module implements a very concise global-state timer.
 
 Useful to quickly time code segments without all the boilerplate of [`<chrono>`](https://en.cppreference.com/w/cpp/chrono).
+
+> [!Important]
+>
+> This module was **deprecated** in favor of `utl::time`. It will currently remain available for compatibility reasons but may be removed at any point of time in the future.
 
 ## Definitions
 
