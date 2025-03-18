@@ -466,60 +466,8 @@ constexpr bool debug =
 #define UTL_PREDEF_TYPE_TRAIT_HAS_MEMBER_TYPE(trait_name_, member_)                                                    \
     UTL_PREDEF_TYPE_TRAIT(trait_name_, std::declval<typename std::decay_t<T>::member_>())
 
-// --- Enum with string conversion ---
+// --- Arcane junk with no purpose ---
 // -----------------------------------
-
-[[nodiscard]] inline std::string _trim_enum_string(const std::string& str) {
-    std::string::const_iterator left_it = str.begin();
-    while (left_it != str.end() && std::isspace(*left_it)) ++left_it;
-
-    std::string::const_reverse_iterator right_it = str.rbegin();
-    while (right_it.base() != left_it && std::isspace(*right_it)) ++right_it;
-
-    return std::string(left_it, right_it.base()); // return string with whitespaces trimmed at both sides
-}
-
-inline void _split_enum_args(const char* va_args, std::string* strings, int count) {
-    std::istringstream ss(va_args);
-    std::string        buffer;
-
-    for (int i = 0; ss.good() && (i < count); ++i) {
-        std::getline(ss, buffer, ',');
-        strings[i] = _trim_enum_string(buffer);
-    }
-};
-
-#define UTL_PREDEF_ENUM_WITH_STRING_CONVERSION(enum_name_, ...)                                                        \
-    namespace enum_name_ {                                                                                             \
-    enum enum_name_ { __VA_ARGS__, _count };                                                                           \
-                                                                                                                       \
-    inline std::string _strings[_count];                                                                               \
-                                                                                                                       \
-    inline std::string to_string(enum_name_ enum_val) {                                                                \
-        if (_strings[0].empty()) { utl::predef::_split_enum_args(#__VA_ARGS__, _strings, _count); }                    \
-        return _strings[enum_val];                                                                                     \
-    }                                                                                                                  \
-                                                                                                                       \
-    inline enum_name_ from_string(const std::string& enum_str) {                                                       \
-        if (_strings[0].empty()) { utl::predef::_split_enum_args(#__VA_ARGS__, _strings, _count); }                    \
-        for (int i = 0; i < _count; ++i) {                                                                             \
-            if (_strings[i] == enum_str) { return static_cast<enum_name_>(i); }                                        \
-        }                                                                                                              \
-        return _count;                                                                                                 \
-    }                                                                                                                  \
-    }
-    // We declare namespace with enum inside to simulate enum-class while having '_strings' array
-    // and 'to_string()', 'from_string()' methods bundled with it.
-    //
-    // To count number of enum elements we add fake '_count' value at the end, which ends up being enum size
-    //
-    // '_strings' is declared compile-time, but gets filled through lazy evaluation upon first
-    // 'to_string()' or 'from_string()' call. To fill it we interpret #__VA_ARGS__ as a single string
-    // with some comma-separated identifiers. Those identifiers get split by commas, trimmed from
-    // whitespaces and added to '_strings'
-    //
-    // Upon further calls (enum -> string) conversion is done though taking '_strings[enum_val]',
-    // while (string -> enum) conversion requires searching through '_strings' to find enum index
 
 #define UTL_PREDEF_IS_FUNCTION_DEFINED(function_name_, return_type_, ...)                                              \
     template <class ReturnType, class... ArgTypes>                                                                     \

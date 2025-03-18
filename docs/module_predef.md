@@ -78,8 +78,6 @@ std::string compilation_summary();
 
 #define UTL_PREDEF_VA_ARGS_COUNT(...) // size of __VA_ARGS__ in variadic macros
 
-#define UTL_PREDEF_ENUM_WITH_STRING_CONVERSION(enum_name, ...)
-
 #define UTL_PREDEF_IS_FUNCTION_DEFINED_TRAIT(function_name, return_type, ...)
 ```
 

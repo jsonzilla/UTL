@@ -7499,60 +7499,8 @@ constexpr bool debug =
 #define UTL_PREDEF_TYPE_TRAIT_HAS_MEMBER_TYPE(trait_name_, member_)                                                    \
     UTL_PREDEF_TYPE_TRAIT(trait_name_, std::declval<typename std::decay_t<T>::member_>())
 
-// --- Enum with string conversion ---
+// --- Arcane junk with no purpose ---
 // -----------------------------------
-
-[[nodiscard]] inline std::string _trim_enum_string(const std::string& str) {
-    std::string::const_iterator left_it = str.begin();
-    while (left_it != str.end() && std::isspace(*left_it)) ++left_it;
-
-    std::string::const_reverse_iterator right_it = str.rbegin();
-    while (right_it.base() != left_it && std::isspace(*right_it)) ++right_it;
-
-    return std::string(left_it, right_it.base()); // return string with whitespaces trimmed at both sides
-}
-
-inline void _split_enum_args(const char* va_args, std::string* strings, int count) {
-    std::istringstream ss(va_args);
-    std::string        buffer;
-
-    for (int i = 0; ss.good() && (i < count); ++i) {
-        std::getline(ss, buffer, ',');
-        strings[i] = _trim_enum_string(buffer);
-    }
-};
-
-#define UTL_PREDEF_ENUM_WITH_STRING_CONVERSION(enum_name_, ...)                                                        \
-    namespace enum_name_ {                                                                                             \
-    enum enum_name_ { __VA_ARGS__, _count };                                                                           \
-                                                                                                                       \
-    inline std::string _strings[_count];                                                                               \
-                                                                                                                       \
-    inline std::string to_string(enum_name_ enum_val) {                                                                \
-        if (_strings[0].empty()) { utl::predef::_split_enum_args(#__VA_ARGS__, _strings, _count); }                    \
-        return _strings[enum_val];                                                                                     \
-    }                                                                                                                  \
-                                                                                                                       \
-    inline enum_name_ from_string(const std::string& enum_str) {                                                       \
-        if (_strings[0].empty()) { utl::predef::_split_enum_args(#__VA_ARGS__, _strings, _count); }                    \
-        for (int i = 0; i < _count; ++i) {                                                                             \
-            if (_strings[i] == enum_str) { return static_cast<enum_name_>(i); }                                        \
-        }                                                                                                              \
-        return _count;                                                                                                 \
-    }                                                                                                                  \
-    }
-    // We declare namespace with enum inside to simulate enum-class while having '_strings' array
-    // and 'to_string()', 'from_string()' methods bundled with it.
-    //
-    // To count number of enum elements we add fake '_count' value at the end, which ends up being enum size
-    //
-    // '_strings' is declared compile-time, but gets filled through lazy evaluation upon first
-    // 'to_string()' or 'from_string()' call. To fill it we interpret #__VA_ARGS__ as a single string
-    // with some comma-separated identifiers. Those identifiers get split by commas, trimmed from
-    // whitespaces and added to '_strings'
-    //
-    // Upon further calls (enum -> string) conversion is done though taking '_strings[enum_val]',
-    // while (string -> enum) conversion requires searching through '_strings' to find enum index
 
 #define UTL_PREDEF_IS_FUNCTION_DEFINED(function_name_, return_type_, ...)                                              \
     template <class ReturnType, class... ArgTypes>                                                                     \
@@ -10532,6 +10480,250 @@ inline void hline() {
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DmitriBogdanov/UTL ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
+// Module:        utl::time
+// Documentation: https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_time.md
+// Source repo:   https://github.com/DmitriBogdanov/UTL
+//
+// This project is licensed under the MIT License
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#if !defined(UTL_PICK_MODULES) || defined(UTLMODULE_TIME)
+#ifndef UTLHEADERGUARD_TIME
+#define UTLHEADERGUARD_TIME
+
+// _______________________ INCLUDES _______________________
+
+#include <chrono>    // steady_clock, system_clock, duration_cast<>(), duration<>, time_point<>
+#include <ctime>     // strftime, mktime
+#include <stdexcept> // runtime_error
+#include <string>    // string, to_string()
+#include <tuple>     // tuple<>, make_tuple()
+
+// ____________________ DEVELOPER DOCS ____________________
+
+// Thin wrapper around <chrono> and <ctime> to make common things easier, initially 
+// started as 'utl::timer' which was a convenient global-state timer that dealt in doubles.
+// After some time and a good read through <chrono> documentation it was deprecated in favor
+// of a this 'utl::time' module, the rewrite got rid of any global state and added better type  
+// safety by properly using <chrono> type system.
+//
+// The reason we can do things so conveniently is because chrono 'duration' and 'time_moment'
+// are capable of wrapping around any arithmetic-like type, including floating-point types which
+// are properly supported. This is a bit cumbersome to do "natively" which is why it is rarely
+// seen in the wild, but with a few simple wrappers things become quite concise.
+
+// ____________________ IMPLEMENTATION ____________________
+
+namespace utl::time {
+
+// ======================
+// --- <chrono> utils ---
+// ======================
+
+template <class Rep, class Period>
+[[nodiscard]] auto unit_split(std::chrono::duration<Rep, Period> val)
+    -> std::tuple<std::chrono::hours, std::chrono::minutes, std::chrono::seconds, std::chrono::milliseconds> {
+    // for some reason 'duration_cast<>()' is not 'noexcept'
+    const auto hours        = std::chrono::duration_cast<std::chrono::hours>(val);
+    const auto minutes      = std::chrono::duration_cast<std::chrono::minutes>(val - hours);
+    const auto seconds      = std::chrono::duration_cast<std::chrono::seconds>(val - hours - minutes);
+    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(val - hours - minutes - seconds);
+    return std::make_tuple(hours, minutes, seconds, milliseconds);
+}
+
+template <class Rep, class Period>
+[[nodiscard]] std::string to_string(std::chrono::duration<Rep, Period> value) {
+    const auto [hours, minutes, seconds, milliseconds] = unit_split(value);
+
+    std::string res;
+    if (hours.count()) {
+        res += std::to_string(hours.count());
+        res += " hours";
+    }
+    if (minutes.count()) {
+        if (hours.count()) res += ' ';
+        res += std::to_string(minutes.count());
+        res += " min";
+    }
+    if (seconds.count()) {
+        if (minutes.count()) res += ' ';
+        res += std::to_string(seconds.count());
+        res += " sec";
+    }
+    if (milliseconds.count()) {
+        if (seconds.count()) res += ' ';
+        res += std::to_string(milliseconds.count());
+        res += " ms";
+    }
+    return res;
+}
+
+// ===========================
+// --- Floating-point time ---
+// ===========================
+
+template <class T>
+using float_duration = std::chrono::duration<double, typename T::period>;
+
+using ns    = float_duration<std::chrono::nanoseconds>;
+using us    = float_duration<std::chrono::microseconds>;
+using ms    = float_duration<std::chrono::milliseconds>;
+using sec   = float_duration<std::chrono::seconds>;
+using min   = float_duration<std::chrono::minutes>;
+using hours = float_duration<std::chrono::hours>;
+
+// Note:
+// A cool thing about floating-point-represented time is that we don't need 'std::chrono::duration_cast<>()'
+// for conversions, float time satisfies 'treat_as_floating_point_v<>' which means implicit conversions between
+// duration can happen for any period, in a nutshell instead of this:
+//    > std::chrono::duration_cast<time::ms>(std::chrono::nanoseconds(15));
+// we can just do this:
+//    > time::ms(std::chrono::nanoseconds(15));
+// and it's allowed to happen implicitly.
+
+// =================
+// --- Stopwatch ---
+// =================
+
+template <class Clock = std::chrono::steady_clock>
+struct Stopwatch {
+    using clock      = Clock;
+    using time_point = typename clock::time_point;
+    using duration   = typename clock::duration;
+
+    Stopwatch() { this->start(); }
+
+    void start() { this->_start = clock::now(); }
+
+    [[nodiscard]] duration elapsed() const { return clock::now() - this->_start; }
+
+    [[nodiscard]] ns    elapsed_ns() const { return this->elapsed(); }
+    [[nodiscard]] us    elapsed_us() const { return this->elapsed(); }
+    [[nodiscard]] ms    elapsed_ms() const { return this->elapsed(); }
+    [[nodiscard]] sec   elapsed_sec() const { return this->elapsed(); }
+    [[nodiscard]] min   elapsed_min() const { return this->elapsed(); }
+    [[nodiscard]] hours elapsed_hours() const { return this->elapsed(); }
+    // <chrono> handles conversion to a floating-point representation when casting duration to the return type
+
+    [[nodiscard]] std::string elapsed_string() const { return to_string(this->elapsed()); }
+
+private:
+    time_point _start;
+};
+
+// =============
+// --- Timer ---
+// =============
+
+template <class Clock = std::chrono::steady_clock>
+struct Timer {
+    using clock      = Clock;
+    using time_point = typename clock::time_point;
+    using duration   = typename clock::duration;
+
+    Timer() = default;
+
+    template <class Rep, class Period>
+    explicit Timer(std::chrono::duration<Rep, Period> length) {
+        this->start(length);
+    }
+
+    template <class Rep, class Period>
+    void start(std::chrono::duration<Rep, Period> length) {
+        this->_start  = clock::now();
+        this->_length = std::chrono::duration_cast<duration>(length);
+    }
+
+    void stop() noexcept { *this = Timer{}; }
+
+    [[nodiscard]] duration elapsed() const { return clock::now() - this->_start; }
+
+    [[nodiscard]] ns    elapsed_ns() const { return this->elapsed(); }
+    [[nodiscard]] us    elapsed_us() const { return this->elapsed(); }
+    [[nodiscard]] ms    elapsed_ms() const { return this->elapsed(); }
+    [[nodiscard]] sec   elapsed_sec() const { return this->elapsed(); }
+    [[nodiscard]] min   elapsed_min() const { return this->elapsed(); }
+    [[nodiscard]] hours elapsed_hours() const { return this->elapsed(); }
+    // <chrono> handles conversion to a floating-point representation when casting duration to the return type
+
+    [[nodiscard]] std::string elapsed_string() const { return to_string(this->elapsed()); }
+
+    [[nodiscard]] bool     finished() const { return this->elapsed() >= this->_length; }
+    [[nodiscard]] bool     running() const noexcept { return this->_length != duration{}; }
+    [[nodiscard]] duration length() const noexcept { return this->_length; }
+
+private:
+    time_point _start{};
+    duration   _length{};
+};
+
+// ======================
+// --- Local datetime ---
+// ======================
+
+std::tm to_localtime(const std::time_t& time) {
+    // There are 3 ways of getting localtime in C-stdlib:
+    //    1. 'std::localtime()' - isn't thread-safe and will be marked as "deprecated" by MSVC
+    //    2. 'localtime_r()'    - isn't a part of C++, it's a part of C11, in reality provided by POSIX
+    //    3. 'localtime_s()'    - isn't a part of C++, it's a part of C23, in reality provided by Windows
+    //                            with reversed order of arguments
+    // Seemingly there is no portable way of getting thread-safe localtime without being screamed at by at least one
+    // compiler, however there is a little known trick that uses a side effect of 'std::mktime()' which normalizes its
+    // inputs should they "overflow" the allowed range. Unlike 'localtime', 'std::mktime()' is thread-safe and portable,
+    // see https://stackoverflow.com/questions/54246983/c-how-to-fix-add-a-time-offset-the-calculation-is-wrong/54248414
+
+    // Create reference time moment at year 2025
+    std::tm reference_tm{};
+    reference_tm.tm_isdst = -1;  // negative => let the implementation deal with daylight savings
+    reference_tm.tm_year  = 125; // counting starts from 1900
+
+    // Get the 'std::time_t' corresponding to the reference time moment
+    const std::time_t reference_time = std::mktime(&reference_tm);
+    if (reference_time == -1)
+        throw std::runtime_error("time::to_localtime(): time moment can't be represented as 'std::time_t'.");
+
+    // Adjusting reference moment by 'time - reference_time' makes it equal to the current time moment,
+    // it is now invalid due to seconds overflowing the allowed range
+    reference_tm.tm_sec += time - reference_time;
+    // 'std::time_t' is an arithmetic type, although not defined, this is almost always an
+    // integral value holding the number of seconds since Epoch (see cppreference). This is
+    // why we can substract them and add into the seconds.
+
+    // Normalize time moment, it is now valid and corresponds to a current local time
+    if (std::mktime(&reference_tm) == -1)
+        throw std::runtime_error("time::to_localtime(): time moment can't be represented as 'std::time_t'.");
+
+    return reference_tm;
+}
+
+[[nodiscard]] inline std::string datetime_string(const char* format = "%Y-%m-%d %H:%M:%S") {
+    const auto now    = std::chrono::system_clock::now();
+    const auto c_time = std::chrono::system_clock::to_time_t(now);
+    const auto c_tm   = to_localtime(c_time);
+
+    std::array<char, 256> buffer;
+    if (std::strftime(buffer.data(), buffer.size(), format, &c_tm) == 0)
+        throw std::runtime_error("time::datetime_string(): 'format' does not fit into the buffer.");
+    return std::string(buffer.data());
+
+    // Note 1: C++20 provides <chrono> with a native way of getting date, before that we have to use <ctime>
+    // Note 2: 'std::chrono::system_clock' is unique - its output can be converted into a C-style 'std::time_t'
+    // Note 3: This function is thread-safe, we use a quirky implementation of 'localtime()', see notes above
+}
+
+} // namespace utl::time
+
+#endif
+#endif // module utl::time
+
+
+
+
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DmitriBogdanov/UTL ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
 // Module:        utl::timer
 // Documentation: https://github.com/DmitriBogdanov/UTL/blob/master/docs/module_timer.md
 // Source repo:   https://github.com/DmitriBogdanov/UTL
@@ -10554,6 +10746,8 @@ inline void hline() {
 
 // ____________________ DEVELOPER DOCS ____________________
 
+// TODO:   [[[ DEPRECATED, WILL BE REMOVED LATER ]]]
+//
 // Global-state timer with built-in formatting. Functions for local date and time.
 //
 // Uses SFINAE to resolve platform-specific calls to local time (localtime_s() on Windows,
@@ -10573,6 +10767,8 @@ namespace utl::timer {
 // --- Internals ---
 // =================
 
+#define utl_timer_deprecate [[deprecated("utl::timer was deprecated in favor of utl::time")]]
+
 using _clock = std::chrono::steady_clock;
 using _ns    = std::chrono::nanoseconds;
 
@@ -10589,7 +10785,7 @@ inline _clock::time_point _start_timepoint;
     return static_cast<double>(elapsed) / _ns_in_ms;
 }
 
-inline void start() noexcept { _start_timepoint = _clock::now(); }
+utl_timer_deprecate inline void start() noexcept { _start_timepoint = _clock::now(); }
 
 // ==============================
 // --- Elapsed Time Functions ---

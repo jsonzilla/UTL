@@ -22,6 +22,8 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
+// TODO:   [[[ DEPRECATED, WILL BE REMOVED LATER ]]]
+//
 // Global-state timer with built-in formatting. Functions for local date and time.
 //
 // Uses SFINAE to resolve platform-specific calls to local time (localtime_s() on Windows,
@@ -41,6 +43,8 @@ namespace utl::timer {
 // --- Internals ---
 // =================
 
+#define utl_timer_deprecate [[deprecated("utl::timer was deprecated in favor of utl::time")]]
+
 using _clock = std::chrono::steady_clock;
 using _ns    = std::chrono::nanoseconds;
 
@@ -57,7 +61,7 @@ inline _clock::time_point _start_timepoint;
     return static_cast<double>(elapsed) / _ns_in_ms;
 }
 
-inline void start() noexcept { _start_timepoint = _clock::now(); }
+utl_timer_deprecate inline void start() noexcept { _start_timepoint = _clock::now(); }
 
 // ==============================
 // --- Elapsed Time Functions ---
