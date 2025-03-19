@@ -11,168 +11,226 @@
 
 **utl::progressbar** adds configurable progress bars for CLI apps.
 
+Below is basic showcase:
+
+```
+// progressbar::Percentage with default style
+[############..................] 42.67% (remaining: 8 sec)
+
+// progressbar::Ruler with default style
+0    10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+#######################
+```
+
 ## Definitions
 
 ```cpp
-// Configuration
-void set_ostream(std::ostream &new_ostream);
-
-// 'Percentage' progressbar
-// > Proper progress bar, uses carriage return escape
-// > sequence (\r) to render new states in the same spot
-class Percentage {
+// 'Percentage' progress bar
+struct Percentage {
 public:
-    Percentage(
-        char done_char = '#',
-        char not_done_char = '.',
-        size_t bar_length = 30,
-        double update_rate = 1e-2,
-        bool show_time_estimate = true
-    );
+    // - Style configuration -
+    struct Style {
+        char        fill            = '#';
+        char        empty           = '.';
+        char        left            = '[';
+        char        right           = ']';
+        std::string estimate_prefix = "(remaining: ";
+        std::string estimate_suffix = ")";
+    } style;
+
+    bool show_bar        = true;
+    bool show_percentage = true;
+    bool show_estimate   = true;
     
-    void start();
-    void set_progress(double percentage);
+    std::size_t bar_length  = 30;
+    double      update_rate = 2.5e-3;
+    
+    // - Methods -
+    Percentage();
+    void set_progress(double value);
     void finish();
+    
+    void update_style();
 };
 
-// 'Ruler' progressbar
-// > Primitive & lightweight progress bar, useful when
-// > terminal has no proper support for escape sequences
+// 'Ruler' progress bar
 class Ruler {
 public:
-    Percentage(
-        char done_char = '#'
-    );
+    // - Style configuration -
+    struct Style {
+        char fill          = '#';
+        char ruler_line    = '-';
+        char ruler_delimer = '|';
+    } style;
+
+    bool show_ticks = true;
+    bool show_ruler = true;
+    bool show_bar   = true;
     
-    void start();
+    // - Methods -
+    Ruler();
     void set_progress(double percentage);
     void finish();
+    
+    void update_style();
 };
 ```
 
 ## Methods
 
-### Configuration
+### `Percentage` progress bar
+
+> [!Note]
+>
+> This is a general progressbar suitable for most applications. It should be a default option unless environment is extremely limited.
 
 > ```cpp
-> void set_ostream()
+> // - Style configuration -
+> struct Style {
+>     char        fill            = '#';
+>     char        empty           = '.';
+>     char        left            = '[';
+>     char        right           = ']';
+>     std::string estimate_prefix = "(remaining: ";
+>     std::string estimate_suffix = ")";
+> } style;
+> 
+> bool show_bar        = true;
+> bool show_percentage = true;
+> bool show_estimate   = true;
+> 
+> std::size_t bar_length  = 30;
+> double      update_rate = 2.5e-3;
 > ```
 
-Redirects output to given `std::ostream`. By default `std::cout` is used.
+Style parameters that can be adjusted:
 
-### 'Percentage' progressbar
+| Option                  | Descriptions                                                      |
+| ----------------------- | ----------------------------------------------------------------- |
+| `style.fill`            | Character used for "filled" part of the bar                       |
+| `style.empty `          | Character used for "empty" part of the bar                        |
+| `style.left`            | Character used for the left end if the bar                        |
+| `style.right`           | Character used for the right end if the bar                       |
+| `style.estimate_prefix` | Text displayed before the time estimate                           |
+| `style.estimate_suffix` | Text displayed after the time estimate                            |
+| `show_bar`              | Whether to render the main bar display                            |
+| `show_percentage`       | Whether to render a numeric label after the bar                   |
+| `show_estimate`         | Whether to render a remaining time estimate                       |
+| `bar_length`            | Progressbar length in characters                                  |
+| `update_rate`           | How often should the bar update, `0.01` corresponds to a single % |
 
-> ```cpp
-> Percentage::Percentage(
->      char done_char = '#',
->      char not_done_char = '.',
->      size_t bar_length = 30,
->      double update_rate = 1e-2,
->      bool show_time_estimate = true
-> )
-> ```
-
-Construct progress bar object with following options:
-
-- `done_char` - character used for "filled" part of the bar;
-- `not_done_char ` - character used for "empty" part of the bar;
-- `bar_length` - bar width in characters;
-- `update_rate` - how often should the bar update its displayed percentage, `1e-2` corresponds to a single percent;
-- `show_time_estimate` - whether to show remaining time estimate (estimated through linear extrapolation);
-
-**Note 1:** for terminals that do not support carriage return `\r`  a less advanced `progressbar::Ruler` should be used.
-
-**Note 2:** for terminals that cannot fit progress bar into a single line & don't properly handle carriage return for wrapped lines, a less advanced `progressbar::Ruler` can be used. Such case is a rarity and depends on terminal implementation.
+**Note:** Progressbar style doesn't update until the next redraw. Immediate redraw can be triggered using `update_style()`.
 
 > ```cpp
-> void Percentage::start();
-> void Percentage::set_progress(double percentage);
+> Percentage();
+> void Percentage::set_progress(double value);
 > void Percentage::finish();
 > ```
 
-Start, update & finish progress bar display. Percentage is a value in $[0, 1]$ range, corresponding to a portion of total progress.
-
-### 'Ruler' progressbar
+Start, update & finish progress bar display. Progress is a `value` in `[0, 1]` range, corresponding to a portion of total workload.
 
 > ```cpp
-> Ruler::Ruler(
->      char done_char = '#'
-> )
+> update_style();
+> ```
+
+Redraws progressbar to update its style configuration immediate.
+
+### `Ruler` progress bar
+
+> [!Note]
+>
+> This is a very minimalistic progressbar, it should be used for terminals that do not support `\r`.
+
+> ```cpp
+> // - Style configuration -
+> struct Style {
+>     char fill          = '#';
+>     char ruler_line    = '-';
+>     char ruler_delimer = '|';
+> } style;
+> 
+> bool show_ticks = true;
+> bool show_ruler = true;
+> bool show_bar   = true;
 > ```
 
 Construct progress bar object with following options:
 
-- `done_char` - character used for "filled" part of the bar;
+| Option                | Descriptions                                      |
+| --------------------- | ------------------------------------------------- |
+| `style.fill`          | Character used for "filled" part of the bar       |
+| `style.ruler_line `   | Character used for "line" part of the ruler above |
+| `style.ruler_delimer` | Character used for delimers on of the ruler above |
+| `show_ticks`          | Whether to render the main bar display            |
+| `show_ruler`          | Whether to render a numeric label after the bar   |
+| `show_bar`            | Whether to render a remaining time estimate       |
+
+**Note:** Disabling `show_bar` makes little practical sense considering it make progressbar not display any progress, but it is still provided for the sake of API uniformity.
 
 > ```cpp
-> void Ruler::start();
+> Ruler();
 > void Ruler::set_progress(double percentage);
 > void Ruler::finish();
 > ```
 
-Start, update & finish progress bar display. Percentage is a value in $[0, 1]$ range, corresponding to a portion of total progress.
+Start, update & finish progress bar display. Progress is a `value` in `[0, 1]` range, corresponding to a portion of total workload.
+
+> ```cpp
+> update_style();
+> ```
+
+Redraws progressbar to update its style configuration immediate.
 
 ## Examples
 
-### Using 'Percentage' progress bar
+### Progress bar for some workload
 
-[ [Run this code](https://godbolt.org/#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:78,endLineNumber:11,positionColumn:5,positionLineNumber:9,selectionStartColumn:78,selectionStartLineNumber:11,startColumn:5,startLineNumber:9),source:'%23include+%3Chttps://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp%3E%0A%0Aint+main(int+argc,+char+**argv)+%7B%0A++++using+namespace+utl%3B%0A%0A++++using+namespace+utl%3B%0A++++using+ms+%3D+std::chrono::milliseconds%3B%0A%0A++++//+Due+to+%22Godbolt.org%22+limitation+on+execution+time+and+nonfunctional+carriage+return,%0A++++//+in+this+example+we+use+short+runtime+and+a+rather+rough+update+rate.%0A++++//+Real-time+progress+display+may+also+be+skipped+by+the+online+compiler.%0A++++constexpr+ms+time(5!'000)%3B%0A++++constexpr+ms+tau(700)%3B%0A%0A++++//+Create+progress+bar+with+style+!'%5B%23%23%23%23%23...%5D+xx.xx%25!'+and+width+50%0A++++//+that+updates+every+0.05%25%0A++++auto+bar+%3D+progressbar::Percentage(!'%23!',+!'.!',+20,+0.05+*+1e-2,+true)%3B%0A%0A++++std::cout+%3C%3C+%22%5Cn-+progressbar::Percentage+-%22%3B%0A%0A++++bar.start()%3B%0A++++for+(ms+t(0)%3B+t+%3C%3D+time%3B+t+%2B%3D+tau)+%7B%0A++++++++std::this_thread::sleep_for(tau)%3B+//+simulate+some+work%0A++++++++const+double+percentage+%3D+double(t.count())+/+time.count()%3B%0A%0A++++++++bar.set_progress(percentage)%3B%0A++++%7D%0A++++bar.finish()%3B%0A%0A++++return+0%3B%0A%7D%0A'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:71.71783148269105,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:clang1600,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-std%3Dc%2B%2B17+-O2',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+clang+16.0.0+(Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+clang+16.0.0',editorid:1,fontScale:12,fontUsePx:'0',j:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+clang+16.0.0+(Compiler+%231)',t:'0')),k:46.69421860597116,l:'4',m:50,n:'0',o:'',s:0,t:'0')),k:28.282168517308946,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4) ]
+[ [Run this code](https://godbolt.org/#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:2,positionColumn:1,positionLineNumber:2,selectionStartColumn:1,selectionStartLineNumber:2,startColumn:1,startLineNumber:2),source:'%23include+%3Chttps://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp%3E%0A%0Aint+main()+%7B%0A++++using+namespace+utl%3B%0A++++using+namespace+std::chrono_literals%3B%0A%0A++++const+int++iterations+%3D+1500%3B%0A++++const+auto+some_work++%3D+%5B%5D+%7B+std::this_thread::sleep_for(10ms)%3B+%7D%3B%0A%0A++++progressbar::Percentage+bar%3B%0A++++for+(int+i+%3D+0%3B+i+%3C+iterations%3B+%2B%2Bi)+%7B%0A++++++++some_work()%3B%0A++++++++bar.set_progress(static_cast%3Cdouble%3E(i+%2B+1)+/+iterations)%3B%0A++++%7D%0A++++bar.finish()%3B%0A%7D%0A'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:71.71783148269105,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:clang1600,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-std%3Dc%2B%2B17+-O2',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+clang+16.0.0+(Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+clang+16.0.0',editorid:1,fontScale:14,fontUsePx:'0',j:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+clang+16.0.0+(Compiler+%231)',t:'0')),k:46.69421860597116,l:'4',m:50,n:'0',o:'',s:0,t:'0')),k:28.282168517308946,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4) ]
+
 ```cpp
 using namespace utl;
-using ms = std::chrono::milliseconds;
+using namespace std::chrono_literals;
 
-constexpr ms time(15'000);
-constexpr ms tau(10);
+const int  iterations = 1500;
+const auto some_work  = [] { std::this_thread::sleep_for(10ms); };
 
-// Create progress bar with style '[#####...] xx.xx%' and width 50
-// that updates every 0.05%
-auto bar = progressbar::Percentage('#', '.', 50, 0.05 * 1e-2, true);
-
-std::cout << "\n- progressbar::Percentage -";
-
-bar.start();
-for (ms t(0); t <= time; t += tau) {
-    std::this_thread::sleep_for(tau); // simulate some work
-    const double percentage = double(t.count()) / time.count();
-
-    bar.set_progress(percentage);
+progressbar::Percentage bar;
+for (int i = 0; i < iterations; ++i) {
+    some_work();
+    bar.set_progress(static_cast<double>(i + 1) / iterations);
 }
 bar.finish();
 ```
 
 Output (at some point in time):
 ```
-- progressbar::Percentage -
-[#################################.................] 67.45% (remaining: 7 sec)
+[############..................] 42.67% (remaining: 8 sec)
 ```
 
-### Using 'Ruler' progress bar
+### Progress bar with custom style
 
-[ [Run this code](https://godbolt.org/#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:6,endLineNumber:21,positionColumn:6,positionLineNumber:21,selectionStartColumn:6,selectionStartLineNumber:21,startColumn:6,startLineNumber:21),source:'%23include+%3Chttps://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp%3E%0A%0Aint+main(int+argc,+char+**argv)+%7B%0A++++using+namespace+utl%3B%0A++++using+ms+%3D+std::chrono::milliseconds%3B%0A%0A++++//+Due+to+%22Godbolt.org%22+limitation+on+execution+time,%0A++++//+in+this+example+we+use+short+runtime+and+a+rather+rough+update+rate.%0A++++//+Real-time+progress+display+may+also+be+skipped+by+the+online+compiler.%0A++++constexpr+ms+time(1!'000)%3B%0A++++constexpr+ms+tau(10)%3B%0A%0A++++auto+ruler+%3D+progressbar::Ruler(!'%23!')%3B%0A%0A++++ruler.start()%3B%0A++++for+(ms+t(0)%3B+t+%3C%3D+time%3B+t+%2B%3D+tau)+%7B%0A++++++++std::this_thread::sleep_for(tau)%3B+//+simulate+some+work%0A++++++++const+double+percentage+%3D+double(t.count())+/+time.count()%3B%0A%0A++++++++ruler.set_progress(percentage)%3B%0A++++%7D%0A++++ruler.finish()%3B%0A%0A++++return+0%3B%0A%7D%0A'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:71.71783148269105,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:clang1600,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-std%3Dc%2B%2B17+-O2',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+clang+16.0.0+(Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+clang+16.0.0',editorid:1,fontScale:12,fontUsePx:'0',j:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+clang+16.0.0+(Compiler+%231)',t:'0')),k:46.69421860597116,l:'4',m:50,n:'0',o:'',s:0,t:'0')),k:28.282168517308946,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4) ]
+[ [Run this code](https://godbolt.org/#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:71,endLineNumber:8,positionColumn:71,positionLineNumber:8,selectionStartColumn:71,selectionStartLineNumber:8,startColumn:71,startLineNumber:8),source:'%23include+%3Chttps://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp%3E%0A%0Aint+main()+%7B%0A++++using+namespace+utl%3B%0A++++using+namespace+std::chrono_literals%3B%0A%0A++++const+int++iterations+%3D+1500%3B%0A++++const+auto+some_work++%3D+%5B%5D+%7B+std::this_thread::sleep_for(10ms)%3B+%7D%3B%0A%0A++++progressbar::Percentage+bar%3B%0A%0A++++bar.style%0A%0A++++for+(int+i+%3D+0%3B+i+%3C+iterations%3B+%2B%2Bi)+%7B%0A++++++++some_work()%3B%0A++++++++bar.set_progress(static_cast%3Cdouble%3E(i+%2B+1)+/+iterations)%3B%0A++++%7D%0A++++bar.finish()%3B%0A%7D%0A'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:71.71783148269105,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:clang1600,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-std%3Dc%2B%2B17+-O2',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+clang+16.0.0+(Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+clang+16.0.0',editorid:1,fontScale:14,fontUsePx:'0',j:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+clang+16.0.0+(Compiler+%231)',t:'0')),k:46.69421860597116,l:'4',m:50,n:'0',o:'',s:0,t:'0')),k:28.282168517308946,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4) ]
+
 ```cpp
 using namespace utl;
-using ms = std::chrono::milliseconds;
+using namespace std::chrono_literals;
 
-constexpr ms time(15'000);
-constexpr ms tau(10);
+const int  iterations = 1500;
+const auto some_work  = [] { std::this_thread::sleep_for(10ms); };
 
-// Create a primitive progress bar with ruler-like style
-auto ruler = progressbar::Ruler('#');
+progressbar::Percentage bar;
 
-ruler.start();
-for (ms t(0); t <= time; t += tau) {
-    std::this_thread::sleep_for(tau); // simulate some work
-    const double percentage = double(t.count()) / time.count();
+bar.style
 
-    ruler.set_progress(percentage);
+for (int i = 0; i < iterations; ++i) {
+    some_work();
+    bar.set_progress(static_cast<double>(i + 1) / iterations);
 }
-ruler.finish();
+bar.finish();
 ```
 
 Output (at some point in time):
 ```
-- progressbar::Ruler -
- 0    10   20   30   40   50   60   70   80   90   100%
- |----|----|----|----|----|----|----|----|----|----|
- ###################################
+68.00% complete, remaining time: 4 sec
 ```

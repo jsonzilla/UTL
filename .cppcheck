@@ -11,9 +11,9 @@
 *:./tests/thirdparty/*
 *:./benchmarks/thirdparty/*
 
-// ======================================
-// --- Disable false-positive warning ---
-// ======================================
+// =======================================
+// --- Disable false-positive warnings ---
+// =======================================
 
 // Note 1:
 // All of this was done for cppcheck version 2.7, newer version may need a revision.
@@ -39,7 +39,7 @@ oppositeExpression:*
 // 'unassignedVariable'   -> Bugged, reports false positives in structure-binding for loops
 //
 // 'oppositeExpression'   -> Reports '-x % x' as stylistic error, this is a perfectly valid statement
-//                           which is often used in bit-twiddling algorinth such as Lemire's int distribution
+//                           which is often used in bit-twiddling algorithms such as Lemire's int distribution
 
 // ==========================================
 // --- Disable opinionated style warnings ---
