@@ -18,7 +18,7 @@
 - Type-safe enum bitflags
 
 > [!Note]
-> Significant part of this module gets added into the standard library with **C++20** `<bits>`, all such function provide similar API to allow for a seamless transition. The only difference is that `std` requires inputs to be unsigned, while `bit` works on both signed & unsigned.
+> Significant part of this module gets added into the standard library with **C++20** `<bits>`, all such functions provide similar API to allow for a seamless transition. The only difference is that `std` requires inputs to be unsigned, while `bit` works on both signed & unsigned.
 
 ## Definitions
 
@@ -44,7 +44,7 @@ template <class T> constexpr std::size_t width(T value) noexcept;
 // Enum Bitflags
 template<class E>
 struct Flags {
-    constexpr Flags(                       E      flag) noexcept;
+    constexpr Flags(                      E       flag) noexcept;
     constexpr Flags(std::initializer_list<E> flag_list) noexcept;
     
     constexpr operator bool() const noexcept;

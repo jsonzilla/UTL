@@ -982,8 +982,8 @@ utl_json_define_trait(_has_mapped_type, std::declval<typename std::decay_t<T>::m
 #undef utl_json_define_trait
 
 // Workaround for 'static_assert(false)' making program ill-formed even
-// when placed inide an 'if constexpr' branch that never compiles.
-// 'static_assert(_always_false_v<T)' on the the other hand doesn't,
+// when placed inside an 'if constexpr' branch that never compiles.
+// 'static_assert(_always_false_v<T)' on the other hand doesn't,
 // which means we can use it to mark branches that should never compile.
 template <class>
 constexpr bool _always_false_v = false;
@@ -1057,9 +1057,9 @@ struct _null_type_impl {
 // on all compilers that I know of. Several other JSON libraries seem to rely on the same behaviour without any issues.
 // The same cannot be said about 'std::unordered_map', which is why we don't use it.
 //
-// We could make a more pedantic choise and add a redundant level of indirection, but that both complicates
+// We could make a more pedantic choice and add a redundant level of indirection, but that both complicates
 // implementation needlessly and reduces performance. A perfect solution would be to write our own map implementation
-// tailored for JSON use cases and providing explicit suppport for heterogenous lookup and incomplete types, but that
+// tailored for JSON use cases and providing explicit support for heterogeneous lookup and incomplete types, but that
 // alone would be grander in scale than this entire parser for a mostly non-critical benefit.
 
 struct _dummy_type {};
@@ -1089,9 +1089,9 @@ template <class T>
 struct possible_mapped_type<T, std::void_t<decltype(std::declval<typename std::decay_t<T>::mapped_type>())>> {
     using type = typename T::mapped_type;
 };
-// these type traits are a key to checking properties of 'T::value_type' & 'T::mapped_type' for a 'T' which may or may
-// not have them (which is exactly the case with recursive traits that we're gonna use later to deduce convertability
-// to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjuction'
+// these type traits are a key to checking properties of 'T::value_type' & 'T::mapped_type' for a 'T' which may
+// or may not have them (which is exactly the case with recursive traits that we're going to use later to deduce
+// convertability to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjunction'
 
 #define utl_json_type_trait_conjunction(trait_name_, ...)                                                              \
     template <class T>                                                                                                 \
@@ -1134,7 +1134,7 @@ utl_json_type_trait_conjunction(
         std::conjunction<is_array_like<T>, is_json_convertible<typename possible_value_type<T>::type>>,
         // ... or it's an object of convertible elements
         std::conjunction<is_object_like<T>, is_json_convertible<typename possible_mapped_type<T>::type>>>,
-    // end recusion by short-circuiting conjunction with 'false' once we arrive to '_dummy_type',
+    // end recursion by short-circuiting conjunction with 'false' once we arrive to '_dummy_type',
     // arriving here means the type isn't convertible to JSON
     std::negation<std::is_same<T, _dummy_type>>);
 
@@ -1145,7 +1145,7 @@ utl_json_type_trait_conjunction(
 // --- Node class ---
 // ==================
 
-enum class Format { PRETTY, MINIMIZED };
+enum class Format : std::uint8_t { PRETTY, MINIMIZED };
 
 class Node;
 inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Format format);
@@ -2105,7 +2105,7 @@ inline void _serialize_json_recursion(const Node& node, std::string& chars, unsi
     //    > chars +=  string_1 + string_2 + string_3; // slow
     //
     // '.append()' performs exactly the same as '+=', but has no overload for appending single chars.
-    // However it does have an overload for appending N of some character, which is why we use if for indentation.
+    // However, it does have an overload for appending N of some character, which is why we use if for indentation.
     //
     // 'std::ostringstream' is painfully slow compared to regular appends
     // so it's out of the question.
@@ -2260,7 +2260,7 @@ inline void _serialize_json_to_buffer(std::string& chars, const Node& node, Form
     const std::size_t json_start = parser.skip_nonsignificant_whitespace(0); // skip leading whitespace
     auto [end_cursor, node]      = parser.parse_node(json_start); // starts parsing recursively from the root node
 
-    // Check for invalid trailing sumbols
+    // Check for invalid trailing symbols
     using namespace std::string_literals;
 
     for (auto cursor = end_cursor; cursor < chars.size(); ++cursor)
@@ -2339,9 +2339,9 @@ void _assign_value_to_node(Node& node, const T& value) {
 // -----------------------
 
 // Assigning JSON node to a value for arbitrary type is a bit of an "incorrect" problem,
-// since we can't possinly know the API of the type we're assigning stuff to.
+// since we can't possibly know the API of the type we're assigning stuff to.
 // Object-like and array-like types need special handling that expands their nodes recursively,
-// we can't directly assign 'std::vector<Node>' to 'std::vector<double>' like we would we simpler types.
+// we can't directly assign 'std::vector<Node>' to 'std::vector<double>' like we would with simpler types.
 template <class T>
 void _assign_node_to_value_recursively(T& value, const Node& node) {
     if constexpr (is_string_like_v<T>) value = node.get_string();
@@ -2360,7 +2360,7 @@ void _assign_node_to_value_recursively(T& value, const Node& node) {
 }
 
 // Not sure how to generically handle array-like types with compile-time known size,
-// so we're just gonna make a special case for 'std::array'
+// so we're just going to make a special case for 'std::array'
 template <class T, std::size_t N>
 void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node) {
     using namespace std::string_literals;
