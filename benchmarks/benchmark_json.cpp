@@ -2,7 +2,7 @@
 
 #include "benchmark.hpp"
 
-// Libraries to benchmarks agains
+// Libraries to benchmarks against
 // nlohmann
 #include "thirdparty/nlohmann_json.hpp"
 // rapidjson
@@ -29,7 +29,7 @@ void benchmark_on_data(const std::string& filepath) {
     const std::string filename = filepath.substr(filepath.find_last_of('/') + 1);
     std::cout << "\n\n====== BENCHMARKING ON DATA: `" << filename << "` ======\n";
 
-    // Create in-memory JSONs that will be used to bechmark serializing
+    // Create in-memory JSONs that will be used to benchmark serializing
     const std::string string_buffer = (std::ostringstream() << std::ifstream(filepath).rdbuf()).str();
     
     // utl::json
@@ -44,7 +44,7 @@ void benchmark_on_data(const std::string& filepath) {
     rapidjson::Document json_rapidjson;
     json_rapidjson.Parse(string_buffer.data());
 
-    // Create minimized & prettified JSON file that will be used to bechmark parsing
+    // Create minimized & prettified JSON file that will be used to benchmark parsing
     json_utl.to_file(parsing_target_minimized, json::Format::MINIMIZED);
     json_utl.to_file(parsing_target_prettified, json::Format::PRETTY);
 

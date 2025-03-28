@@ -20,7 +20,7 @@ directory_tests="${directory_build}tests/"
 script_create_single_header="bash/create_single_header.sh"
 script_run_static_analysis="bash/run_static_analysis.sh"
 
-cppcheck_supressions_file=".cppcheck"
+cppcheck_suppressions_file=".cppcheck"
 cppcheck_cache_directory=".cache-cppcheck"
 
 # =======================

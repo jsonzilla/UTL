@@ -9111,7 +9111,7 @@ inline void seed_with_entropy() {
 // --------------------------------
 
 template <class T, class Gen, _require<std::is_integral_v<T> && std::is_unsigned_v<T>> = true>
-constexpr T _uniform_uint_lemier(Gen& gen, T range) noexcept(noexcept(gen())) {
+constexpr T _uniform_uint_lemire(Gen& gen, T range) noexcept(noexcept(gen())) {
     using W = _wider_t<T>;
 
     W product = W(gen()) * W(range);
@@ -9133,7 +9133,7 @@ constexpr T _uniform_uint_modx1(Gen& gen, T range) noexcept(noexcept(gen())) {
         r = x % range;
     } while (x - r > T(-range));
     return r;
-} // slightly slower than lemier, but doesn't require a wider type
+} // slightly slower than lemire's, but doesn't require a wider type
 
 // Reimplementation of libc++ `std::uniform_int_distribution<>` except
 // - constexpr
@@ -9166,11 +9166,11 @@ constexpr T _generate_uniform_int(Gen& gen, T min, T max) noexcept {
         const common_type ext_range = range + 1; // range can be zero
 
         // PRNG uses all 'common_type' bits uniformly
-        // => use Lemier's algorithm if possible, fallback onto modx1 otherwise,
-        //    libc++ uses conditionally compiled lemier's with 128-bit ints instead of doing a fallback,
+        // => use Lemire's algorithm if possible, fallback onto modx1 otherwise,
+        //    libc++ uses conditionally compiled lemire's with 128-bit ints instead of doing a fallback,
         //    this is slightly faster, but leads to platforms-dependant sequences
         if constexpr (prng_range == type_range) {
-            if constexpr (_has_wider<common_type>) res = _uniform_uint_lemier(gen, ext_range);
+            if constexpr (_has_wider<common_type>) res = _uniform_uint_lemire(gen, ext_range);
             else res = _uniform_uint_modx1(gen, ext_range);
         }
         // PRNG doesn't use all bits uniformly (usually because 'prng_min' is '1')

@@ -49,7 +49,7 @@ This approach provides a generic way of working with matrices that is mostly agn
 
 ## Performance & linear algebra operations
 
-**mvl** classes are intented to be lightweight wrappers that allow convenient data manipulation without any performance tradeoffs on basic operations (loops, indexing, standard algorithms, etc.), this is achieved through conditional compilation and compile-time resolution of all indexing formulas. See [benchmarks](TODO:) for details.
+**mvl** classes are intended to be lightweight wrappers that allow convenient data manipulation without any performance tradeoffs on basic operations (loops, indexing, standard algorithms, etc.), this is achieved through conditional compilation and compile-time resolution of all indexing formulas. See [benchmarks](TODO:) for details.
 
 Due to its arbitrary-data approach, linear algebra operations are intentionally **NOT** implemented by **mvl**. Numeric computation is a separate field and is much better handled by existing libraries like [XTensor](https://xtensor.readthedocs.io), [Eigen](https://eigen.tuxfamily.org) and [Blaze](https://bitbucket.org/blaze-lib/blaze). In cases where matrix computation is needed, it's heavily recommended to use matrices provided by those libraries as a main implementation, and whenever **mvl** functions are needed, those can be wrapped in **mvl** view. For example:
 
@@ -705,7 +705,7 @@ Sorts elements of the underlying array according to `operator<` or a custom comp
 
 Types returned by blocking subview methods of the tensor.
 
-Dense and strided matrices will use apropriately strided views to efficiently represent blocking, while sparse matrices returns sparse views.
+Dense and strided matrices will use appropriately strided views to efficiently represent blocking, while sparse matrices returns sparse views.
 
 All subviews inherit `T`, `Dimension` and `Checking` configuration from the parent.
 
@@ -881,7 +881,7 @@ Operator is only compiled if `value_type` of both tensors is the same and suppor
 > template <class L, class R> L& operator+=(L&& left, R&& right);
 > template <class L, class R> L& operator-=(L&& left, R&& right);
 
-**TODO:** This behaviour is not yet finalized, there are still some considerations to make.
+**TODO:** This behavior is not yet finalized, there are still some considerations to make.
 
 ### Tensor IO formats
 
@@ -1022,7 +1022,7 @@ Constructs a `rows` by `cols` matrix with given strides and all elements initial
 
 **Note 1:** See ["Basic getters" section](#basic-getters) to learn how row- and col- strides work in `mvl`.
 
-**Note 2:** Strides are usually used in the context of views. In case of an owning matrix strides function as an additional padding between elements, while rarely directly useful, in some cases it can be used to reduce cache misses caused by a particulary "unlucky" alignment of rows relative to a cache size.
+**Note 2:** Strides are usually used in the context of views. In case of an owning matrix strides function as an additional padding between elements, while rarely directly useful, in some cases it can be used to reduce cache misses caused by a particularly "unlucky" alignment of rows relative to a cache size.
 
 ```cpp
 explicit GenericTensor(size_type rows, size_type cols, size_type row_stride, size_type col_stride, Callable<value_type(size_type, size_type)> init_func);
@@ -1165,7 +1165,7 @@ std::cout
     << "\n## as_raw_text() ##\n\n"   << mvl::format::as_raw_text(  mat)
     << "\n## as_json_array() ##\n\n" << mvl::format::as_json_array(mat);
 
-// Human-readable formats will aumatically collapse matrices above certain size to following format:
+// Human-readable formats will automatically collapse matrices above certain size to following format:
 // > Tensor [size = 250000] (500 x 500):
 // >   <hidden due to large size>
 ```

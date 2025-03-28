@@ -48,7 +48,7 @@ std::string datetime_string_id();
 > void start() noexcept;
 > ```
 
-Sets internal start timepoint for elapsed measurements.
+Sets internal start time-point for elapsed measurements.
 
 > ```cpp
 > double elapsed_ms()    noexcept;

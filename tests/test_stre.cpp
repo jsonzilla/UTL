@@ -83,9 +83,9 @@ TEST_CASE("Substring checks") {
     CHECK(stre::ends_with("Lorem Ipsum", "Ipsum"));
     CHECK(!stre::ends_with("Lorem Ipsum", "Lorem"));
 
-    CHECK(stre::contains("Some \t\r\n rather 17 bizzare TeXt", "\t\r\n"));
-    CHECK(stre::contains("Some \t\r\n rather 17 bizzare TeXt", " bizzare TeXt"));
-    CHECK(!stre::contains("Some \t\r\n rather 17 bizzare TeXt", "15"));
+    CHECK(stre::contains("Some \t\r\n rather 17 bizarre TeXt", "\t\r\n"));
+    CHECK(stre::contains("Some \t\r\n rather 17 bizarre TeXt", " bizarre TeXt"));
+    CHECK(!stre::contains("Some \t\r\n rather 17 bizarre TeXt", "15"));
 }
 
 // ========================================
@@ -101,21 +101,21 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = false)") {
         CHECK(tokens[2] == "ccc");
     }
 
-    { // leading delimers
+    { // leading delimiters
         const auto tokens = stre::split_by_delimiter("(---)lorem(---)ipsum", "(---)");
         CHECK(tokens.size() == 2);
         CHECK(tokens[0] == "lorem");
         CHECK(tokens[1] == "ipsum");
     }
 
-    { // leading + repeating delimers
+    { // leading + repeating delimiters
         const auto tokens = stre::split_by_delimiter("___lorem_________ipsum", "___");
         CHECK(tokens.size() == 2);
         CHECK(tokens[0] == "lorem");
         CHECK(tokens[1] == "ipsum");
     }
 
-    { // leading + repeating + trailing delimers
+    { // leading + repeating + trailing delimiters
         const auto tokens = stre::split_by_delimiter("xxAxxxxxBxCxDxxEx", "x");
         CHECK(tokens.size() == 5);
         CHECK(tokens[0] == "A");
@@ -125,7 +125,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = false)") {
         CHECK(tokens[4] == "E");
     }
 
-    { // non-empty string with a single delimer-like token
+    { // non-empty string with a single delimiter-like token
         const auto tokens = stre::split_by_delimiter(",,", ",,,");
         CHECK(tokens.size() == 1);
         CHECK(tokens[0] == ",,");
@@ -141,7 +141,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = false)") {
         CHECK(tokens.size() == 0);
     }
 
-    { // non-empty string with empty delimer
+    { // non-empty string with empty delimiter
         const auto tokens = stre::split_by_delimiter("text", "");
         CHECK(tokens.size() == 1);
         CHECK(tokens[0] == "text");
@@ -157,7 +157,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
         CHECK(tokens[2] == "ccc");
     }
 
-    { // leading delimers
+    { // leading delimiters
         const auto tokens = stre::split_by_delimiter("(---)lorem(---)ipsum", "(---)", true);
         CHECK(tokens.size() == 3);
         CHECK(tokens[0] == "");
@@ -165,7 +165,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
         CHECK(tokens[2] == "ipsum");
     }
 
-    { // leading + repeating delimers
+    { // leading + repeating delimiters
         const auto tokens = stre::split_by_delimiter("___lorem_________ipsum", "___", true);
         CHECK(tokens.size() == 5);
         CHECK(tokens[0] == "");
@@ -175,7 +175,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
         CHECK(tokens[4] == "ipsum");
     }
 
-    { // leading + repeating + trailing delimers
+    { // leading + repeating + trailing delimiters
         const auto tokens = stre::split_by_delimiter("xxAxxxxxBxCxDxxEx", "x", true);
         CHECK(tokens.size() == 13);
         CHECK(tokens[0] == "");
@@ -193,7 +193,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
         CHECK(tokens[12] == "");
     }
 
-    { // non-empty string with a single delimer-like token
+    { // non-empty string with a single delimiter-like token
         const auto tokens = stre::split_by_delimiter(",,", ",,,", true);
         CHECK(tokens.size() == 1);
         CHECK(tokens[0] == ",,");
@@ -214,7 +214,7 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
         CHECK(tokens[0] == "");
     }
 
-    { // non-empty string with empty delimer
+    { // non-empty string with empty delimiter
         const auto tokens = stre::split_by_delimiter("text", "", true);
         CHECK(tokens.size() == 1);
         CHECK(tokens[0] == "text");

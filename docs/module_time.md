@@ -256,7 +256,7 @@ There are 3 ways of getting local time in **C**-stdlib:
 2. `localtime_r()`  — isn't a part of **C++**, it's a part of **C11**, in reality provided by POSIX
 3. `localtime_s()`   — isn't a part of **C++**, it's a part of **C23**, in reality provided by Windows with reversed order of arguments
 
-Usually working around this will requires some `#ifdef`'s and non-portable code, however it is possible to exploit some side effects of `std::mktime()` to emulate this function in a thread-safe manner that works on every complier.
+Usually working around this will requires some `#ifdef`'s and non-portable code, however it is possible to exploit some side effects of `std::mktime()` to emulate this function in a thread-safe manner that works on every compiler.
 
 > ```cpp
 > std::string datetime_string(const char* format = "%Y-%m-%d %H:%M:%S");
@@ -377,7 +377,7 @@ std::this_thread::sleep_for(std::chrono::milliseconds(1700)); // wait 1.7 sec
 const auto   end = std::chrono::steady_clock::now();
 const double  ms = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / 1e6;
 
-// this is how it's usually done, however a trully correct way would be to use
+// this is how it's usually done, however a truly correct way would be to use
 // floating-point 'duration_cast()' which ends up being even more verbose:
 // const double ms = std::chrono::duration_cast<std::chrono::duration<double, 
 //                                              std::chrono::milliseconds::period>>(end - start).count();
@@ -439,7 +439,7 @@ const auto result = std::string(buffer.data());
 // doesn't include error handling, if format string was larger that in this example 'std::strftime()'
 // will mess up the formatting and return '0' which usually goes unchecked in examples found online
 
-// in C++20 this gets much easier due to a new <choro> API
+// in C++20 this gets much easier due to a new <chrono> API
 ```
 
 **`utl::time`:**

@@ -13,8 +13,8 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Nothing fance here, just trying all operations on 8-bit integers and checking 
-// that results correspond to analythical ones.
+// Nothing fancy here, just trying all operations on 8-bit integers and checking 
+// that results correspond to analytical ones.
 
 // ____________________ IMPLEMENTATION ____________________
 

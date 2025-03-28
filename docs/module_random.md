@@ -449,7 +449,7 @@ Using low-quality random may introduce artificial biases and unexpected effects 
 
 - Inaccurate statical estimates in [Monte—Carlo simulations](https://en.wikipedia.org/wiki/Monte_Carlo_method) and stochastic modeling
 - Biased optimizations in [genetic algorithms](https://en.wikipedia.org/wiki/Genetic_algorithm)
-- Noticeable biases in entity pathfinding and behavior in games
+- Noticeable biases in entity path finding and behavior in games
 - Issues in procedural generation
 
 These issues become particularly dangerous and difficult to diagnose in multidimensional simulations, as a lot of older PRNGs have significant statistical issues in higher dimensions that simply aren't apparent in a 1D case. 

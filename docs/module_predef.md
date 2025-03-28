@@ -250,7 +250,7 @@ Returns number of comma-separated arguments passed. Used mainly to deduce the si
 
 Declares namespace `enum_name` that contains enumeration `enum_name` with members `...` and methods `enum_name::to_string()`, `enum_name::from_string()` that convert enum values to corresponding `std::string` and back.
 
-If no valid convertion to enum exists for `arg`, `enum_name::from_string(arg)` returns `enum_name::_count`.
+If no valid conversion to enum exists for `arg`, `enum_name::from_string(arg)` returns `enum_name::_count`.
 
 > ```cpp
 > UTL_PREDEF_IS_FUNCTION_DEFINED_TRAIT(function_name, return_type, ...)

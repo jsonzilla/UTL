@@ -142,9 +142,9 @@ struct copy {
 };
 
 // Arbitrary unroll
-template <class T, T... inds, class F>
-constexpr void _loop(std::integer_sequence<T, inds...>, F&& f) {
-    (f(std::integral_constant<T, inds>{}), ...); // C++17 fold expression
+template <class T, T... Idxs, class F>
+constexpr void _loop(std::integer_sequence<T, Idxs...>, F&& f) {
+    (f(std::integral_constant<T, Idxs>{}), ...); // C++17 fold expression
 }
 template <class T, T count, class F>
 constexpr void loop(F&& f) {
@@ -250,7 +250,7 @@ void benchmark_simd_unrolling() {
 
 using DenseMat = mvl::Matrix<double>;
 
-DenseMat dd_matnul_ijk(const DenseMat& left, const DenseMat& right) {
+DenseMat dd_matmul_ijk(const DenseMat& left, const DenseMat& right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
 
     DenseMat res(N_i, N_j, 0.);
@@ -262,7 +262,7 @@ DenseMat dd_matnul_ijk(const DenseMat& left, const DenseMat& right) {
     return res;
 }
 
-DenseMat dd_matnul_ijk_transposed(const DenseMat& left, DenseMat right) {
+DenseMat dd_matmul_ijk_transposed(const DenseMat& left, DenseMat right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
     
     right = right.transposed();
@@ -276,7 +276,7 @@ DenseMat dd_matnul_ijk_transposed(const DenseMat& left, DenseMat right) {
     return res;
 }
 
-DenseMat dd_matnul_ikj(const DenseMat& left, const DenseMat& right) {
+DenseMat dd_matmul_ikj(const DenseMat& left, const DenseMat& right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
 
     DenseMat res(N_i, N_j, 0.);
@@ -291,7 +291,7 @@ DenseMat dd_matnul_ikj(const DenseMat& left, const DenseMat& right) {
 }
 
 
-DenseMat dd_matnul_ikj_noinit(const DenseMat& left, const DenseMat& right) {
+DenseMat dd_matmul_ikj_noinit(const DenseMat& left, const DenseMat& right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
     
     DenseMat res(N_i, N_j);
@@ -310,7 +310,7 @@ DenseMat dd_matnul_ikj_noinit(const DenseMat& left, const DenseMat& right) {
 }
 
 template <std::size_t block_size_kk>
-DenseMat dd_matnul_ikj_kk_blocked(const DenseMat& left, const DenseMat& right) {
+DenseMat dd_matmul_ikj_kk_blocked(const DenseMat& left, const DenseMat& right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
 
     DenseMat res(N_i, N_j, 0.);
@@ -330,7 +330,7 @@ DenseMat dd_matnul_ikj_kk_blocked(const DenseMat& left, const DenseMat& right) {
 }
 
 template <std::size_t block_size_ii, std::size_t block_size_kk>
-DenseMat dd_matnul_ikj_ii_kk_blocked(const DenseMat& left, const DenseMat& right) {
+DenseMat dd_matmul_ikj_ii_kk_blocked(const DenseMat& left, const DenseMat& right) {
     const std::size_t N_i = left.rows(), N_k = left.cols(), N_j = right.cols();
     
     DenseMat res(N_i, N_j, 0.);
@@ -374,41 +374,41 @@ void benchmark_matmul() {
 
     std::vector<std::pair<std::string, double>> control_sums;
 
-    benchmark("dd_matnul_ikj", [&] { C = dd_matnul_ikj(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj", C.sum());
+    benchmark("dd_matmul_ikj", [&] { C = dd_matmul_ikj(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj", C.sum());
     
-    benchmark("dd_matnul_ikj_noinit", [&] { C = dd_matnul_ikj_noinit(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_noinit", C.sum());
+    benchmark("dd_matmul_ikj_noinit", [&] { C = dd_matmul_ikj_noinit(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_noinit", C.sum());
 
-    benchmark("dd_matnul_ijk", [&] { C = dd_matnul_ijk(A, B); });
-    control_sums.emplace_back("dd_matnul_ijk", C.sum());
+    benchmark("dd_matmul_ijk", [&] { C = dd_matmul_ijk(A, B); });
+    control_sums.emplace_back("dd_matmul_ijk", C.sum());
     
-    benchmark("dd_matnul_ijk_transposed", [&] { C = dd_matnul_ijk_transposed(A, B); });
-    control_sums.emplace_back("dd_matnul_ijk_transposed", C.sum());
+    benchmark("dd_matmul_ijk_transposed", [&] { C = dd_matmul_ijk_transposed(A, B); });
+    control_sums.emplace_back("dd_matmul_ijk_transposed", C.sum());
 
-    benchmark("dd_matnul_ikj_kk_blocked<4>", [&] { C = dd_matnul_ikj_kk_blocked<4>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_kk_blocked<4>", C.sum());
+    benchmark("dd_matmul_ikj_kk_blocked<4>", [&] { C = dd_matmul_ikj_kk_blocked<4>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_kk_blocked<4>", C.sum());
 
-    benchmark("dd_matnul_ikj_kk_blocked<8>", [&] { C = dd_matnul_ikj_kk_blocked<8>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_kk_blocked<8>", C.sum());
+    benchmark("dd_matmul_ikj_kk_blocked<8>", [&] { C = dd_matmul_ikj_kk_blocked<8>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_kk_blocked<8>", C.sum());
 
-    benchmark("dd_matnul_ikj_kk_blocked<16>", [&] { C = dd_matnul_ikj_kk_blocked<16>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_kk_blocked<16>", C.sum());
+    benchmark("dd_matmul_ikj_kk_blocked<16>", [&] { C = dd_matmul_ikj_kk_blocked<16>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_kk_blocked<16>", C.sum());
     
-    benchmark("dd_matnul_ikj_kk_blocked<32>", [&] { C = dd_matnul_ikj_kk_blocked<32>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_kk_blocked<32>", C.sum());
+    benchmark("dd_matmul_ikj_kk_blocked<32>", [&] { C = dd_matmul_ikj_kk_blocked<32>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_kk_blocked<32>", C.sum());
     
-    benchmark("dd_matnul_ikj_ii_kk_blocked<4, 4>", [&] { C = dd_matnul_ikj_ii_kk_blocked<4, 4>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_ii_kk_blocked<4, 4>", C.sum());
+    benchmark("dd_matmul_ikj_ii_kk_blocked<4, 4>", [&] { C = dd_matmul_ikj_ii_kk_blocked<4, 4>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_ii_kk_blocked<4, 4>", C.sum());
     
-    benchmark("dd_matnul_ikj_ii_kk_blocked<8, 8>", [&] { C = dd_matnul_ikj_ii_kk_blocked<8, 8>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_ii_kk_blocked<8, 8>", C.sum());
+    benchmark("dd_matmul_ikj_ii_kk_blocked<8, 8>", [&] { C = dd_matmul_ikj_ii_kk_blocked<8, 8>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_ii_kk_blocked<8, 8>", C.sum());
     
-    benchmark("dd_matnul_ikj_ii_kk_blocked<16, 16>", [&] { C = dd_matnul_ikj_ii_kk_blocked<16, 16>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_ii_kk_blocked<16, 16>", C.sum());
+    benchmark("dd_matmul_ikj_ii_kk_blocked<16, 16>", [&] { C = dd_matmul_ikj_ii_kk_blocked<16, 16>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_ii_kk_blocked<16, 16>", C.sum());
     
-    benchmark("dd_matnul_ikj_ii_kk_blocked<32, 32>", [&] { C = dd_matnul_ikj_ii_kk_blocked<32, 32>(A, B); });
-    control_sums.emplace_back("dd_matnul_ikj_ii_kk_blocked<32, 32>", C.sum());
+    benchmark("dd_matmul_ikj_ii_kk_blocked<32, 32>", [&] { C = dd_matmul_ikj_ii_kk_blocked<32, 32>(A, B); });
+    control_sums.emplace_back("dd_matmul_ikj_ii_kk_blocked<32, 32>", C.sum());
 
     // Copy data into Eigen matrices
     Eigen::MatrixXd A_eigen(N_i, N_k), B_eigen(N_k, N_j), C_eigen;
@@ -430,24 +430,24 @@ void benchmark_matmul() {
     
     // Notes:
     // Test indicate that there is no benefit whatsoever to manual unrolling as compiler is already
-    // pretty good at seing SIMD opportunities.
+    // pretty good at seeing SIMD opportunities.
 }
 
-// =================================
-// --- Stringfy float benchmarks ---
-// =================================
+// ==================================
+// --- Stringify float benchmarks ---
+// ==================================
 
-std::string fstrinfigy_ostringstream(double value) {
+std::string float_stringify_ostringstream(double value) {
     std::ostringstream ss;
     ss << value;
     return ss.str();
 }
 
-std::string fstrinfigy_to_string(double value) {
+std::string float_stringify_to_string(double value) {
     return std::to_string(value);
 }
 
-std::string fstrinfigy_charconv(double value) {
+std::string float_stringify_charconv(double value) {
     return log::stringify(value);
 }
 
@@ -469,19 +469,19 @@ void benchmark_stringify() {
 
     benchmark("Temp. std::ostringstream", [&] {
         std::string buffer;
-        A.for_each([&](double elem){ buffer += fstrinfigy_ostringstream(elem); });
+        A.for_each([&](double elem){ buffer += float_stringify_ostringstream(elem); });
         DO_NOT_OPTIMIZE_AWAY(buffer);
     });
     
     benchmark("std::to_string()", [&] {
         std::string buffer;
-        A.for_each([&](double elem){ buffer += fstrinfigy_to_string(elem); });
+        A.for_each([&](double elem){ buffer += float_stringify_to_string(elem); });
         DO_NOT_OPTIMIZE_AWAY(buffer);
     });
 
     benchmark("<charconv>", [&] {
         std::string buffer;
-        A.for_each([&](double elem){ buffer += fstrinfigy_charconv(elem); });
+        A.for_each([&](double elem){ buffer += float_stringify_charconv(elem); });
         DO_NOT_OPTIMIZE_AWAY(buffer);
     });
 }

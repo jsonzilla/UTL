@@ -59,9 +59,9 @@ class Ruler {
 public:
     // - Style configuration -
     struct Style {
-        char fill          = '#';
-        char ruler_line    = '-';
-        char ruler_delimer = '|';
+        char fill            = '#';
+        char ruler_line      = '-';
+        char ruler_delimiter = '|';
     } style;
 
     bool show_ticks = true;
@@ -145,9 +145,9 @@ Redraws progressbar to update its style configuration immediate.
 > ```cpp
 > // - Style configuration -
 > struct Style {
->     char fill          = '#';
->     char ruler_line    = '-';
->     char ruler_delimer = '|';
+>     char fill            = '#';
+>     char ruler_line      = '-';
+>     char ruler_delimiter = '|';
 > } style;
 > 
 > bool show_ticks = true;
@@ -157,14 +157,14 @@ Redraws progressbar to update its style configuration immediate.
 
 Construct progress bar object with following options:
 
-| Option                | Descriptions                                      |
-| --------------------- | ------------------------------------------------- |
-| `style.fill`          | Character used for "filled" part of the bar       |
-| `style.ruler_line `   | Character used for "line" part of the ruler above |
-| `style.ruler_delimer` | Character used for delimers on of the ruler above |
-| `show_ticks`          | Whether to render the main bar display            |
-| `show_ruler`          | Whether to render a numeric label after the bar   |
-| `show_bar`            | Whether to render a remaining time estimate       |
+| Option                  | Descriptions                                       |
+| ----------------------- | -------------------------------------------------- |
+| `style.fill`            | Character used for "filled" part of the bar        |
+| `style.ruler_line `     | Character used for "line" part of the ruler above  |
+| `style.ruler_delimiter` | Character used for delimiter on of the ruler above |
+| `show_ticks`            | Whether to render the main bar display             |
+| `show_ruler`            | Whether to render a numeric label after the bar    |
+| `show_bar`              | Whether to render a remaining time estimate        |
 
 **Note:** Disabling `show_bar` makes little practical sense considering it make progressbar not display any progress, but it is still provided for the sake of API uniformity.
 

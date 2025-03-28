@@ -203,7 +203,7 @@ Returns whether the thread pool is paused.
 ThreadPool& static_thread_pool();
 ```
 
-Returns a global static instance of the threadpool.
+Returns a global static instance of the thread pool.
 
 In most cases there is no need to manually maintain the thread pool at call-site, a global thread pool instance gets created automatically upon the first call to `parallel::static_thread_pool()` or any of the parallel algorithm functions.
 
@@ -345,7 +345,7 @@ Pre-defined binary operations for `parallel::reduce()`.
 
 **Note 1:** All functors will be `noexcept` if possible.
 
-**Note 2:** "Transparent functors" are `void` specializations that deduce their parameter and return types from the arguments. This is how function objects should usually be used. See [cpprefence](https://en.cppreference.com/w/cpp/utility/functional#Transparent_function_objects) for details.
+**Note 2:** "Transparent functors" are `void` specializations that deduce their parameter and return types from the arguments. This is how function objects should usually be used. See [cppreference](https://en.cppreference.com/w/cpp/utility/functional#Transparent_function_objects) for details.
 
 ## Examples
 
@@ -382,7 +382,7 @@ double some_heavy_computation(double x) {
 
 using namespace utl;
 
-// Lauch the computation asynchronously and get its future
+// Launch the computation asynchronously and get its future
 auto future = parallel::task_with_future(some_heavy_computation, 10);
 
 // ... do some other work in the meantime ...
@@ -499,7 +499,7 @@ Data memory usage -> 8.23974609375 MiB
 // Note 2: Not sure why OpenMP doesn't give as much speedup as expected.
 //
 // Note 3: Speedup over 4x can happen on small matrices (like in this measurement)
-//         due to utilization of muliple cache lines in a distributed case.
+//         due to utilization of multiple cache lines in a distributed case.
 //         In case of reductions it is caused by SIMD unrolling, a version
 //         with no unrolling performs similarly to OpenMP.
 ```

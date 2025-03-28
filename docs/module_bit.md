@@ -92,7 +92,7 @@ Sets / clears / flips the `bit` in an integer `value` and returns the result.
 
 Shifts bits in an integer `value` left / right by a given `shift`, shifted from bits are zero-filled.
 
-Functionally identical to operators `<<` and `>>`, but with a proper handling for negative signed integers. In the standard shifting negative numbers is considered [UB](https://en.cppreference.com/w/cpp/language/ub), in practice every single compiler implements signed bitshift as `(signed)((unsigned)value << shift)` while implicitly assuming `value > 0` since negatives are UB. This implicit assumption can lead to incorrectly generated code since branches with `value < 0` will be eliminated as "dead code" simply through the virtue of being near a `value << shift` statement. These functions perform the cast explicitly leading to the exact same performance & behavior but safer.
+Functionally identical to operators `<<` and `>>`, but with a proper handling for negative signed integers. In the standard shifting negative numbers is considered [UB](https://en.cppreference.com/w/cpp/language/ub), in practice every single compiler implements signed bit-shift as `(signed)((unsigned)value << shift)` while implicitly assuming `value > 0` since negatives are UB. This implicit assumption can lead to incorrectly generated code since branches with `value < 0` will be eliminated as "dead code" simply through the virtue of being near a `value << shift` statement. These functions perform the cast explicitly leading to the exact same performance & behavior but safer.
 
 **Note:** This and all consequent functions assume `shift < sizeof(T) * CHAR_BIT`, otherwise behavior is undefined. This precondition is checked in `DEBUG`.
 

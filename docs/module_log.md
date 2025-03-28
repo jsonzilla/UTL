@@ -138,7 +138,7 @@ Wrappers used to pad values with specific alignment when using this module's str
 
 ### Extendable stringifier (advanced feature)
 
-`template <class Derived> struct StringifierBase` is compile-time polymorphism base used to build custom stringifier functors.
+`template <class Derived> struct StringifierBase` is compile-time polymorphism base used to build custom stringifier.
 
 It is an advanced feature and not need for the regular logging, see [section at the end](#advanced-guide-to-custom-stringifiers) for a proper usage guide.
 
@@ -347,7 +347,7 @@ log::add_file_sink("verbose.log").set_verbosity(log::Verbosity::TRACE);
 log::add_file_sink("info.log").set_verbosity(log::Verbosity::INFO).set_colors(log::Colors::ENABLE);
 
 // Instead of calling 'set_...()' we can also pass arguments directly into 'add_..._sink()' function,
-// let's also append all logs to a persistent file that doesn't get rewriten between executions
+// let's also append all logs to a persistent file that doesn't get rewritten between executions
 log::add_file_sink("history.log", log::OpenMode::APPEND).skip_header();
 
 // Add another file for logged messages only (no date/uptime/thread/callsite columns)
@@ -362,7 +362,7 @@ log::add_file_sink("messages.log").set_columns(cols);
 log::add_ostream_sink(std::cerr, log::Verbosity::WARN, log::Colors::ENABLE);
 
 // Log some stuff
-UTL_LOG_DTRACE("Some meaningless stuff"); // 'D' prefix means this will only compile in dubug
+UTL_LOG_DTRACE("Some meaningless stuff"); // 'D' prefix means this will only compile in debug
 UTL_LOG_INFO("Some meaningful stuff");
 UTL_LOG_WARN("Some warning");
 UTL_LOG_ERR("Some error");

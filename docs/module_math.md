@@ -265,7 +265,7 @@ Sorts `array` and applies the same sorting permutation to all `synced_arrays...`
 > Integer ternary_bitselect(bool condition, Integer return_if_true  /* returns 0 if false*/) noexcept;
 > ```
 
-Computes `condition ? return_if_true : return_if_false` branchlessly using properties of arithmetic types. Overloads **(2)** and **(3)** use a more efficient algorithm suitable for integer types. Overload **(3)** simplifies it even more using the `return_if_false == 0` assumption.
+Computes branchless `condition ? return_if_true : return_if_false` using properties of arithmetic types. Overloads **(2)** and **(3)** use a more efficient algorithm suitable for integer types. Overload **(3)** simplifies it even more using the `return_if_false == 0` assumption.
 
 **Note:** This is mostly needed for architectures with expensive branches, such as most GPUs. In usual context a regular ternary should be preferred.
 

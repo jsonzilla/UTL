@@ -696,7 +696,7 @@ const TaskList task_list = {
 };
 
 // Parse JSON from struct,
-// this also doubles as a cheaty way of stringifying structs for debugging
+// this also doubles as a way of stringifying structs for debugging
 std::cout << json::from_struct(task_list).to_string();
 ```
 
@@ -886,7 +886,7 @@ Parsing and serialization also satisfies [C++ `<charconv>`](https://en.cpprefere
 
 ### Some thoughts on implementation
 
-The main weakpoint of `utl::json` from the performance point of view is parsing  of object-heavy JSONs.
+The main weak-point of `utl::json` from the performance point of view is parsing  of object-heavy JSONs.
 
 Unfortunately, the issue is mostly caused by `std::map` insertion & iteration, which dominates the runtime. A truly suitable for the purpose container doesn't really exist in the standard library, and would need a custom implementation like in `RapidJSON`, which would reduce the standard library interoperability thus going against the main purpose of this library which is simplicity of use.
 

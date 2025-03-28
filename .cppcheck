@@ -1,6 +1,6 @@
 // __________________________________ CONTENTS ___________________________________
 //
-//    Analysis supression directives for 'cppcheck' static analysis tool which is
+//    Analysis suppression directives for 'cppcheck' static analysis tool which is
 //    optionally invoked during build.
 // _______________________________________________________________________________
 
@@ -19,7 +19,7 @@
 // All of this was done for cppcheck version 2.7, newer version may need a revision.
 
 // Note 2:
-// Almost all of supressed warnings only appear with max level of checking, 
+// Almost all of suppressed warnings only appear with max level of checking, 
 // the default level is reasonably reserved about false positives and won't really use most of this.
 
 syntaxError:*
@@ -52,15 +52,15 @@ passedByValue:*
 
 // - Justification -
 //
-// 'noExplicitConstructor' -> Implicit convertions can be painful but come on, prohibiting any non-explicit
-//                            constructors with 1 argument prevent a lot of convenient convertions from happening
+// 'noExplicitConstructor' -> Implicit conversions can be painful but come on, prohibiting any non-explicit
+//                            constructors with 1 argument prevent a lot of convenient conversions from happening
 //
 // 'shadowFunction'        -> I believe shadowing variables in some cases is cleaner:
-//                            > Contructor(T data) : data(data) {}         // short, nice API
-//                            > Contructor(T new_data) : data(new_data) {} // either arg or member needs an ugly name
-//                            > Contructor(T data) : m_data(data) {}
+//                            > Constructor(T data) : data(data) {}         // short, nice API
+//                            > Constructor(T new_data) : data(new_data) {} // either arg or member needs an ugly name
+//                            > Constructor(T data) : m_data(data) {}
 //
-// 'useStlAlgorithm'       -> Way too agressive, not every loop looks better as an 'std' algorithm, plus including
+// 'useStlAlgorithm'       -> Way too aggressive, not every loop looks better as an 'std' algorithm, plus including
 //                            the entire huge <algorithm> for every little thing is not good for compile times
 //
 // 'passedByValue'         -> Reports 'std::string_view' as something that should be passed by reference, while in

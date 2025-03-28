@@ -29,7 +29,7 @@ Once this is done, the current branch can be archived as `cpp17` branch, while `
 | Replace class operators `<, >, ==, !=` with a spaceship operator `<=>` | `integral` |  | ✘ |
 | Add `[[likely]]` and `[[unlikely]]` attributes where appropriate | `json` exceptions, `mvl` bound checking |  | ✘ |
 | Use `__VA_OPT__` to remove the need for trailing comma support by the compiler | `predef` |  | ✘ |
-| Replace some occurences of `const std::vector<>` with `std::span<>` |  |  | ✘ |
+| Replace some occurrences of `const std::vector<>` with `std::span<>` |  |  | ✘ |
 | Remove/rename some constants on `utl::math` as they are now part of `std` | `math` |  | ✘ |
 | Remove `utl::stre::start_with()` and `utp::stre::ends_with()` as they are now part of `std` | `stre` |  | ✘ |
 | Replace map/set `.count()` with `.contains()` | `json` |  | ✘ |

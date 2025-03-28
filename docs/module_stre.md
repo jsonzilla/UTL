@@ -36,7 +36,7 @@ bool ends_with(  std::string_view str, std::string_view substr);
 bool contains(   std::string_view str, std::string_view substr);
 
 // Token manipulation
-template<class T> std::string replace_all_occurences(T&& str, std::string_view from, std::string_view to);
+template<class T> std::string replace_all_occurrences(T&& str, std::string_view from, std::string_view to);
 
 std::vector<std::string> split_by_delimiter(std::string_view str, std::string_view delimiter, bool keep_empty_tokens = false);
 
@@ -50,7 +50,7 @@ std::size_t index_of_difference(std::string_view str_1, std::string_view str_2);
 ```
 
 > [!Note]
-> Functions that can utilize mutable input string for a more efficient implementation are declared with `template <class T>` and use [perfect forwarding](https://en.cppreference.com/w/cpp/utility/forward). This means whenever [rvalue](https://en.cppreference.com/w/cpp/language/value_category) arguments are provided they automatically get reused, while lvalues are copied.
+> Functions that can utilize mutable input string for a more efficient implementation are declared with `template <class T>` and use [perfect forwarding](https://en.cppreference.com/w/cpp/utility/forward). This means whenever [r-value](https://en.cppreference.com/w/cpp/language/value_category) arguments are provided they automatically get reused, while l-values are copied.
 
 ## Methods
 
@@ -72,9 +72,9 @@ std::string pad_right(std::string_view str, std::size_t length, char padding_cha
 std::string pad(      std::string_view str, std::size_t length, char padding_char = ' ');
 ```
 
-Pads string `str` with characters `padding_char` from left / right / both sides until it reaches size `lenght`.
+Pads string `str` with characters `padding_char` from left / right / both sides until it reaches size `length`.
 
-**Note:** If `str.size >= lenght` the string is left unchanged.
+**Note:** If `str.size >= length` the string is left unchanged.
 
 > ```cpp
 > std::string pad_with_leading_zeroes(unsigned int number, std::size_t length = 10);
@@ -111,7 +111,7 @@ Returns `true` if string `str` starts with / ends with / contains the substring 
 ### Token manipulation
 
 ```cpp
-template<class T> std::string replace_all_occurences(T&& str, std::string_view from, std::string_view to);
+template<class T> std::string replace_all_occurrences(T&& str, std::string_view from, std::string_view to);
 ```
 
 Scans through the string `str` and replaces all occurrences of substring `from` with a string `to`.
@@ -120,7 +120,7 @@ Scans through the string `str` and replaces all occurrences of substring `from` 
 std::vector<std::string> split_by_delimiter(std::string_view str, std::string_view delimiter, bool keep_empty_tokens = false);
 ```
 
-Splits string `str` into a vector of `std::string` tokens based on `delimeter`.
+Splits string `str` into a vector of `std::string` tokens based on `delimiter`.
 
 By default `keep_empty_tokens` is `false` and `""` is not considered to be a valid token — in case of leading / trailing / repeated delimiters, only non-empty tokens are going to be inserted into the resulting vector. Setting `keep_empty_tokens` to `true` overrides this behavior and keeps all the empty tokens intact.
 
@@ -206,24 +206,24 @@ assert(stre::ends_with(  "lorem ipsum", "ipsum"));
 assert(stre::contains(   "lorem ipsum", "em ip"));
 ```
 
-### Performing token manupulations
+### Performing token manipulations
 
 [ [Run this code](https://godbolt.org/#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:34,endLineNumber:22,positionColumn:34,positionLineNumber:22,selectionStartColumn:34,selectionStartLineNumber:22,startColumn:34,startLineNumber:22),source:'%23include+%3Chttps://raw.githubusercontent.com/DmitriBogdanov/UTL/master/single_include/UTL.hpp%3E%0A%0Aint+main(int+argc,+char+**argv)+%7B%0A%0A++++using+namespace+utl%3B%0A++++%0A++++//+Replacting+tokens%0A++++assert(stre::replace_all_occurences(%22xxxAAxxxAAxxx%22,++%22AA%22,++%22BBB%22)+%3D%3D+%22xxxBBBxxxBBBxxx%22+)%3B%0A++++%0A++++//+Splitting+by+delimer%0A++++auto+tokens+%3D+stre::split_by_delimiter(%22aaa,bbb,ccc,%22,+%22,%22)%3B%0A++++assert(tokens.size()+%3D%3D+3)%3B%0A++++assert(tokens%5B0%5D+%3D%3D+%22aaa%22)%3B%0A++++assert(tokens%5B1%5D+%3D%3D+%22bbb%22)%3B%0A++++assert(tokens%5B2%5D+%3D%3D+%22ccc%22)%3B%0A++++%0A++++//+Splitting+by+complex+delimer+while+keeping+the+empty+tokens%0A++++tokens+%3D+stre::split_by_delimiter(%22(---)lorem(---)ipsum%22,+%22(---)%22,+true)%3B%0A++++assert(tokens.size()+%3D%3D+3)%3B%0A++++assert(tokens%5B0%5D+%3D%3D+%22%22)%3B%0A++++assert(tokens%5B1%5D+%3D%3D+%22lorem%22)%3B%0A++++assert(tokens%5B2%5D+%3D%3D+%22ipsum%22)%3B%0A%0A++++return+0%3B%0A%7D%0A'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:71.71783148269105,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:clang1600,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-std%3Dc%2B%2B17+-O2',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+clang+16.0.0+(Editor+%231)',t:'0')),header:(),l:'4',m:50,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+clang+16.0.0',editorid:1,fontScale:14,fontUsePx:'0',j:1,wrap:'1'),l:'5',n:'0',o:'Output+of+x86-64+clang+16.0.0+(Compiler+%231)',t:'0')),k:46.69421860597116,l:'4',m:50,n:'0',o:'',s:0,t:'0')),k:28.282168517308946,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4) ]
 
 ```cpp
 using namespace utl;
 
-// Replacting tokens
-assert(stre::replace_all_occurences("xxxAAxxxAAxxx",  "AA",  "BBB") == "xxxBBBxxxBBBxxx" );
+// Replacing tokens
+assert(stre::replace_all_occurrences("xxxAAxxxAAxxx",  "AA",  "BBB") == "xxxBBBxxxBBBxxx" );
 
-// Splitting by delimer
+// Splitting by delimiter
 auto tokens = stre::split_by_delimiter("aaa,bbb,ccc,", ",");
 assert(tokens.size() == 3);
 assert(tokens[0] == "aaa");
 assert(tokens[1] == "bbb");
 assert(tokens[2] == "ccc");
 
-// Splitting by complex delimer while keeping the empty tokens
+// Splitting by complex delimiter while keeping the empty tokens
 tokens = stre::split_by_delimiter("(---)lorem(---)ipsum", "(---)", true);
 assert(tokens.size() == 3);
 assert(tokens[0] == "");

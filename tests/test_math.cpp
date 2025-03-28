@@ -11,15 +11,15 @@
 // _______________________ INCLUDES _______________________
 
 #include <array>         // type-trait tests
+#include <cstddef>       // memory usage estimate tests
+#include <cstdint>       // memory usage estimate tests
 #include <functional>    // type-trait tests
+#include <list>          // memory usage estimate tests
 #include <string>        // type-trait tests
 #include <string_view>   // type-trait tests
 #include <unordered_map> // type-trait tests
-#include <vector>        // type-trait tests
-#include <cstddef> // memory usage estimate tests
-#include <cstdint> // memory usage estimate tests
 #include <unordered_set> // memory usage estimate tests
-#include <list> // memory usage estimate tests
+#include <vector>        // type-trait tests
 
 // ____________________ DEVELOPER DOCS ____________________
 
@@ -73,13 +73,13 @@ TEST_CASE("Basic math functions work as expected") {
     static_assert(math::rad_to_deg(math::constants::two_pi) == Flt{360.});
     static_assert(math::rad_to_deg(17. * math::constants::pi) == Flt{17 * 180.});
     static_assert(math::rad_to_deg(-math::constants::pi) == Flt{-180.});
-    
+
     // Sum
-    static_assert(math::sum(0, 3, [](auto i){ return i; }) == 0 + 1 + 2 + 3);
-    static_assert(math::sum(0, 4, [](auto i){ return i * i; }) == 0 + 1 + 4 + 9 + 16);
-    static_assert(math::sum(-2, 2, [](auto i){ return i * i; }) == 4 + 1 + 0 + 1 + 4);
-    static_assert(math::sum(-2, 2, [](auto i){ return i * i; }) == 4 + 1 + 0 + 1 + 4);
-    static_assert(math::sum<std::size_t>(0, std::size_t(4), [](auto i){ return 2 * i; }) == 0 + 2 + 4 + 6 + 8);
+    static_assert(math::sum(0, 3, [](auto i) { return i; }) == 0 + 1 + 2 + 3);
+    static_assert(math::sum(0, 4, [](auto i) { return i * i; }) == 0 + 1 + 4 + 9 + 16);
+    static_assert(math::sum(-2, 2, [](auto i) { return i * i; }) == 4 + 1 + 0 + 1 + 4);
+    static_assert(math::sum(-2, 2, [](auto i) { return i * i; }) == 4 + 1 + 0 + 1 + 4);
+    static_assert(math::sum<std::size_t>(0, std::size_t(4), [](auto i) { return 2 * i; }) == 0 + 2 + 4 + 6 + 8);
 
     // Meshing
     const auto grid_1 = math::linspace(0., 1., math::Points(3));
@@ -149,22 +149,26 @@ TEST_CASE("Permutations work as expected") {
 
 TEST_CASE("(math::memory_size<T, size_t> == ...) for T = ") {
     constexpr auto byte = math::MemoryUnit::BYTE;
-    
+
     constexpr std::array<int, 17> arr{};
     static_assert(math::quick_memory_estimate<byte>(arr) == sizeof(arr));
-    
+
     const std::vector<double> vec(765);
     CHECK(math::quick_memory_estimate<byte>(vec) == 765 * sizeof(double) + sizeof(decltype(vec)));
-    
+
     const std::string str(45, 'x');
     CHECK(math::quick_memory_estimate<byte>(str) == 45 * sizeof(char) + sizeof(decltype(str)));
-    
-    const std::list<std::uint16_t> list = { 1, 2, 3, 4, 5, 6, 7 };
+
+    const std::list<std::uint16_t> list = {1, 2, 3, 4, 5, 6, 7};
     CHECK(math::quick_memory_estimate<byte>(list) >= 7 * sizeof(std::uint16_t) + sizeof(decltype(list)));
-    
-    const std::unordered_set<std::uint64_t> set = { 1, 2, 3, 4, 5 };
+
+    const std::unordered_set<std::uint64_t> set = {1, 2, 3, 4, 5};
     CHECK(math::quick_memory_estimate<byte>(set) >= 5 * sizeof(std::uint64_t) + sizeof(decltype(set)));
-    
-    const std::unordered_map<std::uint64_t, std::uint64_t> map = { { 1, 1 }, { 2, 2 }, { 3, 3 } };
+
+    const std::unordered_map<std::uint64_t, std::uint64_t> map = {
+        {1, 1},
+        {2, 2},
+        {3, 3}
+    };
     CHECK(math::quick_memory_estimate<byte>(map) >= 3 * 2 * sizeof(std::uint64_t) + sizeof(decltype(map)));
 }

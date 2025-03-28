@@ -21,7 +21,7 @@ macro(add_utl_test filename)
     # '-fno-omit-frame-pointer'                => doesn't matter with '-O0', prohibits optimization
     #                                             than makes stack traces harder to analyze
     # '-fno-sanitize-recover=all'              => sanitizers should stop execution (which fails the test)
-    #                                             when  triggered, default behaviour is to continue
+    #                                             when  triggered, default behavior is to continue
     # '-fsanitize=undefined,address,leak'      => enable sanitizers
     # '-Wall -Wextra -Wpedantic -Werror'       => more warnings, treat warnings as errors
     # see GCC docs: https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html
@@ -40,7 +40,7 @@ macro(add_utl_test filename)
     
     # Note:
     # '--force-colors' makes doctest show colored output in the terminal, but makes up CTest logs save ANSI color
-    # codes. Without this flag doctest supresses color because it detects CTest writing output to the file.
+    # codes. Without this flag doctest suppresses color because it detects CTest writing output to the file.
     
 endmacro()
 

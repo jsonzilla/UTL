@@ -133,7 +133,7 @@ TEST_CASE_TEMPLATE("To-JSON-object conversions are handled correctly", T, //
     CHECK(obj.at("key_2").get_number() == 2);
 }
 
-TEST_CASE_TEMPLATE("To-JSON-string conversionsare handled correctly", T, //
+TEST_CASE_TEMPLATE("To-JSON-string conversions are handled correctly", T, //
                    json::String,                                         //
                    std::string,                                          //
                    std::string_view                                      //

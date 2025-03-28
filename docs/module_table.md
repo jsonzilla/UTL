@@ -66,7 +66,7 @@ Redirects output to given `std::ostream`. By default `std::cout` is used.
 > void set_latex_mode(bool toggle);
 > ```
 
-Enables/disables [LaTeX](https://en.wikipedia.org/wiki/LaTeX)-compatible formating.
+Enables/disables [LaTeX](https://en.wikipedia.org/wiki/LaTeX)-compatible formatting.
 
 Tables rendered with this option on will use LaTeX formatting and automatically wrap numbers in formula blocks.
 

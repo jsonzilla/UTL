@@ -2,7 +2,7 @@
 #
 #    ANSI color sequences, we want out messages colored nicely. This isn't
 #    perfectly portable, but now that Windows 10+ supports them out of the box
-#    there are very few shells that don't hangle such sequences properly.
+#    there are very few shells that don't handle such sequences properly.
 # _______________________________________________________________________________
 
 # Reset

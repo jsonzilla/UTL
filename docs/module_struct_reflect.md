@@ -85,11 +85,11 @@ Returns a tuple with perfectly-forwarded references corresponding to the fields 
 
 Below is an **example table** for the reflection of `struct Struct { int x; };`:
 
-| Value category                              | Forwared reference                   | `field_view` return type |
-| ------------------------------------------- | ------------------------------------ | ------------------------ |
-| `value` is a const reference to a struct    | `S&&` corresponds to `const Struct&` | `std:tuple<const int&>`  |
-| `value` is an l-value reference to a struct | `S&&` corresponds to `Struct&`       | `std:tuple<int&>`        |
-| `value` is an r-value reference to a struct | `S&&` corresponds to `Struct&&`      | `std:tuple<int&&>`       |
+| Value category                              | Forwarded reference                   | `field_view` return type |
+| ------------------------------------------- | ------------------------------------- | ------------------------ |
+| `value` is a const reference to a struct    | `S&&` corresponds to `const Struct&`  | `std:tuple<const int&>`  |
+| `value` is an l-value reference to a struct | `S&&` corresponds to `Struct&`        | `std:tuple<int&>`        |
+| `value` is an r-value reference to a struct | `S&&` corresponds to `Struct&&`       | `std:tuple<int&&>`       |
 
 > [!Tip]
 > This effectively means that `field_view` allows struct members to be accessed exactly as one would expect when working with struct members directly, except using a tuple API. See [examples]().
@@ -102,11 +102,11 @@ Returns a tuple with pairs of names and perfectly-forwarded references correspon
 
 Reference forwarding logic is exactly the same as it is in `field_view()`. Below is an **example table** for the reflection of `struct Struct { int x; };`:
 
-| Value category                              | Forwared reference                   | `entry_view()` return type                           |
-| ------------------------------------------- | ------------------------------------ | ---------------------------------------------------- |
-| `value` is a const reference to a struct    | `S&&` corresponds to `const Struct&` | `std:tuple<std::pair<std::string_view, const int&>>` |
-| `value` is an l-value reference to a struct | `S&&` corresponds to `Struct&`       | `std:tuple<std::pair<std::string_view, int&>>`       |
-| `value` is an r-value reference to a struct | `S&&` corresponds to `Struct&&`      | `std:tuple<std::pair<std::string_view, int&&>>`      |
+| Value category                              | Forwarded reference                   | `entry_view()` return type                           |
+| ------------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `value` is a const reference to a struct    | `S&&` corresponds to `const Struct&`  | `std:tuple<std::pair<std::string_view, const int&>>` |
+| `value` is an l-value reference to a struct | `S&&` corresponds to `Struct&`        | `std:tuple<std::pair<std::string_view, int&>>`       |
+| `value` is an r-value reference to a struct | `S&&` corresponds to `Struct&&`       | `std:tuple<std::pair<std::string_view, int&&>>`      |
 
 > ```cpp
 > template <std::size_t I, class S> constexpr auto get(S&& value) noexcept;

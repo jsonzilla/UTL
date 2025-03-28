@@ -131,7 +131,7 @@ void benchmark_matrix_multiplication() {
     //
     // std::async() is extremely inconsistent.
     //
-    // Threadpool seems to perform ~acсording to the sensible expectations.
+    // Threadpool seems to perform ~according to the sensible expectations.
 }
 
 // Benchmark for: parallel vector sum

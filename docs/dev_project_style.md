@@ -120,7 +120,7 @@ TODO:
 ```
 <type>(<scope>): <summary>.
 // repeat for all changes according to commit types
-// <scope> can be ommited for some minor changes
+// <scope> can be omitted for some minor changes
 // Use <scope> = GLOBAL to signify large sweeping changes that affect the whole project
 ```
 

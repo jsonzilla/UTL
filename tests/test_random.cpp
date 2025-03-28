@@ -30,7 +30,7 @@
 
 #define FAST_CHECK(arg_)                                                                                               \
     if (bool res_ = !(arg_)) CHECK(res_)
-// doing straight-up 'CHECK' is somehown MUCH slower, I assume this is caused by the need to remember/log
+// doing straight-up 'CHECK' is somehow MUCH slower, I assume this is caused by the need to remember/log
 // successful checks too
 
 template <class T, class Func>
@@ -235,5 +235,5 @@ TEST_CASE("Uniform distribution mean/min/max are sensible for every generator") 
     // https://en.wikipedia.org/wiki/TestU01
     // a "good" PRNG would be expected to pass (or at least mostly pass) TestU01 Big Crush,
     // however it is a task for PRNG designers, here we merely implement well known algorithms
-    // and check that their implementation wasn't accidentaly broken.
+    // and check that their implementation wasn't accidentally broken.
 }

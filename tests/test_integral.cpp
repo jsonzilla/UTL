@@ -18,13 +18,13 @@
 // ____________________ IMPLEMENTATION ____________________
 
 
-// =============================
-// --- Integer divison tests ---
-// =============================
+// ==============================
+// --- Integer division tests ---
+// ==============================
 
 using namespace integral::literals;
 
-TEST_CASE("Rounding itegral division behaves as expected") {
+TEST_CASE("Rounding integral division behaves as expected") {
     static_assert(integral::div_ceil(6, 3) == 2);
     static_assert(integral::div_ceil(5, 3) == 2);
     static_assert(integral::div_ceil(4, 3) == 2);

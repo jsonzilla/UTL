@@ -113,7 +113,7 @@ template<> struct wider<std::int64_t > { using type =  __int128_t  ; };
 #else
 template<> struct wider<std::uint64_t> { using type = void         ; };
 template<> struct wider<std::int64_t > { using type = void         ; }; 
-#endif // GCC extension, libstdc++ Lemier algorithm uses these
+#endif // GCC extension, libstdc++ Lemire's algorithm uses these
 
 template<class T> using wider_t = typename wider<T>::type;
 
@@ -140,16 +140,16 @@ template<> constexpr auto type_name<long double> =  "long double";
 
 // Below are a few not-entirely-correct distribution implementations
 // that were used to estimate the performance of different algorithms
-// before commiting to a proper implementation in the module
+// before committing to a proper implementation in the module
 
 template <class T>
-struct uint_dist_lemier {
+struct uint_dist_lemire {
     using narrow = T;
     using wide   = wider_t<T>;
 
     narrow range;
 
-    constexpr uint_dist_lemier(T range) noexcept : range(range) {}
+    constexpr uint_dist_lemire(T range) noexcept : range(range) {}
 
     template <class Gen>
     constexpr T operator()(Gen& gen) const noexcept {
@@ -245,8 +245,8 @@ void benchmark_distributions_for_prng(const char* name) {
             }
         });
 
-        benchmark("uint_dist_lemier", [&] {
-            const uint_dist_lemier dist{range};
+        benchmark("uint_dist_lemire", [&] {
+            const uint_dist_lemire dist{range};
             for (auto&& e : data) e = min + dist(gen);
         });
 

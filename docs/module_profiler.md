@@ -26,7 +26,7 @@ UTL_PROFILER_EXCLUSIVE_BEGIN(segment_label, label);
 UTL_PROFILER_EXCLUSIVE_END(segment_label);
 
 // Other utils
-using clock; // alias for 'std::chrono::steady_clock' or a custom implementetion, depending on macro- options
+using clock; // alias for 'std::chrono::steady_clock' or a custom implementation, depending on macro- options
 using duration   = clock::duration;
 using time_point = clock::time_point;
 ```
@@ -75,7 +75,7 @@ using duration   = clock::duration;
 using time_point = clock::time_point;
 ```
 
-Alias for the underlying clock implementation. By default `clock` is [`std::chrono::steady_clock`](https://en.cppreference.com/w/cpp/chrono/steady_clock), however when the use of intrinsics is enabled with `#define UTL_PROFILER_OPTION_USE_x86_INTRINSICS_FOR_FREQUENCY <user_cpu_frequency_hz>` (see [example](micro-benchmarking-with-x86-intrinsics)) it switches to a custom implementation using `rdstc` ASM instruction, which tends to have a much lower overhead than the portable implementations, thus making profilers suitable for a more precise benchmarking on a hot path.
+Alias for the underlying clock implementation. By default `clock` is [`std::chrono::steady_clock`](https://en.cppreference.com/w/cpp/chrono/steady_clock), however when the use of intrinsics is enabled with `#define UTL_PROFILER_OPTION_USE_x86_INTRINSICS_FOR_FREQUENCY <user_cpu_frequency_hz>` (see [example](micro-benchmarking-with-x86-intrinsics)) it switches to a custom implementation using `rdtsc` ASM instruction, which tends to have a much lower overhead than the portable implementations, thus making profilers suitable for a more precise benchmarking on a hot path.
 
 `clock` is compatible with all [`<chrono>`](https://en.cppreference.com/w/cpp/chrono)  functionality and works like any other `std::chrono::` clock, providing a user with a way of leveraging fast time measurements of `rdtsc` intrinsic by simply replacing the clock type inside a regular C++ code.
 
@@ -224,7 +224,7 @@ If we profile  **1st** and **2nd** branches independently, we will measure follo
 
 <img src ="images/profiler_recursion_independent_profiling_branch_2.svg">
 
-Which means $T_1 + T_2 \neq T$, which goes against the logic of what were actually trying to measure. In essense, when profiling recursion, different profilers should be aware of each other and not invoke measurement while inside the call graph of a another already existing profiler.
+Which means $T_1 + T_2 \neq T$, which goes against the logic of what were actually trying to measure. In essence, when profiling recursion, different profilers should be aware of each other and not invoke measurement while inside the call graph of a another already existing profiler.
 
 This is exactly the problem solved by `UTL_PROFILER_EXCLUSIVE()`, as it guarantees no other profiler will be invoked under an already existing one. We will end up with a following call graph:
 
@@ -239,7 +239,7 @@ which corresponds to the parts we were trying to measure and satisfies $T_1 + T_
 
 ## Micro-benchmarking With x86 Intrinsics
 
-To enable the use of intrinsics add folowing `#define` before including the `proto_utils` header:
+To enable the use of intrinsics add following `#define` before including the `proto_utils` header:
 
 ```cpp
 #define UTL_PROFILER_OPTION_USE_x86_INTRINSICS_FOR_FREQUENCY 3'300'000'000
