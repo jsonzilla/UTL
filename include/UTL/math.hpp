@@ -223,7 +223,7 @@ template <class T, _require<has_size_v<T>> = true>
     return static_cast<return_type>(container.size());
 }
 
-// Utility used to reverse indexation logic, mostly useful when working with unsigned indeces
+// Utility used to reverse indexation logic, mostly useful when working with unsigned indices
 template <class T, _require_integral<T> = true>
 [[nodiscard]] constexpr T reverse_idx(T idx, T size) noexcept {
     return size - T(1) - idx;
@@ -444,7 +444,7 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
         bytes += sizeof(T);
         bytes += value.size() * sizeof(typename T::value_type);
     }
-    // Everyting else
+    // Everything else
     else {
         bytes += sizeof(T);
     };

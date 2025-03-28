@@ -42,7 +42,7 @@
 
 // Reasonably performant and convenient logger.
 //
-// The main highligh of this module (and the main performance win relative to 'std::ostream') is a
+// The main highlight of this module (and the main performance win relative to 'std::ostream') is a
 // generic stringifier class that is both convenient and quite fast at formatting multiple values.
 //
 // This stringifier can be customized with CRTP to format things in all kinds of specific ways
@@ -56,7 +56,7 @@
 //    2. A separate persistent thread to flush the buffer
 //
 //       Note: I did try using a stripped down version of 'utl::parallel::ThreadPool' to upload tasks
-//             for flushing the buffer, it generatly improves performance by ~30%, however I decided it
+//             for flushing the buffer, it generally improves performance by ~30%, however I decided it
 //             is not worth the added complexity & cpu usage for that little gain
 //
 //    3. Platform-specific methods to query stuff like time & thread id with less overhead
@@ -103,7 +103,7 @@ inline std::size_t _get_thread_index(const std::thread::id id) {
     const auto it = thread_ids.find(id);
     if (it == thread_ids.end()) return thread_ids[id] = next_id++;
     return it->second;
-    // this map effectively "demangles" platfrom-specific IDs into human-redable IDs (0, 1, 2, ...)
+    // this map effectively "demangles" platform-specific IDs into human-readable IDs (0, 1, 2, ...)
 }
 
 template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, bool> = true>
@@ -169,7 +169,7 @@ utl_log_define_trait(_is_pad, std::declval<std::decay_t<T>>().is_pad);
 // check for operator '++' would lead to false positives, while checking '++c.begin()' would lead to false
 // negatives on containers such as 'std::array'. It would seem that 'std::iterator_traits' is the way to go,
 // but since it provides no good way to test if iterator satisfies a category without checking every possible
-// tag, it ends up being more verbose that exisiting solution.
+// tag, it ends up being more verbose that existing solution.
 
 #undef utl_log_define_trait
 
@@ -278,11 +278,11 @@ struct StringifierBase {
 
     template <class T>
     static void append_int(std::string& buffer, const T& value) {
-        std::array<char, _max_int_digits<T>> stbuff;
-        const auto [number_end_ptr, error_code] = std::to_chars(stbuff.data(), stbuff.data() + stbuff.size(), value);
+        std::array<char, _max_int_digits<T>> str;
+        const auto [number_end_ptr, error_code] = std::to_chars(str.data(), str.data() + str.size(), value);
         if (error_code != std::errc())
             throw std::runtime_error("Stringifier encountered std::to_chars() error while serializing an integer.");
-        buffer.append(stbuff.data(), number_end_ptr - stbuff.data());
+        buffer.append(str.data(), number_end_ptr - str.data());
     }
 
     template <class T>
@@ -292,11 +292,11 @@ struct StringifierBase {
 
     template <class T>
     static void append_float(std::string& buffer, const T& value) {
-        std::array<char, _max_float_digits<T>> stbuff;
-        const auto [number_end_ptr, error_code] = std::to_chars(stbuff.data(), stbuff.data() + stbuff.size(), value);
+        std::array<char, _max_float_digits<T>> str;
+        const auto [number_end_ptr, error_code] = std::to_chars(str.data(), str.data() + str.size(), value);
         if (error_code != std::errc())
             throw std::runtime_error("Stringifier encountered std::to_chars() error while serializing a float.");
-        buffer.append(stbuff.data(), number_end_ptr - stbuff.data());
+        buffer.append(str.data(), number_end_ptr - str.data());
     }
 
     template <class T>
@@ -367,15 +367,15 @@ struct StringifierBase {
     // --- Helpers ---
     // ---------------
 private:
-    template <class Tuplelike, std::size_t... Idx>
-    static void _append_tuple_impl(std::string& buffer, Tuplelike value, std::index_sequence<Idx...>) {
+    template <class Tuple, std::size_t... Idx>
+    static void _append_tuple_impl(std::string& buffer, Tuple value, std::index_sequence<Idx...>) {
         ((Idx == 0 ? "" : buffer += ", ", derived::append(buffer, std::get<Idx>(value))), ...);
         // fold expression '( f(args), ... )' invokes 'f(args)' for all arguments in 'args...'
         // in the same fashion, we can fold over 2 functions by doing '( ( f(args), g(args) ), ... )'
     }
 
-    template <template <class...> class Tuplelike, class... Args>
-    static void _append_tuple_fwd(std::string& buffer, const Tuplelike<Args...>& value) {
+    template <template <class...> class Tuple, class... Args>
+    static void _append_tuple_fwd(std::string& buffer, const Tuple<Args...>& value) {
         buffer += "< ";
         self::_append_tuple_impl(buffer, value, std::index_sequence_for<Args...>{});
         buffer += " >";
@@ -447,9 +447,9 @@ private:
 // The stringifier shines at stringifying & concatenating multiple values into the same buffer.
 // Single-value is a specific case which allows all 'buffer += ...' to be replaced with most things being formatted
 // straight into a newly created string. We could optimize this, but that would make require an almost full logic
-// duplication and make the class cumbersome to extend since instead of a singural 'append_something()' methods there
+// duplication and make the class cumbersome to extend since instead of a singular 'append_something()' methods there
 // would be 2: 'append_something()' and 'construct_something()'. It also doesn't seem to be worth it, the difference
-// in performance isn't that significat and we're still faster than most usual approaches to stringification.
+// in performance isn't that significant and we're still faster than most usual approaches to stringification.
 
 // ===============================
 // --- Stringifier derivatives ---
@@ -562,8 +562,8 @@ constexpr std::size_t _col_w_thread   = sizeof("thread") - 1;
 constexpr std::size_t _col_w_callsite = _w_callsite_before_dot + 1 + _w_callsite_after_dot;
 constexpr std::size_t _col_w_level    = sizeof("level") - 1;
 
-// --- Column left/right delimers ---
-// ----------------------------------
+// --- Column left/right delimiters ---
+// ------------------------------------
 
 constexpr std::string_view _col_ld_datetime = "";
 constexpr std::string_view _col_rd_datetime = " ";
@@ -874,7 +874,7 @@ private:
 struct _logger {
     inline static std::list<Sink> sinks;
     // we use list<> because we don't want sinks to ever reallocate when growing / shrinking
-    // (reallocation requres a move-constructor, which 'std::mutex' doesn't have),
+    // (reallocation requires a move-constructor, which 'std::mutex' doesn't have),
     // the added overhead of iterating a list is negligible
 
     static inline Sink default_sink{std::cout, Verbosity::TRACE, Colors::ENABLE, std::chrono::milliseconds(0),

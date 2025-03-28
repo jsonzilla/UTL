@@ -54,8 +54,8 @@ static_assert((-1 & 3) == 3);
 
 // Note 2:
 // Shifting negative numbers is technically considered UB, in practice every compiler implements
-// signed bitshift as '(signed)( (unsiged)x << shift )' however they still act as if calling shift
-// on a negative 'x < 0' is UB and therefore can never happen which can lead to weirness with what
+// signed bitshift as '(signed)( (unsigned)x << shift )' however they still act as if calling shift
+// on a negative 'x < 0' is UB and therefore can never happen which can lead to weirdness with what
 // compiler considers to be a dead code elimination. This is why we do the casting explicitly and
 // use custom 'lshift()' and 'rshift()' to avoid possible UB.
 // see https://stackoverflow.com/a/29710927/28607141

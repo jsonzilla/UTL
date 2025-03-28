@@ -29,7 +29,7 @@
 // # ::hybrid() #
 // Recommended option, similar precision to spinlock with minimal CPU usage.
 // Loops short system sleep while statistically estimating its error on the fly and once within error
-// margin of the end time, finished with spinlock sleep (essentialy negating usual system sleep error).
+// margin of the end time, finished with spinlock sleep (essentially negating usual system sleep error).
 //
 // # ::system() #
 // Worst precision, frees CPU.

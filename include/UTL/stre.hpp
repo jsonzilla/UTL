@@ -152,7 +152,7 @@ template <class T>
 // ==========================
 
 template <class T>
-[[nodiscard]] std::string replace_all_occurences(T&& str, std::string_view from, std::string_view to) {
+[[nodiscard]] std::string replace_all_occurrences(T&& str, std::string_view from, std::string_view to) {
     std::string res = std::forward<T>(str);
 
     std::size_t i = 0;
@@ -161,13 +161,13 @@ template <class T>
         i += to.size();                                    // step over the replaced region
     }
     // Note: Not stepping over the replaced regions causes self-similar replacements
-    // like "abc" -> "abcabc" to fall into an infinite loop, we don't want that.
+    // like "123" -> "123123" to fall into an infinite loop, we don't want that.
 
     return res;
 }
 
 // Note:
-// Most "split by delimer" implementations found online seem to be horrifically inefficient
+// Most "split by delimiter" implementations found online seem to be horrifically inefficient
 // with unnecessary copying/erasure/intermediate tokens, stringstreams and etc.
 //
 // We can just scan through the string view once, while keeping track of the last segment between
@@ -212,7 +212,7 @@ template <class T>
 // Mostly useful to print strings with special chars in console and look at their contents.
 [[nodiscard]] inline std::string escape_control_chars(std::string_view str) {
     std::string res;
-    res.reserve(str.size()); // no necesseraly correct, but it's a godd first guess
+    res.reserve(str.size()); // not necessarily correct, but it's a good first guess
 
     for (const char c : str) {
         // Control characters with dedicated escape sequences get escaped with those sequences

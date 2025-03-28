@@ -149,7 +149,7 @@ void _append_decorated_value(std::ostream& os, const T& value) {
             number_string += '}';
         }
 
-        // Typeset numbers as formulas 
+        // Typeset numbers as formulas
         os << "$" + number_string + "$";
         // we append it as a single string so ostream 'setw()' doesn't mess up alignment
     } else os << value;
@@ -159,12 +159,12 @@ inline void cell(){};
 
 template <class T, class... Types>
 void cell(const T& value, const Types&... other_values) {
-    const auto left_delimer  = _latex_mode ? "" : "|";
-    const auto delimer       = _latex_mode ? " & " : "|";
-    const auto right_delimer = _latex_mode ? " \\\\\n" : "|\n";
+    const auto left_delim  = _latex_mode ? "" : "|";
+    const auto delim       = _latex_mode ? " & " : "|";
+    const auto right_delim = _latex_mode ? " \\\\\n" : "|\n";
 
-    const std::string left_cline      = (_current_column == 0) ? left_delimer : "";
-    const std::string right_cline     = (_current_column == _columns.size() - 1) ? right_delimer : delimer;
+    const std::string left_cline      = (_current_column == 0) ? left_delim : "";
+    const std::string right_cline     = (_current_column == _columns.size() - 1) ? right_delim : delim;
     const _ios_flags  format          = _columns[_current_column].col_format.flags;
     const uint        float_precision = _columns[_current_column].col_format.precision;
 

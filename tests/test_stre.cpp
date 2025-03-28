@@ -222,10 +222,10 @@ TEST_CASE("Splitting string by delimiter (keep_empty_tokens = true)") {
 }
 
 TEST_CASE("Other utils") {
-    CHECK(stre::replace_all_occurences("xxxAAxxxAAxxx", "AA", "BBB") == "xxxBBBxxxBBBxxx");
-    CHECK(stre::replace_all_occurences("Some very very cool text ending with very", "very", "really") ==
+    CHECK(stre::replace_all_occurrences("xxxAAxxxAAxxx", "AA", "BBB") == "xxxBBBxxxBBBxxx");
+    CHECK(stre::replace_all_occurrences("Some very very cool text ending with very", "very", "really") ==
           "Some really really cool text ending with really");
-    CHECK(stre::replace_all_occurences("very short string", "super long replacement target",
+    CHECK(stre::replace_all_occurrences("very short string", "super long replacement target",
                                        "even longer replacement string just to test thing out") == "very short string");
 
     CHECK(stre::escape_control_chars("Here is \t\n Johny!") == R"(Here is \t\n Johny!)");

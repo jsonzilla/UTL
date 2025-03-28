@@ -37,7 +37,7 @@
 //
 // An alternative frequently used way to do enum reflection is through constexpr parsing of strings returned by
 // compiler-specific '__PRETTY_FUNCTION__' and '__FUNCSIG__', it has a benefit of not requiring the reflection
-// macro however it hammers compile times and improses restrictions on enum values. Some issues such as binary
+// macro however it hammers compile times and improves restrictions on enum values. Some issues such as binary
 // bloat and bitflag-enums can be worked around through proper implementation and some conditional metadata
 // templates, however such approach tends to be quite complex.
 

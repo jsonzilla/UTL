@@ -32,18 +32,18 @@
 // Macros for quick code profiling.
 // Trivially simple, yet effective way of finding bottlenecks without any tooling.
 //
-// Can also be used to benchmark stuff "quick & dirty" due to doing all the time measuring
-// and table formatting one would usually implement in their benchmarks. A proper bechmark
-// suite of course would include support for automatic reruns and gather statistical data,
-// but in prototying this is often not necessary.
-//
 // Resolving time recording inside recursion took some thinking, but ended up being quite simple in
 // implementation. See the docs for more details on that.
 //
 // Currently, the overhead of profiling is barely different to the overhead of just time measurement,
 // this also took a bit of thinking but in the end there is a nice solution that uses static variables
-// to offload things that can only be done once to their initialization, and then links local variables
+// to offload things that can only be done once to their initialization, and then "links" local variables
 // to 'static' markers of the callsite recording. See 'UTL_PROFILE' macro for some more details.
+//
+// Can also be used to benchmark stuff "quick & dirty" due to doing all the time measuring
+// and table formatting one would usually implement in their benchmarks. A proper benchmark
+// suite of course would include support for automatic reruns and gather statistical data,
+// but in prototyping this is often not necessary.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -92,9 +92,9 @@ struct _record {
 
 inline void _utl_profiler_atexit(); // predeclaration, implementation has circular dependency with 'RecordManager'
 
-// =========================
-// --- Profiler Classess ---
-// =========================
+// ========================
+// --- Profiler Classes ---
+// ========================
 
 class _record_manager {
 private:
@@ -132,7 +132,7 @@ protected:
     time_point       start;
     _record_manager* record_manager;
     // we could use 'std::optional<std::reference_wrapper<RecordManager>>',
-    // but that would inctroduce more dependencies for no real reason
+    // but that would introduce more dependencies for no real reason
 public:
     constexpr operator bool() const noexcept { return true; }
 
@@ -153,7 +153,7 @@ struct _scope_timer : public _timer_base {
 };
 
 // Same thing as '_scope_timer' except it uses global static 'exclusive_recursion' instead of regular 'recursion' that
-// is specific to each '_record_manager'. This effecively means no '_exclusive_scope_timer''s will count time as long a
+// is specific to each '_record_manager'. This effectively means no '_exclusive_scope_timer''s will count time as long a
 // single instance of another exclusive timer exists. This allows us to resolve som tricky situations such as recursion
 struct _exclusive_scope_timer : public _timer_base {
     _exclusive_scope_timer(_record_manager* manager) : _timer_base(manager) {
@@ -300,7 +300,7 @@ inline void _utl_profiler_atexit() {
         << std::setw(max_length_percentage) << column_name_percentage << " |\n";
 
     *os << " |"
-        << repeat_hline_symbol(max_length_call_site + 2) // add 2 to account for delimers not having spaces in hline
+        << repeat_hline_symbol(max_length_call_site + 2) // add 2 to account for delimiters not having spaces in hline
         << "|" << repeat_hline_symbol(max_length_label + 2) << "|" << repeat_hline_symbol(max_length_duration + 2)
         << "|" << repeat_hline_symbol(max_length_percentage + 2) << "|\n";
 
@@ -366,7 +366,7 @@ inline void _utl_profiler_atexit() {
 //    constexpr bool ... = true;
 //    static_assert(..., "UTL_PROFILE is a multi-line macro.");
 //
-// is reponsible for preventing accidental errors caused by using macro like this:
+// is responsible for preventing accidental errors caused by using macro like this:
 //
 //    for (...) UTL_PROFILER("") function(); // will only loop the first line of the multi-line macro
 //
@@ -387,7 +387,7 @@ inline void _utl_profiler_atexit() {
 //
 // _utl_profiler_add_uuid(...) ensures no identifier collisions when several profilers exist in a single scope.
 // Since in this context 'uuid' is a line number, the only case in which ids can collide is when multiple profilers
-// are declated on the same line, which I assume no sane person would do. And even if they would, that would simply
+// are declared on the same line, which I assume no sane person would do. And even if they would, that would simply
 // lead to a compiler error. Can't really do better than that without resorting to non-standard macros like
 // '__COUNTER__' for 'uuid' creation
 
@@ -418,7 +418,7 @@ inline void _utl_profiler_atexit() {
 #define UTL_PROFILER_END(segment_label_) utl_profiler_segment_timer_##segment_label_.finish()
 // Note 1:
 //
-// Last semicolon is intentiomally skipped so macro requires it at the end and
+// Last semicolon is intentionally skipped so macro requires it at the end and
 // doesn't mess up auto code formatters that have a dislike for statement macros.
 //
 // Note 2:

@@ -134,7 +134,7 @@ template <class T, _require_integral<T> = true>
     // intrinsics which can speed this up quite significantly due to not having any division
 
     // Note 2:
-    // We have to use different branches depending on the lhs/rhs signs and swap division order due to assymetry
+    // We have to use different branches depending on the lhs/rhs signs and swap division order due to asymmetry
     // in signed integer range, for example, for 32-bit int 'min = -2147483648', while 'max = 2147483647',
     // -2147483648 * -1  =>  positive  =>  can overflow max  =>  mul overflows, 'max / rhs' overflows, 'max / lhs' fine
     // -2147483648 *  1  =>  negative  =>  can overflow min  =>  mul      fine, 'min / rhs'      fine, 'min / lhs' fine

@@ -32,7 +32,7 @@
 // compiler, platform, architecture, compilation info and etc.
 //
 // Boost Predef (https://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/index.html) provides
-// a more complete package when it comes to supporing some esoteric platforms & compilers,
+// a more complete package when it comes to supporting some esoteric platforms & compilers,
 // but has a rather (in my opinion) ugly API.
 //
 // In addition utl::predef also provides some miscellaneous macros for automatic codegen, such as:
@@ -507,7 +507,7 @@ constexpr bool debug =
 // or not seems to be through SFINAE.
 //
 // IMPLEMENTATION COMMENTS:
-// We declate integral constant class with 2 functions 'test()', first one takes priority during overload
+// We declare integral constant class with 2 functions 'test()', first one takes priority during overload
 // resolution and compiles if FUNC(ARGS...) is defined, otherwise it's {Substitution Failure} which is
 // {Is Not An Error} and second function compiles.
 //
@@ -525,7 +525,7 @@ constexpr bool debug =
 // NOTE 1: Some versions of 'clangd' give a 'bugprone-sizeof-expression' warning for sizeof(*A),
 // this is a false alarm.
 //
-// NOTE 2: Frankly, the usefullness of this is rather dubious since constructs like
+// NOTE 2: Frankly, the usefulness of this is rather dubious since constructs like
 //     if constexpr (is_function_defined_windown_specific) { <call the windows-specific function> }
 //     else { <call the linux-specific function> }
 // are still illegal due to 'if constexpr' requiting both branches to have defined identifiers,

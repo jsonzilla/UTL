@@ -28,10 +28,10 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Several <random> compatible PRNGs, slightly improved reimplementations of uniform distributions,
+// Several <random> compatible PRNGs, slightly improved re-implementations of uniform distributions,
 // "better" entropy sources and several convenience wrappers for rng.
 //
-// Everything implemented here should be portable assuming reasonable assumptions (like existance of
+// Everything implemented here should be portable assuming reasonable assumptions (like existence of
 // uint32_t, uint64_t, 8-bit bytes, 32-bit floats, 64-bit doubles and etc.) which hold for most platforms
 
 // ____________________ IMPLEMENTATION ____________________
@@ -182,13 +182,13 @@ template <class ResultType>
     state               = (state ^ (state >> 27)) * 0x94D049BB133111EB;
     return static_cast<ResultType>(state ^ (state >> 31));
     // some of the 16/32-bit PRNGs have bad correlation on the successive seeds, this usually
-    // can be alleviated by using a signle iteration of a "good" PRNG to pre-mix the seed
+    // can be alleviated by using a single iteration of a "good" PRNG to pre-mix the seed
 }
 
 template <class T>
 constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
 // an "overall decent" default seed - doesn't gave too many zeroes,
-// unlikely to accidentaly match with a user-defined seed
+// unlikely to accidentally match with a user-defined seed
 
 
 // =========================
@@ -202,7 +202,7 @@ constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
 // (C++20 and above, see https://en.cppreference.com/w/cpp/numeric/random/uniform_random_bit_generator)
 
 // Note:
-// Here PRNGs take 'SeedSeq' as a forwaring reference 'SeedSeq&&', while standard PRNGS take 'SeedSeq&',
+// Here PRNGs take 'SeedSeq' as a forwarding reference 'SeedSeq&&', while standard PRNGS take 'SeedSeq&',
 // this is how it should've been done in the standard too, but for some reason they only standardized
 // l-value references, perfect forwarding probably just wasn't in use at the time.
 
@@ -219,7 +219,7 @@ namespace generators {
 // Quality:     2/5
 // State:       4 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "RomuMono16" is the fastest 16-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "RomuMono16" is the fastest 16-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 16-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -387,7 +387,7 @@ public:
 // Quality:     2/5
 // State:       12 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "RomuTrio" is the fastest 32-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "RomuTrio" is the fastest 32-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 32-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -554,7 +554,7 @@ public:
 // Quality:     2/5
 // State:       16 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "DuoJr" is the fastest 64-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "DuoJr" is the fastest 64-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 64-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -604,12 +604,12 @@ public:
 // --- CSPRNGs ---
 // ---------------
 
-// Implementation of ChaCha20 CPRNG conforming to RFC 7539 standard
+// Implementation of ChaCha20 CSPRNG conforming to RFC 7539 standard
 // see https://datatracker.ietf.org/doc/html/rfc7539
 //     https://www.rfc-editor.org/rfc/rfc7539#section-2.4
 //     https://en.wikipedia.org/wiki/Salsa20
 
-// Quarted-round operation for ChaCha20 stream cipher
+// Quarter-round operation for ChaCha20 stream cipher
 constexpr void _quarter_round(std::uint32_t& a, std::uint32_t& b, std::uint32_t& c, std::uint32_t& d) {
     a += b, d ^= a, d = _rotl_value(d, 16);
     c += d, b ^= c, b = _rotl_value(b, 12);
@@ -751,13 +751,13 @@ using default_result_type    = default_generator_type::result_type;
 inline default_generator_type default_generator;
 
 inline std::seed_seq entropy_seq() {
-    // Ensure thread safery of our entropy source, it should generally work fine even without
+    // Ensure thread safety of our entropy source, it should generally work fine even without
     // it, but with this we can be sure things never race
     static std::mutex     entropy_mutex;
     const std::lock_guard entropy_guard(entropy_mutex);
 
     // Hardware entropy (if implemented),
-    // some platfroms (mainly MinGW) implements random device as a regular PRNG that
+    // some platforms (mainly MinGW) implements random device as a regular PRNG that
     // doesn't change from run to run, this is horrible, but we can somewhat improve
     // things by mixing other sources of entropy. Since hardware entropy is a rather
     // limited resource we only call it once.
@@ -780,7 +780,7 @@ inline std::seed_seq entropy_seq() {
     const auto cpu_counter = static_cast<std::uint64_t>(utl_random_cpu_counter);
 
     // Note:
-    // There are other sources of entropy, such as function adresses,
+    // There are other sources of entropy, such as function addresses,
     // but those can be rather "constant" on some platforms
 
     return {seed_rd, _crush_to_uint32(seed_time), _crush_to_uint32(heap_address_hash),
@@ -868,7 +868,7 @@ constexpr T _generate_uniform_int(Gen& gen, T min, T max) noexcept {
 
         // PRNG uses all 'common_type' bits uniformly
         // => use Lemier's algorithm if possible, fallback onto modx1 otherwise,
-        //    libc++ uses conditionally compiled lemier's with 128-bit ints intead of doing a fallback,
+        //    libc++ uses conditionally compiled lemier's with 128-bit ints instead of doing a fallback,
         //    this is slightly faster, but leads to platforms-dependant sequences
         if constexpr (prng_range == type_range) {
             if constexpr (_has_wider<common_type>) res = _uniform_uint_lemier(gen, ext_range);
@@ -884,7 +884,7 @@ constexpr T _generate_uniform_int(Gen& gen, T min, T max) noexcept {
             res /= scaling;
         }
     }
-    // PRNG needs several invocations to aquire enough state for the range
+    // PRNG needs several invocations to acquire enough state for the range
     else if (prng_range < range) {
         common_type temp{};
         do {
@@ -1125,7 +1125,7 @@ constexpr bool operator==(const UniformRealDistribution<T>& lhs, const UniformRe
 
 // Note 1:
 // Despite the intuitive judgement, benchmarks don't seem to indicate that creating
-// new distribution objects on each call introduces any noticeble overhead
+// new distribution objects on each call introduces any noticeable overhead
 //
 // sizeof(std::uniform_int_distribution<int>)     ==  8
 // sizeof(std::uniform_real_distribution<double>) == 16
@@ -1183,8 +1183,8 @@ const T& rand_choice(std::initializer_list<T> objects) noexcept {
 
 template <class T>
 T rand_linear_combination(const T& A, const T& B) noexcept(noexcept(A + B) && noexcept(A * 1.)) {
-    const auto coef = rand_double();
-    return A * coef + B * (1. - coef);
+    const auto weight = rand_double();
+    return A * weight + B * (1. - weight);
 } // random linear combination of 2 colors/vectors/etc
 
 } // namespace utl::random

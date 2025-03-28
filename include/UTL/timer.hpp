@@ -29,7 +29,7 @@
 // Uses SFINAE to resolve platform-specific calls to local time (localtime_s() on Windows,
 // localtime_r() on Linux), the same can be done with macros. The fact that there seems to
 // be no portable way of getting local time before C++20 (which adds "Calendar" part of <chrono>)
-// is rather bizzare, but not unmanageable.
+// is rather bizarre, but not unmanageable.
 //
 // This implementation will probably be improved later to provide a more generic API with local
 // timers and accumulators, but I haven't figured out a way to do it without increasing verbosity

@@ -35,7 +35,7 @@
 //
 // An alternative frequently used way to do struct reflection is through generated code with structured binding &
 // hundreds of overloads. This has a benefit of producing nicer error messages on 'for_each()' however the
-// resulting implementation is downright abnorrent.
+// resulting implementation is downright abhorrent.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -232,7 +232,7 @@ constexpr void tuple_for_each(T&& tuple, Func&& func) {
 template <class T1, class T2, class Func, std::size_t... Idx>
 constexpr void _tuple_for_each_impl(T1&& tuple_1, T2&& tuple_2, Func&& func, std::index_sequence<Idx...>) {
     (func(std::get<Idx>(std::forward<T1>(tuple_1)), std::get<Idx>(std::forward<T2>(tuple_2))), ...);
-    // fold expression '( f(args), ... )' invokes 'f(args)' for all indeces in the index sequence
+    // fold expression '( f(args), ... )' invokes 'f(args)' for all indices in the index sequence
 }
 
 template <class T1, class T2, class Func>

@@ -37,7 +37,7 @@
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
+// Reasonably simple (if we discount reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
 // stuff. Unlike some other implementations, doesn't include the tokenizing step - we parse everything in a single 1D
 // scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is
 // due to a nice quirk of JSON: when parsing nodes, we can always determine node type based on a single first
@@ -59,7 +59,7 @@ namespace utl::json {
 // --- Misc. utils ---
 // ===================
 
-// Codepoint convertion function. We could use <codecvt> to do the same in a few lines,
+// Codepoint conversion function. We could use <codecvt> to do the same in a few lines,
 // but <codecvt> was marked for deprecation in C++17 and fully removed in C++26, as of now
 // there is no standard library replacement so we have to roll our own. This is likely to
 // be more performant too due to not having any redundant locale handling.
@@ -67,7 +67,7 @@ namespace utl::json {
 // The function was tested for all valid codepoints (from U+0000 to U+10FFFF)
 // against the <codecvt> implementation and proved to be exactly the same.
 //
-// Codepoint <-> UTF-8 convertion table (see https://en.wikipedia.org/wiki/UTF-8):
+// Codepoint <-> UTF-8 conversion table (see https://en.wikipedia.org/wiki/UTF-8):
 //
 // | Codepoint range      | Byte 1   | Byte 2   | Byte 3   | Byte 4   |
 // |----------------------|----------|----------|----------|----------|
@@ -344,7 +344,7 @@ struct possible_mapped_type<T, std::void_t<decltype(std::declval<typename std::d
 };
 // these type traits are a key to checking properties of 'T::value_type' & 'T::mapped_type' for a 'T' which may
 // or may not have them (which is exactly the case with recursive traits that we're going to use later to deduce
-// convertability to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjunction'
+// convertibility to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjunction'
 
 #define utl_json_type_trait_conjunction(trait_name_, ...)                                                              \
     template <class T>                                                                                                 \
@@ -365,7 +365,7 @@ struct possible_mapped_type<T, std::void_t<decltype(std::declval<typename std::d
 // is because 1st option allows for recursive type traits, while 'using' syntax doesn't. We have some recursive type
 // traits here in form of 'is_json_type_convertible<>', which expands over the 'T' checking that 'T', 'T::value_type'
 // (if exists), 'T::mapped_type' (if exists) and their other layered value/mapped types are all satisfying the
-// necessary convertability trait. This allows us to make a trait which fully deduces whether some
+// necessary convertibility trait. This allows us to make a trait which fully deduces whether some
 // complex datatype can be converted to a JSON recursively.
 
 utl_json_type_trait_conjunction(is_object_like, _has_begin<T>, _has_end<T>, _has_key_type<T>, _has_mapped_type<T>);
@@ -611,7 +611,7 @@ public:
     template <class T>
     Node& operator=(std::initializer_list<T> ilist) {
         // We can't just do 'return *this = array_type(value);' because compiler doesn't realize it can
-        // convert 'std::initializer_list<T>' to 'std::vector<Node>' for all 'T' convertable to 'Node',
+        // convert 'std::initializer_list<T>' to 'std::vector<Node>' for all 'T' convertible to 'Node',
         // we have to invoke 'Node()' constructor explicitly (here it happens in 'emplace_back()')
         array_type array_value;
         array_value.reserve(ilist.size());
@@ -793,7 +793,7 @@ constexpr std::array<bool, _number_of_char_values> _lookup_whitespace_chars = []
     std::array<bool, _number_of_char_values> res{};
     // "Insignificant whitespace" according to the JSON spec:
     // [https://ecma-international.org/wp-content/uploads/ECMA-404.pdf]
-    // constitues following symbols:
+    // constitutes following symbols:
     // - Whitespace      (aka ' ' )
     // - Tabs            (aka '\t')
     // - Carriage return (aka '\r')
@@ -895,7 +895,7 @@ struct _parser {
         std::string key; // allocating a string here is fine since we will std::move() it into a map key
         std::tie(cursor, key) = this->parse_string(cursor);
 
-        // Handle stuff inbetween
+        // Handle stuff in-between
         cursor = this->skip_nonsignificant_whitespace(cursor);
         if (this->chars[cursor] != ':')
             throw std::runtime_error("JSON object node encountered unexpected symbol {"s + this->chars[cursor] +
@@ -918,7 +918,7 @@ struct _parser {
 
         // Note 1:
         // The question of whether JSON allows duplicate keys is non-trivial but the resulting answer is YES.
-        // JSON is goverened by 2 standards:
+        // JSON is governed by 2 standards:
         // 1) ECMA-404 https://ecma-international.org/wp-content/uploads/ECMA-404.pdf
         //    which doesn't say anything about duplicate kys
         // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc8259
@@ -930,7 +930,7 @@ struct _parser {
         // which means at the end of the day duplicate keys are discouraged but still valid
 
         // Note 2:
-        // There is no standard specification on which JSON value should be prefered in case of duplicate keys.
+        // There is no standard specification on which JSON value should be preferred in case of duplicate keys.
         // This is considered implementation detail as per RFC-8259:
         //    "An object whose names are all unique is interoperable in the sense that all software implementations
         //    receiving that object will agree on the name-value mappings. When the names within an object are not
@@ -1090,7 +1090,7 @@ struct _parser {
 
         const auto throw_surrogate_error = [&](std::string_view hex) {
             throw std::runtime_error("JSON string node encountered invalid unicode escape sequence in " +
-                                     "secong half of UTF-16 surrogate pair starting at {"s + std::string(hex) +
+                                     "second half of UTF-16 surrogate pair starting at {"s + std::string(hex) +
                                      "} while parsing an escape sequence at pos "s + std::to_string(cursor) + "."s +
                                      _pretty_error(cursor, this->chars));
         };
@@ -1564,7 +1564,7 @@ template <class T>
 template <class T>
 void _assign_value_to_node(Node& node, const T& value) {
     if constexpr (is_json_convertible_v<T>) node = value;
-    // it is critical that the trait above performs DEEP check for JSON convertability and not a shallow one,
+    // it is critical that the trait above performs DEEP check for JSON convertibility and not a shallow one,
     // we want to detect things like 'std::vector<int>' as convertible, but not things like 'std::vector<MyStruct>',
     // these should expand over their element type / mapped type further until either they either reach
     // the reflected 'MyStruct' or end up on a dead end, which means an impossible conversion

@@ -54,8 +54,8 @@ static_assert((-1 & 3) == 3);
 
 // Note 2:
 // Shifting negative numbers is technically considered UB, in practice every compiler implements
-// signed bitshift as '(signed)( (unsiged)x << shift )' however they still act as if calling shift
-// on a negative 'x < 0' is UB and therefore can never happen which can lead to weirness with what
+// signed bitshift as '(signed)( (unsigned)x << shift )' however they still act as if calling shift
+// on a negative 'x < 0' is UB and therefore can never happen which can lead to weirdness with what
 // compiler considers to be a dead code elimination. This is why we do the casting explicitly and
 // use custom 'lshift()' and 'rshift()' to avoid possible UB.
 // see https://stackoverflow.com/a/29710927/28607141
@@ -271,7 +271,7 @@ public:
 //
 // An alternative frequently used way to do enum reflection is through constexpr parsing of strings returned by
 // compiler-specific '__PRETTY_FUNCTION__' and '__FUNCSIG__', it has a benefit of not requiring the reflection
-// macro however it hammers compile times and improses restrictions on enum values. Some issues such as binary
+// macro however it hammers compile times and improves restrictions on enum values. Some issues such as binary
 // bloat and bitflag-enums can be worked around through proper implementation and some conditional metadata
 // templates, however such approach tends to be quite complex.
 
@@ -550,7 +550,7 @@ template <class T, _require_integral<T> = true>
     // intrinsics which can speed this up quite significantly due to not having any division
 
     // Note 2:
-    // We have to use different branches depending on the lhs/rhs signs and swap division order due to assymetry
+    // We have to use different branches depending on the lhs/rhs signs and swap division order due to asymmetry
     // in signed integer range, for example, for 32-bit int 'min = -2147483648', while 'max = 2147483647',
     // -2147483648 * -1  =>  positive  =>  can overflow max  =>  mul overflows, 'max / rhs' overflows, 'max / lhs' fine
     // -2147483648 *  1  =>  negative  =>  can overflow min  =>  mul      fine, 'min / rhs'      fine, 'min / lhs' fine
@@ -784,7 +784,7 @@ namespace literals {
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Reasonably simple (if we discound reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
+// Reasonably simple (if we discount reflection) parser / serializer, doesn't use any intrinsics or compiler-specific
 // stuff. Unlike some other implementations, doesn't include the tokenizing step - we parse everything in a single 1D
 // scan over the data, constructing recursive JSON struct on the fly. The main reason we can do this so easily is
 // due to a nice quirk of JSON: when parsing nodes, we can always determine node type based on a single first
@@ -806,7 +806,7 @@ namespace utl::json {
 // --- Misc. utils ---
 // ===================
 
-// Codepoint convertion function. We could use <codecvt> to do the same in a few lines,
+// Codepoint conversion function. We could use <codecvt> to do the same in a few lines,
 // but <codecvt> was marked for deprecation in C++17 and fully removed in C++26, as of now
 // there is no standard library replacement so we have to roll our own. This is likely to
 // be more performant too due to not having any redundant locale handling.
@@ -814,7 +814,7 @@ namespace utl::json {
 // The function was tested for all valid codepoints (from U+0000 to U+10FFFF)
 // against the <codecvt> implementation and proved to be exactly the same.
 //
-// Codepoint <-> UTF-8 convertion table (see https://en.wikipedia.org/wiki/UTF-8):
+// Codepoint <-> UTF-8 conversion table (see https://en.wikipedia.org/wiki/UTF-8):
 //
 // | Codepoint range      | Byte 1   | Byte 2   | Byte 3   | Byte 4   |
 // |----------------------|----------|----------|----------|----------|
@@ -1091,7 +1091,7 @@ struct possible_mapped_type<T, std::void_t<decltype(std::declval<typename std::d
 };
 // these type traits are a key to checking properties of 'T::value_type' & 'T::mapped_type' for a 'T' which may
 // or may not have them (which is exactly the case with recursive traits that we're going to use later to deduce
-// convertability to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjunction'
+// convertibility to recursive JSON). '_dummy_type' here is necessary to end the recursion of 'std::disjunction'
 
 #define utl_json_type_trait_conjunction(trait_name_, ...)                                                              \
     template <class T>                                                                                                 \
@@ -1112,7 +1112,7 @@ struct possible_mapped_type<T, std::void_t<decltype(std::declval<typename std::d
 // is because 1st option allows for recursive type traits, while 'using' syntax doesn't. We have some recursive type
 // traits here in form of 'is_json_type_convertible<>', which expands over the 'T' checking that 'T', 'T::value_type'
 // (if exists), 'T::mapped_type' (if exists) and their other layered value/mapped types are all satisfying the
-// necessary convertability trait. This allows us to make a trait which fully deduces whether some
+// necessary convertibility trait. This allows us to make a trait which fully deduces whether some
 // complex datatype can be converted to a JSON recursively.
 
 utl_json_type_trait_conjunction(is_object_like, _has_begin<T>, _has_end<T>, _has_key_type<T>, _has_mapped_type<T>);
@@ -1358,7 +1358,7 @@ public:
     template <class T>
     Node& operator=(std::initializer_list<T> ilist) {
         // We can't just do 'return *this = array_type(value);' because compiler doesn't realize it can
-        // convert 'std::initializer_list<T>' to 'std::vector<Node>' for all 'T' convertable to 'Node',
+        // convert 'std::initializer_list<T>' to 'std::vector<Node>' for all 'T' convertible to 'Node',
         // we have to invoke 'Node()' constructor explicitly (here it happens in 'emplace_back()')
         array_type array_value;
         array_value.reserve(ilist.size());
@@ -1540,7 +1540,7 @@ constexpr std::array<bool, _number_of_char_values> _lookup_whitespace_chars = []
     std::array<bool, _number_of_char_values> res{};
     // "Insignificant whitespace" according to the JSON spec:
     // [https://ecma-international.org/wp-content/uploads/ECMA-404.pdf]
-    // constitues following symbols:
+    // constitutes following symbols:
     // - Whitespace      (aka ' ' )
     // - Tabs            (aka '\t')
     // - Carriage return (aka '\r')
@@ -1642,7 +1642,7 @@ struct _parser {
         std::string key; // allocating a string here is fine since we will std::move() it into a map key
         std::tie(cursor, key) = this->parse_string(cursor);
 
-        // Handle stuff inbetween
+        // Handle stuff in-between
         cursor = this->skip_nonsignificant_whitespace(cursor);
         if (this->chars[cursor] != ':')
             throw std::runtime_error("JSON object node encountered unexpected symbol {"s + this->chars[cursor] +
@@ -1665,7 +1665,7 @@ struct _parser {
 
         // Note 1:
         // The question of whether JSON allows duplicate keys is non-trivial but the resulting answer is YES.
-        // JSON is goverened by 2 standards:
+        // JSON is governed by 2 standards:
         // 1) ECMA-404 https://ecma-international.org/wp-content/uploads/ECMA-404.pdf
         //    which doesn't say anything about duplicate kys
         // 2) RFC-8259 https://www.rfc-editor.org/rfc/rfc8259
@@ -1677,7 +1677,7 @@ struct _parser {
         // which means at the end of the day duplicate keys are discouraged but still valid
 
         // Note 2:
-        // There is no standard specification on which JSON value should be prefered in case of duplicate keys.
+        // There is no standard specification on which JSON value should be preferred in case of duplicate keys.
         // This is considered implementation detail as per RFC-8259:
         //    "An object whose names are all unique is interoperable in the sense that all software implementations
         //    receiving that object will agree on the name-value mappings. When the names within an object are not
@@ -1837,7 +1837,7 @@ struct _parser {
 
         const auto throw_surrogate_error = [&](std::string_view hex) {
             throw std::runtime_error("JSON string node encountered invalid unicode escape sequence in " +
-                                     "secong half of UTF-16 surrogate pair starting at {"s + std::string(hex) +
+                                     "second half of UTF-16 surrogate pair starting at {"s + std::string(hex) +
                                      "} while parsing an escape sequence at pos "s + std::to_string(cursor) + "."s +
                                      _pretty_error(cursor, this->chars));
         };
@@ -2311,7 +2311,7 @@ template <class T>
 template <class T>
 void _assign_value_to_node(Node& node, const T& value) {
     if constexpr (is_json_convertible_v<T>) node = value;
-    // it is critical that the trait above performs DEEP check for JSON convertability and not a shallow one,
+    // it is critical that the trait above performs DEEP check for JSON convertibility and not a shallow one,
     // we want to detect things like 'std::vector<int>' as convertible, but not things like 'std::vector<MyStruct>',
     // these should expand over their element type / mapped type further until either they either reach
     // the reflected 'MyStruct' or end up on a dead end, which means an impossible conversion
@@ -2460,7 +2460,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
 
 // Reasonably performant and convenient logger.
 //
-// The main highligh of this module (and the main performance win relative to 'std::ostream') is a
+// The main highlight of this module (and the main performance win relative to 'std::ostream') is a
 // generic stringifier class that is both convenient and quite fast at formatting multiple values.
 //
 // This stringifier can be customized with CRTP to format things in all kinds of specific ways
@@ -2474,7 +2474,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
 //    2. A separate persistent thread to flush the buffer
 //
 //       Note: I did try using a stripped down version of 'utl::parallel::ThreadPool' to upload tasks
-//             for flushing the buffer, it generatly improves performance by ~30%, however I decided it
+//             for flushing the buffer, it generally improves performance by ~30%, however I decided it
 //             is not worth the added complexity & cpu usage for that little gain
 //
 //    3. Platform-specific methods to query stuff like time & thread id with less overhead
@@ -2521,7 +2521,7 @@ inline std::size_t _get_thread_index(const std::thread::id id) {
     const auto it = thread_ids.find(id);
     if (it == thread_ids.end()) return thread_ids[id] = next_id++;
     return it->second;
-    // this map effectively "demangles" platfrom-specific IDs into human-redable IDs (0, 1, 2, ...)
+    // this map effectively "demangles" platform-specific IDs into human-readable IDs (0, 1, 2, ...)
 }
 
 template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, bool> = true>
@@ -2587,7 +2587,7 @@ utl_log_define_trait(_is_pad, std::declval<std::decay_t<T>>().is_pad);
 // check for operator '++' would lead to false positives, while checking '++c.begin()' would lead to false
 // negatives on containers such as 'std::array'. It would seem that 'std::iterator_traits' is the way to go,
 // but since it provides no good way to test if iterator satisfies a category without checking every possible
-// tag, it ends up being more verbose that exisiting solution.
+// tag, it ends up being more verbose that existing solution.
 
 #undef utl_log_define_trait
 
@@ -2696,11 +2696,11 @@ struct StringifierBase {
 
     template <class T>
     static void append_int(std::string& buffer, const T& value) {
-        std::array<char, _max_int_digits<T>> stbuff;
-        const auto [number_end_ptr, error_code] = std::to_chars(stbuff.data(), stbuff.data() + stbuff.size(), value);
+        std::array<char, _max_int_digits<T>> str;
+        const auto [number_end_ptr, error_code] = std::to_chars(str.data(), str.data() + str.size(), value);
         if (error_code != std::errc())
             throw std::runtime_error("Stringifier encountered std::to_chars() error while serializing an integer.");
-        buffer.append(stbuff.data(), number_end_ptr - stbuff.data());
+        buffer.append(str.data(), number_end_ptr - str.data());
     }
 
     template <class T>
@@ -2710,11 +2710,11 @@ struct StringifierBase {
 
     template <class T>
     static void append_float(std::string& buffer, const T& value) {
-        std::array<char, _max_float_digits<T>> stbuff;
-        const auto [number_end_ptr, error_code] = std::to_chars(stbuff.data(), stbuff.data() + stbuff.size(), value);
+        std::array<char, _max_float_digits<T>> str;
+        const auto [number_end_ptr, error_code] = std::to_chars(str.data(), str.data() + str.size(), value);
         if (error_code != std::errc())
             throw std::runtime_error("Stringifier encountered std::to_chars() error while serializing a float.");
-        buffer.append(stbuff.data(), number_end_ptr - stbuff.data());
+        buffer.append(str.data(), number_end_ptr - str.data());
     }
 
     template <class T>
@@ -2785,15 +2785,15 @@ struct StringifierBase {
     // --- Helpers ---
     // ---------------
 private:
-    template <class Tuplelike, std::size_t... Idx>
-    static void _append_tuple_impl(std::string& buffer, Tuplelike value, std::index_sequence<Idx...>) {
+    template <class Tuple, std::size_t... Idx>
+    static void _append_tuple_impl(std::string& buffer, Tuple value, std::index_sequence<Idx...>) {
         ((Idx == 0 ? "" : buffer += ", ", derived::append(buffer, std::get<Idx>(value))), ...);
         // fold expression '( f(args), ... )' invokes 'f(args)' for all arguments in 'args...'
         // in the same fashion, we can fold over 2 functions by doing '( ( f(args), g(args) ), ... )'
     }
 
-    template <template <class...> class Tuplelike, class... Args>
-    static void _append_tuple_fwd(std::string& buffer, const Tuplelike<Args...>& value) {
+    template <template <class...> class Tuple, class... Args>
+    static void _append_tuple_fwd(std::string& buffer, const Tuple<Args...>& value) {
         buffer += "< ";
         self::_append_tuple_impl(buffer, value, std::index_sequence_for<Args...>{});
         buffer += " >";
@@ -2865,9 +2865,9 @@ private:
 // The stringifier shines at stringifying & concatenating multiple values into the same buffer.
 // Single-value is a specific case which allows all 'buffer += ...' to be replaced with most things being formatted
 // straight into a newly created string. We could optimize this, but that would make require an almost full logic
-// duplication and make the class cumbersome to extend since instead of a singural 'append_something()' methods there
+// duplication and make the class cumbersome to extend since instead of a singular 'append_something()' methods there
 // would be 2: 'append_something()' and 'construct_something()'. It also doesn't seem to be worth it, the difference
-// in performance isn't that significat and we're still faster than most usual approaches to stringification.
+// in performance isn't that significant and we're still faster than most usual approaches to stringification.
 
 // ===============================
 // --- Stringifier derivatives ---
@@ -2980,8 +2980,8 @@ constexpr std::size_t _col_w_thread   = sizeof("thread") - 1;
 constexpr std::size_t _col_w_callsite = _w_callsite_before_dot + 1 + _w_callsite_after_dot;
 constexpr std::size_t _col_w_level    = sizeof("level") - 1;
 
-// --- Column left/right delimers ---
-// ----------------------------------
+// --- Column left/right delimiters ---
+// ------------------------------------
 
 constexpr std::string_view _col_ld_datetime = "";
 constexpr std::string_view _col_rd_datetime = " ";
@@ -3292,7 +3292,7 @@ private:
 struct _logger {
     inline static std::list<Sink> sinks;
     // we use list<> because we don't want sinks to ever reallocate when growing / shrinking
-    // (reallocation requres a move-constructor, which 'std::mutex' doesn't have),
+    // (reallocation requires a move-constructor, which 'std::mutex' doesn't have),
     // the added overhead of iterating a list is negligible
 
     static inline Sink default_sink{std::cout, Verbosity::TRACE, Colors::ENABLE, std::chrono::milliseconds(0),
@@ -3613,7 +3613,7 @@ template <class T, _require<has_size_v<T>> = true>
     return static_cast<return_type>(container.size());
 }
 
-// Utility used to reverse indexation logic, mostly useful when working with unsigned indeces
+// Utility used to reverse indexation logic, mostly useful when working with unsigned indices
 template <class T, _require_integral<T> = true>
 [[nodiscard]] constexpr T reverse_idx(T idx, T size) noexcept {
     return size - T(1) - idx;
@@ -3834,7 +3834,7 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
         bytes += sizeof(T);
         bytes += value.size() * sizeof(typename T::value_type);
     }
-    // Everyting else
+    // Everything else
     else {
         bytes += sizeof(T);
     };
@@ -3902,7 +3902,7 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
 // unsuitable or unreasonable from the implementation standpoint. Below is a little rundown of implementations
 // that were attempted and used/discared for various reasons.
 //
-// Currently matrix/vector/view/etc code reuse is implemented though a whole buch of conditional compilation with
+// Currently matrix/vector/view/etc code reuse is implemented though a whole bunch of conditional compilation with
 // SFINAE, abuse of conditional inheritance, conditional types and constexpr if's. While not perfect, this is
 // the best working approach so far. Below is a list of approaches that has been considered & tried:
 //
@@ -3910,8 +3910,8 @@ template <MemoryUnit units = MemoryUnit::MiB, class T>
 //
 //    => [-] UNSUITABLE APPROACH
 //
-// 2) Regular OOP with virtual classes - having vtables in lightweigh containers is highly undesirable, we can
-//    avoid this using CRTP however we run into issues with multiple inheritance (see below)
+// 2) Regular OOP with virtual classes - having vtables in lightweight containers is highly undesirable,
+//    we can avoid this using CRTP however we run into issues with multiple inheritance (see below)
 //
 //    => [-] UNSUITABLE APPROACH
 //
@@ -3983,11 +3983,10 @@ namespace utl::mvl {
 // --- Type Traits ---
 // ===================
 
-// MARK:
 // Macro for generating type traits with all their boilerplate
 //
 // While it'd be nice to avoid macro usage alltogether, having a few macros for generating standardized boilerplate
-// that gets repeated several dosen times DRASTICALLY improves the maintainability of the whole conditional compilation
+// that gets repeated several dozen times DRASTICALLY improves the maintainability of the whole conditional compilation
 // mechanism down the line. They will be later #undef'ed.
 
 #define utl_mvl_define_trait(trait_name_, ...)                                                                         \
@@ -4048,8 +4047,6 @@ utl_mvl_define_trait_has_member(_is_tensor, is_tensor);
 utl_mvl_define_trait_has_member(_is_sparse_entry_1d, is_sparse_entry_1d);
 utl_mvl_define_trait_has_member(_is_sparse_entry_2d, is_sparse_entry_2d);
 
-// MARK:
-
 // =======================
 // --- Stringification ---
 // =======================
@@ -4087,8 +4084,12 @@ constexpr int _max_float_digits =
 template <class T>
 constexpr int _max_int_digits = 2 + std::numeric_limits<T>::digits10;
 
-// --- Stringifiers ---
-// --------------------
+// --- Stringifier ---
+// -------------------
+
+// TODO:
+// Replace or rethink all of this stringifying stuff, perhaps it would be best to just have a super-simple
+// one and let other functions take custom stringifier from 'utl::log'
 
 template <class T>
 void _append_stringified(std::string& str, const T& value);
@@ -4145,13 +4146,13 @@ void _append_stringified_array(std::string& str, const T& value) {
     str += " }";
 }
 
-template <class Tuplelike, std::size_t... Idx>
-void _append_stringified_tuple_impl(std::string& str, Tuplelike value, std::index_sequence<Idx...>) {
+template <class Tuple, std::size_t... Idx>
+void _append_stringified_tuple_impl(std::string& str, Tuple value, std::index_sequence<Idx...>) {
     ((Idx == 0 ? "" : str += ", ", _append_stringified(str, std::get<Idx>(value))), ...);
 }
 
-template <template <class...> class Tuplelike, class... Args>
-void _append_stringified_tuple(std::string& str, const Tuplelike<Args...>& value) {
+template <template <class...> class Tuple, class... Args>
+void _append_stringified_tuple(std::string& str, const Tuple<Args...>& value) {
     str += "< ";
     _append_stringified_tuple_impl(str, value, std::index_sequence_for<Args...>{});
     str += " >";
@@ -4231,7 +4232,7 @@ struct default_stringifier {
 // --- Helper Functions ---
 // ========================
 
-// Shortuct for labda-type-based SFINAE.
+// Shortcut for lambda-type-based SFINAE.
 //
 // Callables in this module are usually takes as a template type since 'std::function<>' introduces very significant
 // overhead with its type erasure. With template args all lambdas and functors can be nicely inlined, however we lose
@@ -4247,7 +4248,7 @@ template <class T>
     return std::unique_ptr<T[]>(new T[size]);
 }
 
-// Marker for uncreachable code
+// Marker for unreachable code
 [[noreturn]] inline void _unreachable() {
 // (Implementation from https://en.cppreference.com/w/cpp/utility/unreachable)
 // Use compiler specific extensions if possible.
@@ -4426,7 +4427,7 @@ private:
 // ======================================
 
 // Note:
-// All sparse entries and multi-dimensional indeces can be sorted lexicographically
+// All sparse entries and multi-dimensional indices can be sorted lexicographically
 
 template <class T>
 struct SparseEntry1D {
@@ -4515,7 +4516,9 @@ template <class L, class R, class Op, _is_sparse_entry_2d_enable_if<R> = true>
 std::decay_t<R> _apply_binary_op_to_value_and_sparse_entry(L&& left_value, R&& right, Op&& op) {
     return {right.i, right.j, std::forward<Op>(op)(std::forward<L>(left_value), std::forward<R>(right).value)};
 }
-// MARK:
+
+// TODO:
+// Fix binary ops, figure out what the hell did I even do here
 
 // =============
 // --- Enums ---
@@ -4561,7 +4564,7 @@ using _are_tensors_with_same_value_type_enable_if =
 
 #define utl_mvl_tensor_arg_vals T, _dimension, _type, _ownership, _checking, _layout
 
-// Incredibly improtant macros used for conditional compilation of member functions.
+// Incredibly important macros used for conditional compilation of member functions.
 // They automatically create the boilerplate that makes member functions dependant on the template parameters,
 // which is necessary for conditional compilation and "forward" to a 'enable_if' condition.
 //
@@ -4577,7 +4580,7 @@ using _are_tensors_with_same_value_type_enable_if =
 
 #define utl_mvl_reqs(condition_) template <utl_mvl_require(condition_)>
 
-// A somewhat scuffed version of trait-definig macro used to create SFINAE-restrictions
+// A somewhat scuffed version of trait-defining macro used to create SFINAE-restrictions
 // on tensor params in free functions. Only supports trivial conditions of the form
 // '<parameter> [==][!=] <value>'. Perhaps there is a better way of doing it, but I'm not yet sure.
 //
@@ -4602,8 +4605,8 @@ utl_mvl_define_tensor_param_restriction(_is_matrix_tensor, dimension == Dimensio
 
 // Unlike class method, member values can't be templated, which prevents us from using regular 'enable_if_t' SFINAE
 // for their conditional compilation. The (seemingly) best workaround to compile members conditionally is to inherit
-// 'std::contidional<T, EmptyClass>' where 'T' is a "dummy" class with the sole purpose of having data members to
-// inherit. This does not introduce virtualiztion (which is good, that how we want it).
+// 'std::conditional<T, EmptyClass>' where 'T' is a "dummy" class with the sole purpose of having data members to
+// inherit. This does not introduce virtualization (which is good, that how we want it).
 
 template <int id>
 struct _nothing {};
@@ -5091,14 +5094,14 @@ public:
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference)> = true>
     [[nodiscard]] bool true_for_all(PredType predicate) const {
-        auto inversed_predicate = [&](const_reference e) -> bool { return !predicate(e); };
-        return !this->true_for_any(inversed_predicate);
+        auto inverse_predicate = [&](const_reference e) -> bool { return !predicate(e); };
+        return !this->true_for_any(inverse_predicate);
     }
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference, size_type)> = true>
     [[nodiscard]] bool true_for_all(PredType predicate) const {
-        auto inversed_predicate = [&](const_reference e, size_type idx) -> bool { return !predicate(e, idx); };
-        return !this->true_for_any(inversed_predicate);
+        auto inverse_predicate = [&](const_reference e, size_type idx) -> bool { return !predicate(e, idx); };
+        return !this->true_for_any(inverse_predicate);
     }
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference, size_type, size_type)> = true,
@@ -5106,10 +5109,10 @@ public:
     [[nodiscard]] bool true_for_all(PredType predicate) const {
         // We can reuse .true_for_any() with inverted predicate due to following conjecture:
         // FOR_ALL (predicate)  ~  ! FOR_ANY (!predicate)
-        auto inversed_predicate = [&](const_reference e, size_type i, size_type j) -> bool {
+        auto inverse_predicate = [&](const_reference e, size_type i, size_type j) -> bool {
             return !predicate(e, i, j);
         };
-        return !this->true_for_any(inversed_predicate);
+        return !this->true_for_any(inverse_predicate);
     }
 
     // --- Const algorithms ---
@@ -5285,7 +5288,7 @@ public:
         if constexpr (self::params::type == Type::SPARSE) {
             return this->filter([](const_reference, size_type i, size_type j) { return i == j; });
         }
-        // Non-sparce matrices can just iterate over diagonal directly
+        // Non-sparse matrices can just iterate over diagonal directly
         else {
             const size_type     min_size = std::min(this->rows(), this->cols());
             _cref_triplet_array triplets;
@@ -5348,7 +5351,7 @@ public:
         /* Sparse matrices have no better way of getting a diagonal than filtering (i == j) */
         if constexpr (self::params::type == Type::SPARSE) {
             return this->filter([](const_reference, size_type i, size_type j) { return i == j; });
-        } /* Non-sparce matrices can just iterate over diagonal directly */
+        } /* Non-sparse matrices can just iterate over diagonal directly */
         else {
             const size_type    min_size = std::min(this->rows(), this->cols());
             _ref_triplet_array triplets;
@@ -5611,7 +5614,7 @@ public:
         this->_rows       = other.rows();
         this->_cols       = other.cols();
         this->_row_stride = other.row_stride();
-        this->_col_strude = other.col_stride();
+        this->_col_stride = other.col_stride();
         this->_data       = std::move(_make_unique_ptr_array<value_type>(this->size()));
         this->fill(value_type());
         // Not quite sure whether swapping strides when changing layouts like this is okay,
@@ -5701,9 +5704,8 @@ public:
 
     // Init-with-value
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::DENSE &&
-                 ownership ==
-                     Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
-                                                                  const_reference value = value_type()) {
+                 ownership == Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
+                                                                           const_reference value = value_type()) {
         this->_rows = rows;
         this->_cols = cols;
         this->_data = std::move(_make_unique_ptr_array<value_type>(this->size()));
@@ -5794,10 +5796,9 @@ public:
 
     // Init-with-value
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::STRIDED &&
-                 ownership ==
-                     Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols, size_type row_stride,
-                                                                  size_type       col_stride,
-                                                                  const_reference value = value_type()) {
+                 ownership == Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
+                                                                           size_type row_stride, size_type col_stride,
+                                                                           const_reference value = value_type()) {
         this->_rows       = rows;
         this->_cols       = cols;
         this->_row_stride = row_stride;
@@ -6002,18 +6003,18 @@ template <utl_mvl_tensor_arg_defs>
     return stringify(_tensor_meta_string(tensor), "  <hidden due to large size>\n");
 }
 
-// Generic method to do "dense matrix print" with given delimers.
-// Cuts down on repitition since a lot of formats only differ in the delimers used.
+// Generic method to do "dense matrix print" with given delimiters.
+// Cuts down on repetition since a lot of formats only differ in the delimiters used.
 template <class T, Type type, Ownership ownership, Checking checking, Layout layout, class Func>
 [[nodiscard]] std::string
-_generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership, checking, layout>& tensor,      //
-                      std::string_view                                                              begin,       //
-                      std::string_view                                                              row_begin,   //
-                      std::string_view                                                              col_delimer, //
-                      std::string_view                                                              row_end,     //
-                      std::string_view                                                              row_delimer, //
-                      std::string_view                                                              end,         //
-                      Func                                                                          stringifier  //
+_generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership, checking, layout>& tensor,     //
+                      std::string_view                                                              begin,      //
+                      std::string_view                                                              row_begin,  //
+                      std::string_view                                                              col_delim,  //
+                      std::string_view                                                              row_end,    //
+                      std::string_view                                                              row_delim,  //
+                      std::string_view                                                              end,        //
+                      Func                                                                          stringifier //
 ) {
     if (tensor.empty()) return (std::string() += begin) += end;
 
@@ -6038,10 +6039,10 @@ _generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership,
         for (std::size_t j = 0; j < strings.cols(); ++j) {
             if (strings(i, j).size() < column_widths[j]) buffer.append(column_widths[j] - strings(i, j).size(), ' ');
             buffer += strings(i, j);
-            if (j + 1 < strings.cols()) buffer += col_delimer;
+            if (j + 1 < strings.cols()) buffer += col_delim;
         }
         buffer += row_end;
-        if (i + 1 < strings.rows()) buffer += row_delimer;
+        if (i + 1 < strings.rows()) buffer += row_delim;
     }
     buffer += end;
 
@@ -6182,7 +6183,7 @@ auto operator-(L&& left) {
 
 // Doing things "in a dumb but simple way" would be to just have all operators take arguments as const-refs and
 // return a copy, however we can speed things up a lot by properly using perfect forwarding, which would reuse
-// r-lvalues if possible to avoid allocation. Doing so would effectively change something like this:
+// r-values if possible to avoid allocation. Doing so would effectively change something like this:
 //    res = A + B - C - D + E
 // from 5 (!) copies to only 1, since first operator will create an r-value that gets propagated and reused by
 // all others. This however introduces it's own set of challenges since instead of traditional overloading we
@@ -6210,7 +6211,7 @@ auto operator-(L&& left) {
 //
 // It's a good question whether to threat binary '*' as element-wise product (which would be in line with other
 // operators) or a matrix product, but in the end it seems doing it element-wise would be too confusing for the
-// user, so we leave '*' as a matrix product and declate element-wise product as a function 'elementwise_product()'
+// user, so we leave '*' as a matrix product and declare element-wise product as a function 'elementwise_product()'
 // since no existing operators seem suitable for such overload.
 
 // (1)  dense +  dense =>  dense
@@ -6555,7 +6556,7 @@ public:
 // Benchmarks indicate speedups ~130% to ~400% depending on CPU, compiler and options
 // large unrolling (32) seems to be the best on benchmarks, however it may bloat the binary
 // and take over too many branch predictor slots in case of min/max reductions, 4-8 seems
-// like a reasonable sweetspot for most machines.
+// like a reasonable sweet spot for most machines.
 //
 // One may think that it is a job of compiler to perform such optimizations, yet even with
 // GCC '-Ofast -funroll-all-loop' and GCC unroll pragmas it fails to do them reliably.
@@ -6563,14 +6564,14 @@ public:
 // The reason it fails to do so is pretty clear for '-O2' and below - strictly speaking, most binary
 // operations on floats are non-commutative (sum depends on the order of addition, for example), however
 // since reduction is inherently not-order-preserving there is no harm in reordering operations some more
-// and unrolling the loop so compiler will be able to use SIMD if it sees it as possile (which it often does).
+// and unrolling the loop so compiler will be able to use SIMD if it sees it as possible (which it often does).
 //
 // Why vectorization of simple loops still tends to fail with '-Ofast' which reduces conformance and
 // allows reordering of math operations is unclear, but this is how it happens when actually measured.
 //
-template <class T, T... indeces, class F>
-constexpr void _unroll_impl(std::integer_sequence<T, indeces...>, F&& f) {
-    (f(std::integral_constant<T, indeces>{}), ...);
+template <class T, T... indices, class F>
+constexpr void _unroll_impl(std::integer_sequence<T, indices...>, F&& f) {
+    (f(std::integral_constant<T, indices>{}), ...);
 }
 template <class T, T count, class F>
 constexpr void _unroll(F&& f) {
@@ -6699,7 +6700,7 @@ public:
         const std::size_t current_thread_count = this->get_thread_count();
 
         if (thread_count == current_thread_count) return;
-        // 'quick escape' so we don't experience too much slowdown when the user calls '.set_thread_count()' reapeatedly
+        // 'quick escape' so we don't experience too much slowdown when the user calls '.set_thread_count()' repeatedly
 
         if (thread_count > current_thread_count) {
             this->start_threads(thread_count - current_thread_count);
@@ -6892,8 +6893,6 @@ template <class Container, class Func>
 void for_loop(Container&& container, Func&& func) {
     for_loop(Range{std::forward<Container>(container)}, std::forward<Func>(func));
 }
-// couldn't figure out how to make it work perfect-forwared 'Container&&',
-// for some reason it would always cause template deduction to fail
 
 // =============================
 // --- 'Parallel reduce' API ---
@@ -7065,7 +7064,7 @@ struct max<void> {
 // compiler, platform, architecture, compilation info and etc.
 //
 // Boost Predef (https://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/index.html) provides
-// a more complete package when it comes to supporing some esoteric platforms & compilers,
+// a more complete package when it comes to supporting some esoteric platforms & compilers,
 // but has a rather (in my opinion) ugly API.
 //
 // In addition utl::predef also provides some miscellaneous macros for automatic codegen, such as:
@@ -7540,7 +7539,7 @@ constexpr bool debug =
 // or not seems to be through SFINAE.
 //
 // IMPLEMENTATION COMMENTS:
-// We declate integral constant class with 2 functions 'test()', first one takes priority during overload
+// We declare integral constant class with 2 functions 'test()', first one takes priority during overload
 // resolution and compiles if FUNC(ARGS...) is defined, otherwise it's {Substitution Failure} which is
 // {Is Not An Error} and second function compiles.
 //
@@ -7558,7 +7557,7 @@ constexpr bool debug =
 // NOTE 1: Some versions of 'clangd' give a 'bugprone-sizeof-expression' warning for sizeof(*A),
 // this is a false alarm.
 //
-// NOTE 2: Frankly, the usefullness of this is rather dubious since constructs like
+// NOTE 2: Frankly, the usefulness of this is rather dubious since constructs like
 //     if constexpr (is_function_defined_windown_specific) { <call the windows-specific function> }
 //     else { <call the linux-specific function> }
 // are still illegal due to 'if constexpr' requiting both branches to have defined identifiers,
@@ -7608,18 +7607,18 @@ constexpr bool debug =
 // Macros for quick code profiling.
 // Trivially simple, yet effective way of finding bottlenecks without any tooling.
 //
-// Can also be used to benchmark stuff "quick & dirty" due to doing all the time measuring
-// and table formatting one would usually implement in their benchmarks. A proper bechmark
-// suite of course would include support for automatic reruns and gather statistical data,
-// but in prototying this is often not necessary.
-//
 // Resolving time recording inside recursion took some thinking, but ended up being quite simple in
 // implementation. See the docs for more details on that.
 //
 // Currently, the overhead of profiling is barely different to the overhead of just time measurement,
 // this also took a bit of thinking but in the end there is a nice solution that uses static variables
-// to offload things that can only be done once to their initialization, and then links local variables
+// to offload things that can only be done once to their initialization, and then "links" local variables
 // to 'static' markers of the callsite recording. See 'UTL_PROFILE' macro for some more details.
+//
+// Can also be used to benchmark stuff "quick & dirty" due to doing all the time measuring
+// and table formatting one would usually implement in their benchmarks. A proper benchmark
+// suite of course would include support for automatic reruns and gather statistical data,
+// but in prototyping this is often not necessary.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -7668,9 +7667,9 @@ struct _record {
 
 inline void _utl_profiler_atexit(); // predeclaration, implementation has circular dependency with 'RecordManager'
 
-// =========================
-// --- Profiler Classess ---
-// =========================
+// ========================
+// --- Profiler Classes ---
+// ========================
 
 class _record_manager {
 private:
@@ -7708,7 +7707,7 @@ protected:
     time_point       start;
     _record_manager* record_manager;
     // we could use 'std::optional<std::reference_wrapper<RecordManager>>',
-    // but that would inctroduce more dependencies for no real reason
+    // but that would introduce more dependencies for no real reason
 public:
     constexpr operator bool() const noexcept { return true; }
 
@@ -7729,7 +7728,7 @@ struct _scope_timer : public _timer_base {
 };
 
 // Same thing as '_scope_timer' except it uses global static 'exclusive_recursion' instead of regular 'recursion' that
-// is specific to each '_record_manager'. This effecively means no '_exclusive_scope_timer''s will count time as long a
+// is specific to each '_record_manager'. This effectively means no '_exclusive_scope_timer''s will count time as long a
 // single instance of another exclusive timer exists. This allows us to resolve som tricky situations such as recursion
 struct _exclusive_scope_timer : public _timer_base {
     _exclusive_scope_timer(_record_manager* manager) : _timer_base(manager) {
@@ -7876,7 +7875,7 @@ inline void _utl_profiler_atexit() {
         << std::setw(max_length_percentage) << column_name_percentage << " |\n";
 
     *os << " |"
-        << repeat_hline_symbol(max_length_call_site + 2) // add 2 to account for delimers not having spaces in hline
+        << repeat_hline_symbol(max_length_call_site + 2) // add 2 to account for delimiters not having spaces in hline
         << "|" << repeat_hline_symbol(max_length_label + 2) << "|" << repeat_hline_symbol(max_length_duration + 2)
         << "|" << repeat_hline_symbol(max_length_percentage + 2) << "|\n";
 
@@ -7942,7 +7941,7 @@ inline void _utl_profiler_atexit() {
 //    constexpr bool ... = true;
 //    static_assert(..., "UTL_PROFILE is a multi-line macro.");
 //
-// is reponsible for preventing accidental errors caused by using macro like this:
+// is responsible for preventing accidental errors caused by using macro like this:
 //
 //    for (...) UTL_PROFILER("") function(); // will only loop the first line of the multi-line macro
 //
@@ -7963,7 +7962,7 @@ inline void _utl_profiler_atexit() {
 //
 // _utl_profiler_add_uuid(...) ensures no identifier collisions when several profilers exist in a single scope.
 // Since in this context 'uuid' is a line number, the only case in which ids can collide is when multiple profilers
-// are declated on the same line, which I assume no sane person would do. And even if they would, that would simply
+// are declared on the same line, which I assume no sane person would do. And even if they would, that would simply
 // lead to a compiler error. Can't really do better than that without resorting to non-standard macros like
 // '__COUNTER__' for 'uuid' creation
 
@@ -7994,7 +7993,7 @@ inline void _utl_profiler_atexit() {
 #define UTL_PROFILER_END(segment_label_) utl_profiler_segment_timer_##segment_label_.finish()
 // Note 1:
 //
-// Last semicolon is intentiomally skipped so macro requires it at the end and
+// Last semicolon is intentionally skipped so macro requires it at the end and
 // doesn't mess up auto code formatters that have a dislike for statement macros.
 //
 // Note 2:
@@ -8078,7 +8077,7 @@ public:
     bool show_estimate   = true;
 
     std::size_t bar_length  = 30;
-    double      update_rate = 2.5e-3; // every quorter of a % feels like a good default
+    double      update_rate = 2.5e-3; // every quarter of a % feels like a good default
 
     // - Public API -
     Percentage() : start_time_point(clock::now()) {
@@ -8108,7 +8107,7 @@ public:
         std::cout << '\n';
         std::cout.flush();
     }
-    
+
     void update_style() {
         this->draw();
         std::cout.flush();
@@ -8216,9 +8215,9 @@ class Ruler {
 public:
     // - Public parameters -
     struct Style {
-        char fill          = '#';
-        char ruler_line    = '-';
-        char ruler_delimer = '|';
+        char fill            = '#';
+        char ruler_line      = '-';
+        char ruler_delimiter = '|';
     } style;
 
     bool show_ticks = true;
@@ -8271,7 +8270,7 @@ private:
 
         std::array<char, ruler.size()> buffer;
         for (std::size_t i = 0; i < ruler.size(); ++i)
-            buffer[i] = (this->ruler[i] == '|') ? this->style.ruler_delimer : this->style.ruler_line;
+            buffer[i] = (this->ruler[i] == '|') ? this->style.ruler_delimiter : this->style.ruler_line;
         // formats ruler without allocating
 
         std::cout.write(buffer.data(), buffer.size());
@@ -8328,10 +8327,10 @@ private:
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Several <random> compatible PRNGs, slightly improved reimplementations of uniform distributions,
+// Several <random> compatible PRNGs, slightly improved re-implementations of uniform distributions,
 // "better" entropy sources and several convenience wrappers for rng.
 //
-// Everything implemented here should be portable assuming reasonable assumptions (like existance of
+// Everything implemented here should be portable assuming reasonable assumptions (like existence of
 // uint32_t, uint64_t, 8-bit bytes, 32-bit floats, 64-bit doubles and etc.) which hold for most platforms
 
 // ____________________ IMPLEMENTATION ____________________
@@ -8482,13 +8481,13 @@ template <class ResultType>
     state               = (state ^ (state >> 27)) * 0x94D049BB133111EB;
     return static_cast<ResultType>(state ^ (state >> 31));
     // some of the 16/32-bit PRNGs have bad correlation on the successive seeds, this usually
-    // can be alleviated by using a signle iteration of a "good" PRNG to pre-mix the seed
+    // can be alleviated by using a single iteration of a "good" PRNG to pre-mix the seed
 }
 
 template <class T>
 constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
 // an "overall decent" default seed - doesn't gave too many zeroes,
-// unlikely to accidentaly match with a user-defined seed
+// unlikely to accidentally match with a user-defined seed
 
 
 // =========================
@@ -8502,7 +8501,7 @@ constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
 // (C++20 and above, see https://en.cppreference.com/w/cpp/numeric/random/uniform_random_bit_generator)
 
 // Note:
-// Here PRNGs take 'SeedSeq' as a forwaring reference 'SeedSeq&&', while standard PRNGS take 'SeedSeq&',
+// Here PRNGs take 'SeedSeq' as a forwarding reference 'SeedSeq&&', while standard PRNGS take 'SeedSeq&',
 // this is how it should've been done in the standard too, but for some reason they only standardized
 // l-value references, perfect forwarding probably just wasn't in use at the time.
 
@@ -8519,7 +8518,7 @@ namespace generators {
 // Quality:     2/5
 // State:       4 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "RomuMono16" is the fastest 16-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "RomuMono16" is the fastest 16-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 16-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -8687,7 +8686,7 @@ public:
 // Quality:     2/5
 // State:       12 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "RomuTrio" is the fastest 32-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "RomuTrio" is the fastest 32-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 32-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -8854,7 +8853,7 @@ public:
 // Quality:     2/5
 // State:       16 bytes
 //
-// Romu family provides extemely fast non-linear PRNGs, "DuoJr" is the fastest 64-bit option available
+// Romu family provides extremely fast non-linear PRNGs, "DuoJr" is the fastest 64-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
 // a faster 64-bit PRNG, so if speed is needed at all cost this one provides it.
@@ -8904,12 +8903,12 @@ public:
 // --- CSPRNGs ---
 // ---------------
 
-// Implementation of ChaCha20 CPRNG conforming to RFC 7539 standard
+// Implementation of ChaCha20 CSPRNG conforming to RFC 7539 standard
 // see https://datatracker.ietf.org/doc/html/rfc7539
 //     https://www.rfc-editor.org/rfc/rfc7539#section-2.4
 //     https://en.wikipedia.org/wiki/Salsa20
 
-// Quarted-round operation for ChaCha20 stream cipher
+// Quarter-round operation for ChaCha20 stream cipher
 constexpr void _quarter_round(std::uint32_t& a, std::uint32_t& b, std::uint32_t& c, std::uint32_t& d) {
     a += b, d ^= a, d = _rotl_value(d, 16);
     c += d, b ^= c, b = _rotl_value(b, 12);
@@ -9051,13 +9050,13 @@ using default_result_type    = default_generator_type::result_type;
 inline default_generator_type default_generator;
 
 inline std::seed_seq entropy_seq() {
-    // Ensure thread safery of our entropy source, it should generally work fine even without
+    // Ensure thread safety of our entropy source, it should generally work fine even without
     // it, but with this we can be sure things never race
     static std::mutex     entropy_mutex;
     const std::lock_guard entropy_guard(entropy_mutex);
 
     // Hardware entropy (if implemented),
-    // some platfroms (mainly MinGW) implements random device as a regular PRNG that
+    // some platforms (mainly MinGW) implements random device as a regular PRNG that
     // doesn't change from run to run, this is horrible, but we can somewhat improve
     // things by mixing other sources of entropy. Since hardware entropy is a rather
     // limited resource we only call it once.
@@ -9080,7 +9079,7 @@ inline std::seed_seq entropy_seq() {
     const auto cpu_counter = static_cast<std::uint64_t>(utl_random_cpu_counter);
 
     // Note:
-    // There are other sources of entropy, such as function adresses,
+    // There are other sources of entropy, such as function addresses,
     // but those can be rather "constant" on some platforms
 
     return {seed_rd, _crush_to_uint32(seed_time), _crush_to_uint32(heap_address_hash),
@@ -9168,7 +9167,7 @@ constexpr T _generate_uniform_int(Gen& gen, T min, T max) noexcept {
 
         // PRNG uses all 'common_type' bits uniformly
         // => use Lemier's algorithm if possible, fallback onto modx1 otherwise,
-        //    libc++ uses conditionally compiled lemier's with 128-bit ints intead of doing a fallback,
+        //    libc++ uses conditionally compiled lemier's with 128-bit ints instead of doing a fallback,
         //    this is slightly faster, but leads to platforms-dependant sequences
         if constexpr (prng_range == type_range) {
             if constexpr (_has_wider<common_type>) res = _uniform_uint_lemier(gen, ext_range);
@@ -9184,7 +9183,7 @@ constexpr T _generate_uniform_int(Gen& gen, T min, T max) noexcept {
             res /= scaling;
         }
     }
-    // PRNG needs several invocations to aquire enough state for the range
+    // PRNG needs several invocations to acquire enough state for the range
     else if (prng_range < range) {
         common_type temp{};
         do {
@@ -9425,7 +9424,7 @@ constexpr bool operator==(const UniformRealDistribution<T>& lhs, const UniformRe
 
 // Note 1:
 // Despite the intuitive judgement, benchmarks don't seem to indicate that creating
-// new distribution objects on each call introduces any noticeble overhead
+// new distribution objects on each call introduces any noticeable overhead
 //
 // sizeof(std::uniform_int_distribution<int>)     ==  8
 // sizeof(std::uniform_real_distribution<double>) == 16
@@ -9483,8 +9482,8 @@ const T& rand_choice(std::initializer_list<T> objects) noexcept {
 
 template <class T>
 T rand_linear_combination(const T& A, const T& B) noexcept(noexcept(A + B) && noexcept(A * 1.)) {
-    const auto coef = rand_double();
-    return A * coef + B * (1. - coef);
+    const auto weight = rand_double();
+    return A * weight + B * (1. - weight);
 } // random linear combination of 2 colors/vectors/etc
 
 } // namespace utl::random
@@ -9531,31 +9530,8 @@ T rand_linear_combination(const T& A, const T& B) noexcept(noexcept(A + B) && no
 // Command line utils that allow simple creation of temporary files and command line
 // calls with stdout and stderr piping (a task surprisingly untrivial in standard C++).
 //
-// # ::random_ascii_string() #
-// Creates random ASCII string of given length.
-// Uses chars in ['a', 'z'] range.
-//
-// # ::generate_temp_file() #
-// Generates temporary .txt file with a random unique name, and returns it's filepath.
-// Files generated during current runtime can be deleted with '::clear_temp_files()'.
-// If '::clear_temp_files()' wasn't called manually, it gets called automatically upon exiting 'main()'.
-// Uses relative path internally.
-//
-// # ::clear_temp_files() #
-// Clears temporary files generated during current runtime.
-//
-// # ::erase_temp_file() #
-// Clears a single temporary file with given filepath.
-//
-// # ::run_command() #
-// Runs a command using the default system shell.
-// Returns piped status (error code), stdout and stderr.
-//
-// # ::exe_path() #
-// Parses executable path from argcv as std::string_view.
-//
-// # ::command_line_args() #
-// Parses command line arguments from argcv as std::string_view.
+// Not particularly secure, but there's not much we can do about it, executing shell
+// commands in not secure inherently.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -9574,7 +9550,7 @@ namespace utl::shell {
         result[i] = static_cast<char>(min_char + std::rand() % (max_char - min_char + 1));
     // we don't really care about the quality of random here, and we already include <cstdlib>,
     // so rand() is fine, otherwise we'd have to include the entirety of <random> for this function.
-    // There's also a whole buch of issues caused by questionable design <random>, (such as
+    // There's also a whole bunch of issues caused by questionable design <random>, (such as
     // 'std::uniform_int_distribution' not supporting 'char') for generating random strings properly
     // (aka faster and thread-safe) there is a much better option in 'utl::random::rand_string()'.
     // Note that using remainder formula for int distribution is also biased, but here it doesn't matter.
@@ -9745,7 +9721,7 @@ inline CommandResult run_command(const std::string& command) {
 // # ::hybrid() #
 // Recommended option, similar precision to spinlock with minimal CPU usage.
 // Loops short system sleep while statistically estimating its error on the fly and once within error
-// margin of the end time, finished with spinlock sleep (essentialy negating usual system sleep error).
+// margin of the end time, finished with spinlock sleep (essentially negating usual system sleep error).
 //
 // # ::system() #
 // Worst precision, frees CPU.
@@ -9965,7 +9941,7 @@ template <class T>
 // ==========================
 
 template <class T>
-[[nodiscard]] std::string replace_all_occurences(T&& str, std::string_view from, std::string_view to) {
+[[nodiscard]] std::string replace_all_occurrences(T&& str, std::string_view from, std::string_view to) {
     std::string res = std::forward<T>(str);
 
     std::size_t i = 0;
@@ -9974,13 +9950,13 @@ template <class T>
         i += to.size();                                    // step over the replaced region
     }
     // Note: Not stepping over the replaced regions causes self-similar replacements
-    // like "abc" -> "abcabc" to fall into an infinite loop, we don't want that.
+    // like "123" -> "123123" to fall into an infinite loop, we don't want that.
 
     return res;
 }
 
 // Note:
-// Most "split by delimer" implementations found online seem to be horrifically inefficient
+// Most "split by delimiter" implementations found online seem to be horrifically inefficient
 // with unnecessary copying/erasure/intermediate tokens, stringstreams and etc.
 //
 // We can just scan through the string view once, while keeping track of the last segment between
@@ -10025,7 +10001,7 @@ template <class T>
 // Mostly useful to print strings with special chars in console and look at their contents.
 [[nodiscard]] inline std::string escape_control_chars(std::string_view str) {
     std::string res;
-    res.reserve(str.size()); // no necesseraly correct, but it's a godd first guess
+    res.reserve(str.size()); // not necessarily correct, but it's a good first guess
 
     for (const char c : str) {
         // Control characters with dedicated escape sequences get escaped with those sequences
@@ -10109,7 +10085,7 @@ template <class T>
 //
 // An alternative frequently used way to do struct reflection is through generated code with structured binding &
 // hundreds of overloads. This has a benefit of producing nicer error messages on 'for_each()' however the
-// resulting implementation is downright abnorrent.
+// resulting implementation is downright abhorrent.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -10306,7 +10282,7 @@ constexpr void tuple_for_each(T&& tuple, Func&& func) {
 template <class T1, class T2, class Func, std::size_t... Idx>
 constexpr void _tuple_for_each_impl(T1&& tuple_1, T2&& tuple_2, Func&& func, std::index_sequence<Idx...>) {
     (func(std::get<Idx>(std::forward<T1>(tuple_1)), std::get<Idx>(std::forward<T2>(tuple_2))), ...);
-    // fold expression '( f(args), ... )' invokes 'f(args)' for all indeces in the index sequence
+    // fold expression '( f(args), ... )' invokes 'f(args)' for all indices in the index sequence
 }
 
 template <class T1, class T2, class Func>
@@ -10480,7 +10456,7 @@ void _append_decorated_value(std::ostream& os, const T& value) {
             number_string += '}';
         }
 
-        // Typeset numbers as formulas 
+        // Typeset numbers as formulas
         os << "$" + number_string + "$";
         // we append it as a single string so ostream 'setw()' doesn't mess up alignment
     } else os << value;
@@ -10490,12 +10466,12 @@ inline void cell(){};
 
 template <class T, class... Types>
 void cell(const T& value, const Types&... other_values) {
-    const auto left_delimer  = _latex_mode ? "" : "|";
-    const auto delimer       = _latex_mode ? " & " : "|";
-    const auto right_delimer = _latex_mode ? " \\\\\n" : "|\n";
+    const auto left_delim  = _latex_mode ? "" : "|";
+    const auto delim       = _latex_mode ? " & " : "|";
+    const auto right_delim = _latex_mode ? " \\\\\n" : "|\n";
 
-    const std::string left_cline      = (_current_column == 0) ? left_delimer : "";
-    const std::string right_cline     = (_current_column == _columns.size() - 1) ? right_delimer : delimer;
+    const std::string left_cline      = (_current_column == 0) ? left_delim : "";
+    const std::string right_cline     = (_current_column == _columns.size() - 1) ? right_delim : delim;
     const _ios_flags  format          = _columns[_current_column].col_format.flags;
     const uint        float_precision = _columns[_current_column].col_format.precision;
 
@@ -10818,7 +10794,7 @@ std::tm to_localtime(const std::time_t& time) {
 // Uses SFINAE to resolve platform-specific calls to local time (localtime_s() on Windows,
 // localtime_r() on Linux), the same can be done with macros. The fact that there seems to
 // be no portable way of getting local time before C++20 (which adds "Calendar" part of <chrono>)
-// is rather bizzare, but not unmanageable.
+// is rather bizarre, but not unmanageable.
 //
 // This implementation will probably be improved later to provide a more generic API with local
 // timers and accumulators, but I haven't figured out a way to do it without increasing verbosity

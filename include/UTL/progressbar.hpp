@@ -55,7 +55,7 @@ public:
     bool show_estimate   = true;
 
     std::size_t bar_length  = 30;
-    double      update_rate = 2.5e-3; // every quorter of a % feels like a good default
+    double      update_rate = 2.5e-3; // every quarter of a % feels like a good default
 
     // - Public API -
     Percentage() : start_time_point(clock::now()) {
@@ -85,7 +85,7 @@ public:
         std::cout << '\n';
         std::cout.flush();
     }
-    
+
     void update_style() {
         this->draw();
         std::cout.flush();
@@ -193,9 +193,9 @@ class Ruler {
 public:
     // - Public parameters -
     struct Style {
-        char fill          = '#';
-        char ruler_line    = '-';
-        char ruler_delimer = '|';
+        char fill            = '#';
+        char ruler_line      = '-';
+        char ruler_delimiter = '|';
     } style;
 
     bool show_ticks = true;
@@ -248,7 +248,7 @@ private:
 
         std::array<char, ruler.size()> buffer;
         for (std::size_t i = 0; i < ruler.size(); ++i)
-            buffer[i] = (this->ruler[i] == '|') ? this->style.ruler_delimer : this->style.ruler_line;
+            buffer[i] = (this->ruler[i] == '|') ? this->style.ruler_delimiter : this->style.ruler_line;
         // formats ruler without allocating
 
         std::cout.write(buffer.data(), buffer.size());

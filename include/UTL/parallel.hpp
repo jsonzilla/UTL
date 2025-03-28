@@ -87,7 +87,7 @@ public:
 // Benchmarks indicate speedups ~130% to ~400% depending on CPU, compiler and options
 // large unrolling (32) seems to be the best on benchmarks, however it may bloat the binary
 // and take over too many branch predictor slots in case of min/max reductions, 4-8 seems
-// like a reasonable sweetspot for most machines.
+// like a reasonable sweet spot for most machines.
 //
 // One may think that it is a job of compiler to perform such optimizations, yet even with
 // GCC '-Ofast -funroll-all-loop' and GCC unroll pragmas it fails to do them reliably.
@@ -95,14 +95,14 @@ public:
 // The reason it fails to do so is pretty clear for '-O2' and below - strictly speaking, most binary
 // operations on floats are non-commutative (sum depends on the order of addition, for example), however
 // since reduction is inherently not-order-preserving there is no harm in reordering operations some more
-// and unrolling the loop so compiler will be able to use SIMD if it sees it as possile (which it often does).
+// and unrolling the loop so compiler will be able to use SIMD if it sees it as possible (which it often does).
 //
 // Why vectorization of simple loops still tends to fail with '-Ofast' which reduces conformance and
 // allows reordering of math operations is unclear, but this is how it happens when actually measured.
 //
-template <class T, T... indeces, class F>
-constexpr void _unroll_impl(std::integer_sequence<T, indeces...>, F&& f) {
-    (f(std::integral_constant<T, indeces>{}), ...);
+template <class T, T... indices, class F>
+constexpr void _unroll_impl(std::integer_sequence<T, indices...>, F&& f) {
+    (f(std::integral_constant<T, indices>{}), ...);
 }
 template <class T, T count, class F>
 constexpr void _unroll(F&& f) {
@@ -231,7 +231,7 @@ public:
         const std::size_t current_thread_count = this->get_thread_count();
 
         if (thread_count == current_thread_count) return;
-        // 'quick escape' so we don't experience too much slowdown when the user calls '.set_thread_count()' reapeatedly
+        // 'quick escape' so we don't experience too much slowdown when the user calls '.set_thread_count()' repeatedly
 
         if (thread_count > current_thread_count) {
             this->start_threads(thread_count - current_thread_count);
@@ -424,8 +424,6 @@ template <class Container, class Func>
 void for_loop(Container&& container, Func&& func) {
     for_loop(Range{std::forward<Container>(container)}, std::forward<Func>(func));
 }
-// couldn't figure out how to make it work perfect-forwared 'Container&&',
-// for some reason it would always cause template deduction to fail
 
 // =============================
 // --- 'Parallel reduce' API ---

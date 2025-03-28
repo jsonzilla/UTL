@@ -32,31 +32,8 @@
 // Command line utils that allow simple creation of temporary files and command line
 // calls with stdout and stderr piping (a task surprisingly untrivial in standard C++).
 //
-// # ::random_ascii_string() #
-// Creates random ASCII string of given length.
-// Uses chars in ['a', 'z'] range.
-//
-// # ::generate_temp_file() #
-// Generates temporary .txt file with a random unique name, and returns it's filepath.
-// Files generated during current runtime can be deleted with '::clear_temp_files()'.
-// If '::clear_temp_files()' wasn't called manually, it gets called automatically upon exiting 'main()'.
-// Uses relative path internally.
-//
-// # ::clear_temp_files() #
-// Clears temporary files generated during current runtime.
-//
-// # ::erase_temp_file() #
-// Clears a single temporary file with given filepath.
-//
-// # ::run_command() #
-// Runs a command using the default system shell.
-// Returns piped status (error code), stdout and stderr.
-//
-// # ::exe_path() #
-// Parses executable path from argcv as std::string_view.
-//
-// # ::command_line_args() #
-// Parses command line arguments from argcv as std::string_view.
+// Not particularly secure, but there's not much we can do about it, executing shell
+// commands in not secure inherently.
 
 // ____________________ IMPLEMENTATION ____________________
 
@@ -75,7 +52,7 @@ namespace utl::shell {
         result[i] = static_cast<char>(min_char + std::rand() % (max_char - min_char + 1));
     // we don't really care about the quality of random here, and we already include <cstdlib>,
     // so rand() is fine, otherwise we'd have to include the entirety of <random> for this function.
-    // There's also a whole buch of issues caused by questionable design <random>, (such as
+    // There's also a whole bunch of issues caused by questionable design <random>, (such as
     // 'std::uniform_int_distribution' not supporting 'char') for generating random strings properly
     // (aka faster and thread-safe) there is a much better option in 'utl::random::rand_string()'.
     // Note that using remainder formula for int distribution is also biased, but here it doesn't matter.

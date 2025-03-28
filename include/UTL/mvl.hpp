@@ -45,7 +45,7 @@
 // unsuitable or unreasonable from the implementation standpoint. Below is a little rundown of implementations
 // that were attempted and used/discared for various reasons.
 //
-// Currently matrix/vector/view/etc code reuse is implemented though a whole buch of conditional compilation with
+// Currently matrix/vector/view/etc code reuse is implemented though a whole bunch of conditional compilation with
 // SFINAE, abuse of conditional inheritance, conditional types and constexpr if's. While not perfect, this is
 // the best working approach so far. Below is a list of approaches that has been considered & tried:
 //
@@ -53,8 +53,8 @@
 //
 //    => [-] UNSUITABLE APPROACH
 //
-// 2) Regular OOP with virtual classes - having vtables in lightweigh containers is highly undesirable, we can
-//    avoid this using CRTP however we run into issues with multiple inheritance (see below)
+// 2) Regular OOP with virtual classes - having vtables in lightweight containers is highly undesirable,
+//    we can avoid this using CRTP however we run into issues with multiple inheritance (see below)
 //
 //    => [-] UNSUITABLE APPROACH
 //
@@ -126,11 +126,10 @@ namespace utl::mvl {
 // --- Type Traits ---
 // ===================
 
-// MARK:
 // Macro for generating type traits with all their boilerplate
 //
 // While it'd be nice to avoid macro usage alltogether, having a few macros for generating standardized boilerplate
-// that gets repeated several dosen times DRASTICALLY improves the maintainability of the whole conditional compilation
+// that gets repeated several dozen times DRASTICALLY improves the maintainability of the whole conditional compilation
 // mechanism down the line. They will be later #undef'ed.
 
 #define utl_mvl_define_trait(trait_name_, ...)                                                                         \
@@ -191,8 +190,6 @@ utl_mvl_define_trait_has_member(_is_tensor, is_tensor);
 utl_mvl_define_trait_has_member(_is_sparse_entry_1d, is_sparse_entry_1d);
 utl_mvl_define_trait_has_member(_is_sparse_entry_2d, is_sparse_entry_2d);
 
-// MARK:
-
 // =======================
 // --- Stringification ---
 // =======================
@@ -230,8 +227,12 @@ constexpr int _max_float_digits =
 template <class T>
 constexpr int _max_int_digits = 2 + std::numeric_limits<T>::digits10;
 
-// --- Stringifiers ---
-// --------------------
+// --- Stringifier ---
+// -------------------
+
+// TODO:
+// Replace or rethink all of this stringifying stuff, perhaps it would be best to just have a super-simple
+// one and let other functions take custom stringifier from 'utl::log'
 
 template <class T>
 void _append_stringified(std::string& str, const T& value);
@@ -288,13 +289,13 @@ void _append_stringified_array(std::string& str, const T& value) {
     str += " }";
 }
 
-template <class Tuplelike, std::size_t... Idx>
-void _append_stringified_tuple_impl(std::string& str, Tuplelike value, std::index_sequence<Idx...>) {
+template <class Tuple, std::size_t... Idx>
+void _append_stringified_tuple_impl(std::string& str, Tuple value, std::index_sequence<Idx...>) {
     ((Idx == 0 ? "" : str += ", ", _append_stringified(str, std::get<Idx>(value))), ...);
 }
 
-template <template <class...> class Tuplelike, class... Args>
-void _append_stringified_tuple(std::string& str, const Tuplelike<Args...>& value) {
+template <template <class...> class Tuple, class... Args>
+void _append_stringified_tuple(std::string& str, const Tuple<Args...>& value) {
     str += "< ";
     _append_stringified_tuple_impl(str, value, std::index_sequence_for<Args...>{});
     str += " >";
@@ -374,7 +375,7 @@ struct default_stringifier {
 // --- Helper Functions ---
 // ========================
 
-// Shortuct for labda-type-based SFINAE.
+// Shortcut for lambda-type-based SFINAE.
 //
 // Callables in this module are usually takes as a template type since 'std::function<>' introduces very significant
 // overhead with its type erasure. With template args all lambdas and functors can be nicely inlined, however we lose
@@ -390,7 +391,7 @@ template <class T>
     return std::unique_ptr<T[]>(new T[size]);
 }
 
-// Marker for uncreachable code
+// Marker for unreachable code
 [[noreturn]] inline void _unreachable() {
 // (Implementation from https://en.cppreference.com/w/cpp/utility/unreachable)
 // Use compiler specific extensions if possible.
@@ -569,7 +570,7 @@ private:
 // ======================================
 
 // Note:
-// All sparse entries and multi-dimensional indeces can be sorted lexicographically
+// All sparse entries and multi-dimensional indices can be sorted lexicographically
 
 template <class T>
 struct SparseEntry1D {
@@ -658,7 +659,9 @@ template <class L, class R, class Op, _is_sparse_entry_2d_enable_if<R> = true>
 std::decay_t<R> _apply_binary_op_to_value_and_sparse_entry(L&& left_value, R&& right, Op&& op) {
     return {right.i, right.j, std::forward<Op>(op)(std::forward<L>(left_value), std::forward<R>(right).value)};
 }
-// MARK:
+
+// TODO:
+// Fix binary ops, figure out what the hell did I even do here
 
 // =============
 // --- Enums ---
@@ -704,7 +707,7 @@ using _are_tensors_with_same_value_type_enable_if =
 
 #define utl_mvl_tensor_arg_vals T, _dimension, _type, _ownership, _checking, _layout
 
-// Incredibly improtant macros used for conditional compilation of member functions.
+// Incredibly important macros used for conditional compilation of member functions.
 // They automatically create the boilerplate that makes member functions dependant on the template parameters,
 // which is necessary for conditional compilation and "forward" to a 'enable_if' condition.
 //
@@ -720,7 +723,7 @@ using _are_tensors_with_same_value_type_enable_if =
 
 #define utl_mvl_reqs(condition_) template <utl_mvl_require(condition_)>
 
-// A somewhat scuffed version of trait-definig macro used to create SFINAE-restrictions
+// A somewhat scuffed version of trait-defining macro used to create SFINAE-restrictions
 // on tensor params in free functions. Only supports trivial conditions of the form
 // '<parameter> [==][!=] <value>'. Perhaps there is a better way of doing it, but I'm not yet sure.
 //
@@ -745,8 +748,8 @@ utl_mvl_define_tensor_param_restriction(_is_matrix_tensor, dimension == Dimensio
 
 // Unlike class method, member values can't be templated, which prevents us from using regular 'enable_if_t' SFINAE
 // for their conditional compilation. The (seemingly) best workaround to compile members conditionally is to inherit
-// 'std::contidional<T, EmptyClass>' where 'T' is a "dummy" class with the sole purpose of having data members to
-// inherit. This does not introduce virtualiztion (which is good, that how we want it).
+// 'std::conditional<T, EmptyClass>' where 'T' is a "dummy" class with the sole purpose of having data members to
+// inherit. This does not introduce virtualization (which is good, that how we want it).
 
 template <int id>
 struct _nothing {};
@@ -1234,14 +1237,14 @@ public:
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference)> = true>
     [[nodiscard]] bool true_for_all(PredType predicate) const {
-        auto inversed_predicate = [&](const_reference e) -> bool { return !predicate(e); };
-        return !this->true_for_any(inversed_predicate);
+        auto inverse_predicate = [&](const_reference e) -> bool { return !predicate(e); };
+        return !this->true_for_any(inverse_predicate);
     }
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference, size_type)> = true>
     [[nodiscard]] bool true_for_all(PredType predicate) const {
-        auto inversed_predicate = [&](const_reference e, size_type idx) -> bool { return !predicate(e, idx); };
-        return !this->true_for_any(inversed_predicate);
+        auto inverse_predicate = [&](const_reference e, size_type idx) -> bool { return !predicate(e, idx); };
+        return !this->true_for_any(inverse_predicate);
     }
 
     template <class PredType, _has_signature_enable_if<PredType, bool(const_reference, size_type, size_type)> = true,
@@ -1249,10 +1252,10 @@ public:
     [[nodiscard]] bool true_for_all(PredType predicate) const {
         // We can reuse .true_for_any() with inverted predicate due to following conjecture:
         // FOR_ALL (predicate)  ~  ! FOR_ANY (!predicate)
-        auto inversed_predicate = [&](const_reference e, size_type i, size_type j) -> bool {
+        auto inverse_predicate = [&](const_reference e, size_type i, size_type j) -> bool {
             return !predicate(e, i, j);
         };
-        return !this->true_for_any(inversed_predicate);
+        return !this->true_for_any(inverse_predicate);
     }
 
     // --- Const algorithms ---
@@ -1428,7 +1431,7 @@ public:
         if constexpr (self::params::type == Type::SPARSE) {
             return this->filter([](const_reference, size_type i, size_type j) { return i == j; });
         }
-        // Non-sparce matrices can just iterate over diagonal directly
+        // Non-sparse matrices can just iterate over diagonal directly
         else {
             const size_type     min_size = std::min(this->rows(), this->cols());
             _cref_triplet_array triplets;
@@ -1491,7 +1494,7 @@ public:
         /* Sparse matrices have no better way of getting a diagonal than filtering (i == j) */
         if constexpr (self::params::type == Type::SPARSE) {
             return this->filter([](const_reference, size_type i, size_type j) { return i == j; });
-        } /* Non-sparce matrices can just iterate over diagonal directly */
+        } /* Non-sparse matrices can just iterate over diagonal directly */
         else {
             const size_type    min_size = std::min(this->rows(), this->cols());
             _ref_triplet_array triplets;
@@ -1754,7 +1757,7 @@ public:
         this->_rows       = other.rows();
         this->_cols       = other.cols();
         this->_row_stride = other.row_stride();
-        this->_col_strude = other.col_stride();
+        this->_col_stride = other.col_stride();
         this->_data       = std::move(_make_unique_ptr_array<value_type>(this->size()));
         this->fill(value_type());
         // Not quite sure whether swapping strides when changing layouts like this is okay,
@@ -1844,9 +1847,8 @@ public:
 
     // Init-with-value
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::DENSE &&
-                 ownership ==
-                     Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
-                                                                  const_reference value = value_type()) {
+                 ownership == Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
+                                                                           const_reference value = value_type()) {
         this->_rows = rows;
         this->_cols = cols;
         this->_data = std::move(_make_unique_ptr_array<value_type>(this->size()));
@@ -1937,10 +1939,9 @@ public:
 
     // Init-with-value
     utl_mvl_reqs(dimension == Dimension::MATRIX && type == Type::STRIDED &&
-                 ownership ==
-                     Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols, size_type row_stride,
-                                                                  size_type       col_stride,
-                                                                  const_reference value = value_type()) {
+                 ownership == Ownership::CONTAINER) explicit GenericTensor(size_type rows, size_type cols,
+                                                                           size_type row_stride, size_type col_stride,
+                                                                           const_reference value = value_type()) {
         this->_rows       = rows;
         this->_cols       = cols;
         this->_row_stride = row_stride;
@@ -2145,18 +2146,18 @@ template <utl_mvl_tensor_arg_defs>
     return stringify(_tensor_meta_string(tensor), "  <hidden due to large size>\n");
 }
 
-// Generic method to do "dense matrix print" with given delimers.
-// Cuts down on repitition since a lot of formats only differ in the delimers used.
+// Generic method to do "dense matrix print" with given delimiters.
+// Cuts down on repetition since a lot of formats only differ in the delimiters used.
 template <class T, Type type, Ownership ownership, Checking checking, Layout layout, class Func>
 [[nodiscard]] std::string
-_generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership, checking, layout>& tensor,      //
-                      std::string_view                                                              begin,       //
-                      std::string_view                                                              row_begin,   //
-                      std::string_view                                                              col_delimer, //
-                      std::string_view                                                              row_end,     //
-                      std::string_view                                                              row_delimer, //
-                      std::string_view                                                              end,         //
-                      Func                                                                          stringifier  //
+_generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership, checking, layout>& tensor,     //
+                      std::string_view                                                              begin,      //
+                      std::string_view                                                              row_begin,  //
+                      std::string_view                                                              col_delim,  //
+                      std::string_view                                                              row_end,    //
+                      std::string_view                                                              row_delim,  //
+                      std::string_view                                                              end,        //
+                      Func                                                                          stringifier //
 ) {
     if (tensor.empty()) return (std::string() += begin) += end;
 
@@ -2181,10 +2182,10 @@ _generic_dense_format(const GenericTensor<T, Dimension::MATRIX, type, ownership,
         for (std::size_t j = 0; j < strings.cols(); ++j) {
             if (strings(i, j).size() < column_widths[j]) buffer.append(column_widths[j] - strings(i, j).size(), ' ');
             buffer += strings(i, j);
-            if (j + 1 < strings.cols()) buffer += col_delimer;
+            if (j + 1 < strings.cols()) buffer += col_delim;
         }
         buffer += row_end;
-        if (i + 1 < strings.rows()) buffer += row_delimer;
+        if (i + 1 < strings.rows()) buffer += row_delim;
     }
     buffer += end;
 
@@ -2325,7 +2326,7 @@ auto operator-(L&& left) {
 
 // Doing things "in a dumb but simple way" would be to just have all operators take arguments as const-refs and
 // return a copy, however we can speed things up a lot by properly using perfect forwarding, which would reuse
-// r-lvalues if possible to avoid allocation. Doing so would effectively change something like this:
+// r-values if possible to avoid allocation. Doing so would effectively change something like this:
 //    res = A + B - C - D + E
 // from 5 (!) copies to only 1, since first operator will create an r-value that gets propagated and reused by
 // all others. This however introduces it's own set of challenges since instead of traditional overloading we
@@ -2353,7 +2354,7 @@ auto operator-(L&& left) {
 //
 // It's a good question whether to threat binary '*' as element-wise product (which would be in line with other
 // operators) or a matrix product, but in the end it seems doing it element-wise would be too confusing for the
-// user, so we leave '*' as a matrix product and declate element-wise product as a function 'elementwise_product()'
+// user, so we leave '*' as a matrix product and declare element-wise product as a function 'elementwise_product()'
 // since no existing operators seem suitable for such overload.
 
 // (1)  dense +  dense =>  dense
