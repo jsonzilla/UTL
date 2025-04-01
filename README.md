@@ -3,7 +3,6 @@
 [<img src ="docs/images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
 [<img src ="docs/images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
 
-
 # UTL
 
 **UTL** is a collection of small self-contained libraries that aim to provide a set of concise utilities aimed at prototyping with minimal boilerplate. Most of the modules were created during my work in gamedev and math research projects.
@@ -57,8 +56,6 @@ Secondary design goals also include:
 * [Names reserved for implementation](./docs/guide_reserved_names.md)
 
 * [Building tests & examples](./docs/guide_building_project.md)
-
-
 
 ## Requirements
 

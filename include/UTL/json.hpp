@@ -1642,7 +1642,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
     constexpr bool utl::json::_is_reflected_struct<struct_name_> = true;                                               \
                                                                                                                        \
     template <>                                                                                                        \
-    utl::json::Node utl::json::from_struct<struct_name_>(const struct_name_& val) {                                    \
+    inline utl::json::Node utl::json::from_struct<struct_name_>(const struct_name_& val) {                             \
         utl::json::Node json;                                                                                          \
         /* map 'json["<FIELDNAME>"] = val.<FIELDNAME>;' */                                                             \
         utl_json_map(utl_json_from_struct_assign, __VA_ARGS__);                                                        \
@@ -1650,7 +1650,7 @@ void _assign_node_to_value_recursively(std::array<T, N>& value, const Node& node
     }                                                                                                                  \
                                                                                                                        \
     template <>                                                                                                        \
-    auto utl::json::Node::to_struct<struct_name_>() const->struct_name_ {                                              \
+    inline auto utl::json::Node::to_struct<struct_name_>() const->struct_name_ {                                       \
         struct_name_ val;                                                                                              \
         /* map 'val.<FIELDNAME> = this->at("<FIELDNAME>").get<decltype(val.<FIELDNAME>)>();' */                        \
         utl_json_map(utl_json_to_struct_assign, __VA_ARGS__);                                                          \
