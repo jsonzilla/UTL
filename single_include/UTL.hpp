@@ -1449,7 +1449,7 @@ public:
         const auto chars = this->to_string(format);
 
         const std::filesystem::path path = filepath;
-        if (path.has_parent_path() && std::filesystem::exists(path.parent_path()))
+        if (path.has_parent_path() && !std::filesystem::exists(path.parent_path()))
             std::filesystem::create_directories(std::filesystem::path(filepath).parent_path());
         // no need to do an OS call in a trivial case, some systems might also have limited permissions
         // on directory creation and calling 'create_directories()' straight up will cause them to error
@@ -9252,14 +9252,14 @@ struct UniformIntDistribution {
     [[nodiscard]] constexpr result_type min() const noexcept { return this->pars.min; }
     [[nodiscard]] constexpr result_type max() const noexcept { return this->pars.max; }
 
+    constexpr bool operator==(const UniformIntDistribution& other) noexcept {
+        return this->a() == other.a() && this->b() == other.b();
+    }
+    constexpr bool operator!=(const UniformIntDistribution& other) noexcept { return !(*this == other); }
+
 private:
     param_type pars{};
 };
-
-template <class T>
-constexpr bool operator==(const UniformIntDistribution<T>& lhs, const UniformIntDistribution<T>& rhs) noexcept {
-    return lhs.a() == rhs.a() && lhs.b() == rhs.b();
-}
 
 // --- Uniform real distribution ---
 // ---------------------------------
@@ -9411,12 +9411,111 @@ struct UniformRealDistribution {
     constexpr result_type b() const noexcept { return this->pars.max; }
     constexpr result_type min() const noexcept { return this->pars.min; }
     constexpr result_type max() const noexcept { return this->pars.max; }
+
+    constexpr bool operator==(const UniformRealDistribution& other) noexcept {
+        return this->a() == other.a() && this->b() == other.b();
+    }
+    constexpr bool operator!=(const UniformRealDistribution& other) noexcept { return !(*this == other); }
 };
 
-template <class T>
-constexpr bool operator==(const UniformRealDistribution<T>& lhs, const UniformRealDistribution<T>& rhs) noexcept {
-    return lhs.a() == rhs.a() && lhs.b() == rhs.b();
-}
+// --- Normal distribution ---
+// ---------------------------
+
+template <class T = double, _require<std::is_floating_point_v<T>> = true>
+struct NormalDistribution {
+    using result_type = T;
+
+    struct param_type {
+        result_type mean   = 0;
+        result_type stddev = 1;
+    } pars{};
+
+private:
+    // Marsaglia Polar algorithm generates values in pairs so we need to cache the 2nd one
+    result_type saved           = 0;
+    bool        saved_available = false;
+
+    // Implementation of Marsaglia Polar method for N(0, 1) based on libstdc++,
+    // the algorithm is exactly the same, except we use a faster uniform distribution
+    // ('generate_canonical()' that was implemented earlier)
+    //
+    // Note 1:
+    // While our 'generate_canonical()' is slightly different in that in produces [0, 1] range
+    // instead of [0, 1), this is not an issue since Marsaglia Polar is a rejection method and does
+    // not care about the inclusion of upper-boundaries, they get rejected by 'r2 > T(1)' check
+    //
+    // Note 2:
+    // As far as normal distributions go we have 3 options:
+    //    - Box-Muller
+    //    - Marsaglia Polar
+    //    - Ziggurat
+    // Box-Muller performance is similar to Marsaglia Polar, but it has issues working with [0, 1]
+    // 'generate_canonical()'. Ziggurat is usually ~50% faster, but involver several KB of lookup tables
+    // and a MUCH more cumbersome and difficult to generalize implementation. Most (in fact, all I've seen so far)
+    // ziggurat implementations found online are absolutely atrocious. There is a very interesting and well-made
+    // paper by Christopher McFarland (2015, see https://pmc.ncbi.nlm.nih.gov/articles/PMC4812161/ for pdf) than
+    // proposes several significant improvements, but it has even more lookup tables (~12 KB in total) and an even
+    // harder implementation. For the sake of robustness we will stick to Polar method for now.
+    //
+    // Note 3:
+    // Not 'constexpr' due to the <cmath> nonsense, can't do anything about it, will be fixed with C++23.
+    //
+    template <class Gen>
+    result_type generate_standard_normal(Gen& gen) noexcept {
+        if (this->saved_available) {
+            this->saved_available = false;
+            return this->saved;
+        }
+
+        result_type x, y, r2;
+
+        do {
+            x  = T(2) * generate_canonical<result_type>(gen) - T(1);
+            y  = T(2) * generate_canonical<result_type>(gen) - T(1);
+            r2 = x * x + y * y;
+        } while (r2 > T(1) || r2 == T(0));
+
+        const result_type mult = std::sqrt(-2 * std::log(r2) / r2);
+
+        this->saved_available = true;
+        this->saved           = x * mult;
+
+        return y * mult;
+    }
+
+public:
+    constexpr NormalDistribution() = default;
+    constexpr NormalDistribution(T mean, T stddev) noexcept : pars({mean, stddev}) { assert(stddev >= T(0)); }
+    constexpr NormalDistribution(const param_type& p) noexcept : pars(p) { assert(p.stddev >= T(0)); }
+
+    template <class Gen>
+    result_type operator()(Gen& gen) noexcept {
+        return this->generate_standard_normal(gen) * this->pars.stddev + this->pars.mean;
+    }
+
+    template <class Gen>
+    result_type operator()(Gen& gen, const param_type& params) noexcept {
+        assert(params.stddev >= T(0));
+        return this->generate_standard_normal(gen) * params.stddev + params.mean;
+    }
+
+    constexpr void reset() const noexcept {
+        this->saved           = 0;
+        this->saved_available = false;
+    }
+    [[nodiscard]] constexpr param_type  param() const noexcept { return this->pars; }
+    constexpr void                      param(const param_type& p) noexcept { *this = NormalDistribution(p); }
+    [[nodiscard]] constexpr result_type mean() const noexcept { return this->pars.mean; }
+    [[nodiscard]] constexpr result_type stddev() const noexcept { return this->pars.stddev; }
+    [[nodiscard]] constexpr result_type min() const noexcept { return std::numeric_limits<result_type>::lowest(); }
+    [[nodiscard]] constexpr result_type max() const noexcept { return std::numeric_limits<result_type>::max(); }
+
+    constexpr bool operator==(const NormalDistribution& other) noexcept {
+        return this->mean() == other.mean() && this->stddev() == other.stddev() &&
+               this->saved_available == other.saved_available && this->saved == other.saved;
+    }
+    constexpr bool operator!=(const NormalDistribution& other) noexcept { return !(*this == other); }
+};
 
 // ========================
 // --- Random Functions ---

@@ -84,10 +84,9 @@ void benchmark_prngs() {
     benchmark_prng<random::generators::ChaCha20>("ChaCha20");
 }
 
-// ===============================
-// --- Distribution benchmarks ---
-// ===============================
-
+// =======================================
+// --- Uniform Distribution benchmarks ---
+// =======================================
 
 // clang-format off
 template<class T> struct wider { static_assert(json::_always_false_v<T>, "Missing specialization"); };
