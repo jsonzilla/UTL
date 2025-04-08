@@ -140,12 +140,20 @@ void _append_decorated_value(std::ostream& os, const T& value) {
             const std::string mantissa = number_string.substr(0, e_index - 1);
             const char        sign     = number_string.at(e_index + 1);
             const std::string exponent = number_string.substr(e_index + 2);
-
+            
+            const bool        mantissa_is_one =
+                mantissa == "1" || mantissa == "1." || mantissa == "1.0" || mantissa == "1.00" || mantissa == "1.000";
+            // dirty, simple, a sensible person would figure this out with math a lookup tables
+            
             number_string.clear();
-            number_string += mantissa;
-            number_string += " \\cdot 10^{";
+            if (!mantissa_is_one) { // powers of 10 don't need the fractional part
+                number_string += mantissa;
+                number_string += " \\cdot "; 
+            }
+            number_string += "10^{";
             if (sign == '-') number_string += sign;
-            number_string += _trim_left(exponent, '0');
+            const std::string trimmed_exponent = _trim_left(exponent, '0');
+            number_string += trimmed_exponent.empty() ? "0" : trimmed_exponent; // prevent stuff like '10^{}'
             number_string += '}';
         }
 
