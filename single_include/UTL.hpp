@@ -9517,6 +9517,122 @@ public:
     constexpr bool operator!=(const NormalDistribution& other) noexcept { return !(*this == other); }
 };
 
+// --- Approximate normal distribution ---
+// ---------------------------------------
+
+// Extremely fast, but noticeably imprecise normal distribution, can be very useful for fuzzing & gamedev=
+
+template <class T, _require<std::is_integral_v<T> && std::is_unsigned_v<T>> = true>
+[[nodiscard]] constexpr int _popcount(T x) noexcept {
+    constexpr auto bitmask_1 = T(0x5555555555555555UL);
+    constexpr auto bitmask_2 = T(0x3333333333333333UL);
+    constexpr auto bitmask_3 = T(0x0F0F0F0F0F0F0F0FUL);
+
+    constexpr auto bitmask_16 = T(0x00FF00FF00FF00FFUL);
+    constexpr auto bitmask_32 = T(0x0000FFFF0000FFFFUL);
+    constexpr auto bitmask_64 = T(0x00000000FFFFFFFFUL);
+
+    x = (x & bitmask_1) + ((x >> 1) & bitmask_1);
+    x = (x & bitmask_2) + ((x >> 2) & bitmask_2);
+    x = (x & bitmask_3) + ((x >> 4) & bitmask_3);
+
+    if constexpr (sizeof(T) > 1) x = (x & bitmask_16) + ((x >> 8) & bitmask_16);
+    if constexpr (sizeof(T) > 2) x = (x & bitmask_32) + ((x >> 16) & bitmask_32);
+    if constexpr (sizeof(T) > 4) x = (x & bitmask_64) + ((x >> 32) & bitmask_64);
+
+    return x; // GCC seem to be smart enough to replace this with a built-in
+} // C++20 adds a proper 'std::popcount()'
+
+// Quick approximation of normal distribution based on this excellent reddit thread:
+// https://www.reddit.com/r/algorithms/comments/yyz59u/fast_approximate_gaussian_generator/
+//
+// Lack of <cmath> functions also allows us to 'constexpr' everything
+
+template <class T>
+[[nodiscard]] constexpr T _approx_standard_normal_from_u32_pair(std::uint32_t major, std::uint32_t minor) noexcept {
+    constexpr T delta = T(1) / T(4294967296); // (1 / 2^32)
+
+    T x = _popcount(major); // random binomially distributed integer 0 to 32
+    x += minor * delta;     // linearly fill the gaps between integers
+    x -= T(16.5);           // re-center around 0 (the mean should be 16+0.5)
+    x *= T(0.3535534);      // scale to ~1 standard deviation
+    return x;
+
+    // 'x' now has a mean of 0, stddev very close to 1, and lies strictly in [-5.833631, 5.833631] range,
+    // there are exactly 33 * 2^32 possible outputs which is slightly more than 37 bits of entropy,
+    // the distribution is approximated via 33 equally spaced intervals each of which is further subdivided
+    // into 2^32 parts. As a result we have a very fast, but noticeably inaccurate approximation, not suitable
+    // for research, but might prove very useful in fuzzing / gamedev where quality is not that important.
+}
+
+template <class T>
+[[nodiscard]] constexpr T _approx_standard_normal_from_u64(std::uint64_t rng) noexcept {
+    return _approx_standard_normal_from_u32_pair<T>(static_cast<std::uint32_t>(rng >> 32),
+                                                    static_cast<std::uint32_t>(rng));
+}
+
+template <class T, class Gen>
+constexpr T _approx_standard_normal(Gen& gen) noexcept {
+    // Ensure PRNG is bit-uniform
+    using generated_type = typename Gen::result_type;
+
+    static_assert(Gen::min() == 0);
+    static_assert(Gen::max() == std::numeric_limits<generated_type>::max());
+
+    // Forward PRNG to a fast approximation
+    if constexpr (sizeof(generated_type) == 8) {
+        return _approx_standard_normal_from_u64<T>(gen());
+    } else if constexpr (sizeof(generated_type) == 4) {
+        return _approx_standard_normal_from_u32_pair<T>(static_cast<std::uint32_t>(gen() >> 32),
+                                                        static_cast<std::uint32_t>(gen()));
+    } else {
+        static_assert(_always_false_v<T>, "ApproxNormalDistribution<> only supports bit-uniform 32/64-bit PRNGs.");
+        // we could use a slower fallback for esoteric PRNGs, but I think it's better to explicitly state when "fast
+        // approximate" is not available, esoteric PRNGs are already handled by a regular NormalDistribution
+    }
+}
+
+template <class T = double, _require<std::is_floating_point_v<T>> = true>
+struct ApproxNormalDistribution {
+    using result_type = T;
+
+    struct param_type {
+        result_type mean   = 0;
+        result_type stddev = 1;
+    } pars{};
+
+    constexpr ApproxNormalDistribution() = default;
+    constexpr ApproxNormalDistribution(T mean, T stddev) noexcept : pars({mean, stddev}) { assert(stddev >= T(0)); }
+    constexpr ApproxNormalDistribution(const param_type& p) noexcept : pars(p) { assert(p.stddev >= T(0)); }
+
+    template <class Gen>
+    constexpr result_type operator()(Gen& gen) noexcept {
+        return _approx_standard_normal<result_type>(gen) * this->pars.stddev + this->pars.mean;
+    }
+
+    template <class Gen>
+    constexpr result_type operator()(Gen& gen, const param_type& params) noexcept {
+        assert(params.stddev >= T(0));
+        return _approx_standard_normal<result_type>(gen) * params.stddev + params.mean;
+    }
+
+    constexpr void reset() const noexcept {
+        this->saved           = 0;
+        this->saved_available = false;
+    }
+    [[nodiscard]] constexpr param_type  param() const noexcept { return this->pars; }
+    constexpr void                      param(const param_type& p) noexcept { *this = NormalDistribution(p); }
+    [[nodiscard]] constexpr result_type mean() const noexcept { return this->pars.mean; }
+    [[nodiscard]] constexpr result_type stddev() const noexcept { return this->pars.stddev; }
+    [[nodiscard]] constexpr result_type min() const noexcept { return std::numeric_limits<result_type>::lowest(); }
+    [[nodiscard]] constexpr result_type max() const noexcept { return std::numeric_limits<result_type>::max(); }
+
+    constexpr bool operator==(const ApproxNormalDistribution& other) noexcept {
+        return this->mean() == other.mean() && this->stddev() == other.stddev();
+    }
+    constexpr bool operator!=(const ApproxNormalDistribution& other) noexcept { return !(*this == other); }
+};
+
 // ========================
 // --- Random Functions ---
 // ========================

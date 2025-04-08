@@ -85,7 +85,7 @@ While the library itself consists of a single header with no embedded dependenci
 
 ## Work in progress
 
-* Old module reworks (`utl::timer` and `utl::table`);
+* Old module reworks (`utl::table`);
 * Examples for `utl::math`;
 * Small API improvements for `utl::log`;
 * Vector support for `utl::mvl`;

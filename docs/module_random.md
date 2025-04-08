@@ -93,10 +93,16 @@ std::uint32_t entropy();
 
 // Distributions
 template <class T>
-struct UniformIntDistribution  { /* same API as std::uniform_int_distribution<T> */  };
+struct UniformIntDistribution   { /* same API as std::uniform_int_distribution<T> */  };
 
 template <class T>
-struct UniformRealDistribution { /* same API as std::uniform_real_distribution<T> */ };
+struct UniformRealDistribution  { /* same API as std::uniform_real_distribution<T> */ };
+
+template <class T>
+struct NormalDistribution       { /* same API as std::normal_distribution<T> */       };
+
+template <class T>
+struct ApproxNormalDistribution { /* same API as std::normal_distribution<T> */       };
 
 template <class T, class Gen>
 constexpr T generate_canonical(Gen& gen) noexcept(noexcept(gen()));
@@ -218,6 +224,8 @@ These functions serve a role of a "slightly better and more convenient [std::ran
 
 ### Distributions
 
+#### Uniform integer distribution
+
 > ```cpp
 > template <class T>
 > struct UniformIntDistribution {
@@ -233,6 +241,8 @@ Uniform integer distribution class that provides a 1-to-1 copy of [`std::uniform
 - Distribution sequence is platform-independent
 
 **Note:** This is a close reimplementation of `std::uniform_int_distribution` for [GCC libstdc++](https://github.com/gcc-mirror/gcc) with some additional considerations, it provides similar performance and in some cases may even produce the same sequence.
+
+#### Uniform real distribution
 
 > ```cpp
 > template <class T>
@@ -260,6 +270,39 @@ Uniform floating-point distribution class that provides a 1-to-1 copy of [`std::
 Generates a random floating point number in range $[0, 1]$ similarly to [`std::generate_canonical<>()`](https://en.cppreference.com/w/cpp/numeric/random/generate_canonical).
 
 Always generates `std::numeric_limits<T>::digits` bits of randomness, which is enough to fill the mantissa. See `UniformRealDistribution` for notes on implementation improvements.
+
+#### Normal distribution
+
+> ```cpp
+> template <class T>
+> struct NormalDistribution {
+>     /* ... */
+> };
+> ```
+
+Normal floating-point distribution class that provides a 1-to-1 copy of [`std::normal_distribution`](https://en.cppreference.com/w/cpp/numeric/random/normal_distribution) API, except:
+
+- Everything is `noexcept`
+- Performance on a common use case is slightly improved (~1.1 to ~1.3 times faster distribution)
+
+**How is it faster than std:** It uses faster uniform real distribution for rejection sampling, the underlying [Marsaglia polar method](https://en.wikipedia.org/wiki/Marsaglia_polar_method) itself is implemented exactly the same as in all major compilers.
+
+#### Approximate normal distribution
+
+> ```cpp
+> template <class T>
+> struct ApproxNormalDistribution {
+>     /* ... */
+> };
+> ```
+
+Normal floating-point distribution class that provides a 1-to-1 copy of [`std::normal_distribution`](https://en.cppreference.com/w/cpp/numeric/random/normal_distribution) API, except:
+
+- Everything is `constexpr` and `noexcept`
+- `operator()` is `const`-qualified
+- **Extremely** good performance (~4 times faster distribution) at the cost of precision ([see distribution approximations](#distribution-approximations))
+
+**How is it faster than std:** It uses the fact that [popcount](https://en.cppreference.com/w/cpp/numeric/popcount) of a uniformly distributed integer follows a binomial distribution. By rescaling that binomial distribution and adding some linear fill we can achieve a curve very similar to a proper normal distribution in just a few instructions. While that level of precision is not suitable for a general use, in instances where quality is not particularly important (gamedev, fuzzing) this is perhaps the fastest possible way of generating normally distributed floats.
 
 ### Convenient random functions
 
@@ -554,3 +597,11 @@ Such approach however is beyond cumbersome and is rarely used in practice, which
 Unfortunately the is no "nice" and portable way of getting proper cryptographic entropy is a standard library. Main issues were already mentioned in the section documenting [`random::entropy_seq()`](#entropy), the best we can do without using system API is to sample everything we can (`std::random_device`, time in nanoseconds, address space, some other PRNG and etc.) and use seeding sequence to mash it all together into a single state.
 
 The result of such approach is generally satisfactory, however oftentimes not sufficient for proper cryptographic security.
+
+#### Distribution approximations
+
+Most non-uniform distributions transform their inputs with slow non-linear functions like `std::sqrt()`, `std::log()`, `std::exp()` and etc. In many practical cases (gamedev, fuzzing, rendering) we don't need distributions to be particularly precise, this warrants usage of approximations which can completely avoid non-linear functions and get "close enough" results in a fraction of time.
+
+Below is an example of an empirical [PDF](https://en.wikipedia.org/wiki/Probability_density_function) produced by a regular `NormalDistribution<>` and an  `ApproxNormalDistribution<>` which is about **3–4 times faster** to compute.
+
+<img src ="images/random_normal_approximation.svg">
