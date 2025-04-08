@@ -9606,12 +9606,12 @@ struct ApproxNormalDistribution {
     constexpr ApproxNormalDistribution(const param_type& p) noexcept : pars(p) { assert(p.stddev >= T(0)); }
 
     template <class Gen>
-    constexpr result_type operator()(Gen& gen) noexcept {
+    constexpr result_type operator()(Gen& gen) const noexcept {
         return _approx_standard_normal<result_type>(gen) * this->pars.stddev + this->pars.mean;
     }
 
     template <class Gen>
-    constexpr result_type operator()(Gen& gen, const param_type& params) noexcept {
+    constexpr result_type operator()(Gen& gen, const param_type& params) const noexcept {
         assert(params.stddev >= T(0));
         return _approx_standard_normal<result_type>(gen) * params.stddev + params.mean;
     }
@@ -10788,7 +10788,7 @@ namespace utl::time {
 // --- <chrono> utils ---
 // ======================
 
-struct SplitTime {
+struct SplitDuration {
     std::chrono::hours        hours;
     std::chrono::minutes      min;
     std::chrono::seconds      sec;
@@ -10802,14 +10802,14 @@ struct SplitTime {
                                           decltype(ms)::rep, decltype(us)::rep, decltype(ns)::rep>;
     // standard doesn't specify common representation type, usually it's 'std::int64_t'
 
-    std::array<common_rep, SplitTime::size> count() {
+    std::array<common_rep, SplitDuration::size> count() {
         return {this->hours.count(), this->min.count(), this->sec.count(),
                 this->ms.count(),    this->us.count(),  this->ns.count()};
     }
 };
 
 template <class Rep, class Period>
-[[nodiscard]] SplitTime unit_split(std::chrono::duration<Rep, Period> val) {
+[[nodiscard]] SplitDuration unit_split(std::chrono::duration<Rep, Period> val) {
     // for some reason 'duration_cast<>()' is not 'noexcept'
     const auto hours = std::chrono::duration_cast<std::chrono::hours>(val);
     const auto min   = std::chrono::duration_cast<std::chrono::minutes>(val - hours);
@@ -10832,11 +10832,11 @@ template <class Rep, class Period>
     // timescale <= ms      =>   show {    ms,  us,  ns }   =>   string "___ ms ___ us ___ ns"
     // timescale <= us      =>   show {    us,  ns      }   =>   string "___ us ___ ns"
     // timescale <= ns      =>   show {    ns           }   =>   string "___ ns"
-    
-    if (relevant_units == 0) relevant_units = SplitTime::size; // treat '0' as 'show everything'
 
-    const std::array<SplitTime::common_rep, SplitTime::size> counts = unit_split(value).count();
-    const std::array<const char*, SplitTime::size>           names  = {"hours", "min", "sec", "ms", "us", "ns"};
+    if (relevant_units == 0) return ""; // early escape for a pathological case
+
+    const std::array<SplitDuration::common_rep, SplitDuration::size> counts = unit_split(value).count();
+    const std::array<const char*, SplitDuration::size>               names  = {"hours", "min", "sec", "ms", "us", "ns"};
 
     for (std::size_t unit = 0; unit < counts.size(); ++unit) {
         if (counts[unit]) {

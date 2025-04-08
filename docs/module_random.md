@@ -257,6 +257,7 @@ Uniform floating-point distribution class that provides a 1-to-1 copy of [`std::
 - `operator()` is `const`-qualified
 - Performance on a common use case is drastically improved (~1.3 to ~4 times faster `double` and `float` generation)
 - Output range is $[min, max]$ instead of standard-mandated $[min, max)$
+- Distribution sequence is platform-independent
 
 **Note:** This is a close reimplementation of `std::uniform_real_distribution` for [MSVC STL](https://github.com/microsoft/STL) with some additional considerations and special logic for common optimizable cases.
 
@@ -284,6 +285,7 @@ Normal floating-point distribution class that provides a 1-to-1 copy of [`std::n
 
 - Everything is `noexcept`
 - Performance on a common use case is slightly improved (~1.1 to ~1.3 times faster distribution)
+- Distribution sequence is platform-independent
 
 **How is it faster than std:** It uses faster uniform real distribution for rejection sampling, the underlying [Marsaglia polar method](https://en.wikipedia.org/wiki/Marsaglia_polar_method) itself is implemented exactly the same as in all major compilers.
 
@@ -301,6 +303,7 @@ Normal floating-point distribution class that provides a 1-to-1 copy of [`std::n
 - Everything is `constexpr` and `noexcept`
 - `operator()` is `const`-qualified
 - **Extremely** good performance (~4 times faster distribution) at the cost of precision ([see distribution approximations](#distribution-approximations))
+- Distribution sequence is platform-independent
 
 **How is it faster than std:** It uses the fact that [popcount](https://en.cppreference.com/w/cpp/numeric/popcount) of a uniformly distributed integer follows a binomial distribution. By rescaling that binomial distribution and adding some linear fill we can achieve a curve very similar to a proper normal distribution in just a few instructions. While that level of precision is not suitable for a general use, in instances where quality is not particularly important (gamedev, fuzzing) this is perhaps the fastest possible way of generating normally distributed floats.
 

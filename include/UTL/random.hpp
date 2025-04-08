@@ -1307,12 +1307,12 @@ struct ApproxNormalDistribution {
     constexpr ApproxNormalDistribution(const param_type& p) noexcept : pars(p) { assert(p.stddev >= T(0)); }
 
     template <class Gen>
-    constexpr result_type operator()(Gen& gen) noexcept {
+    constexpr result_type operator()(Gen& gen) const noexcept {
         return _approx_standard_normal<result_type>(gen) * this->pars.stddev + this->pars.mean;
     }
 
     template <class Gen>
-    constexpr result_type operator()(Gen& gen, const param_type& params) noexcept {
+    constexpr result_type operator()(Gen& gen, const param_type& params) const noexcept {
         assert(params.stddev >= T(0));
         return _approx_standard_normal<result_type>(gen) * params.stddev + params.mean;
     }
