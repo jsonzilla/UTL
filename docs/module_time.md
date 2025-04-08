@@ -26,12 +26,20 @@ Feature summary:
 
 ```cpp
 // Unit split
-template <class Rep, class Period>
-auto unit_split(std::chrono::duration<Rep, Period> val);
-    -> /* tuple of hours, minutes, seconds, milliseconds */;
+struct SplitDuration {
+    std::chrono::hours        hours;
+    std::chrono::minutes      min;
+    std::chrono::seconds      sec;
+    std::chrono::milliseconds ms;
+    std::chrono::microseconds us;
+    std::chrono::nanoseconds  ns;
+};
 
 template <class Rep, class Period>
-std::string to_string(std::chrono::duration<Rep, Period> value);
+SplitDuration unit_split(std::chrono::duration<Rep, Period> val);
+
+template <class Rep, class Period>
+std::string to_string(std::chrono::duration<Rep, Period> value, std::size_t relevant_units = 3);
 
 // Floating-point time
 template <class T> using float_duration;
@@ -60,7 +68,8 @@ struct Stopwatch {
     sec         elapsed_sec()    const;
     min         elapsed_min()    const;
     hours       elapsed_hours()  const;
-    std::string elapsed_string() const;
+    
+    std::string elapsed_string(std::size_t relevant_units = 3) const;
 };
 
 // Timer
@@ -87,7 +96,8 @@ struct Timer {
     sec         elapsed_sec()    const;
     min         elapsed_min()    const;
     hours       elapsed_hours()  const;
-    std::string elapsed_string() const;
+    
+    std::string elapsed_string(std::size_t relevant_units = 3) const;
     
     bool     finished() const;
     bool      running() const noexcept;
@@ -105,10 +115,22 @@ std::string datetime_string(const char* format = "%Y-%m-%d %H:%M:%S");
 ### Unit split
 
 > ```cpp
-> template <class Rep, class Period>
-> auto unit_split(std::chrono::duration<Rep, Period> val);
->     -> std::tuple<std::chrono::hours, std::chrono::minutes, std::chrono::seconds, std::chrono::milliseconds>;
+> struct SplitDuration {
+>     std::chrono::hours        hours;
+>     std::chrono::minutes      min;
+>     std::chrono::seconds      sec;
+>     std::chrono::milliseconds ms;
+>     std::chrono::microseconds us;
+>     std::chrono::nanoseconds  ns;
+> };
 > ```
+
+POD struct representing duration split into individual units.
+
+> ```cpp
+> template <class Rep, class Period>
+> SplitDuration unit_split(std::chrono::duration<Rep, Period> val);
+>    ```
 
 Splits given duration into distinct units.
 
@@ -116,12 +138,20 @@ For example, `73432` milliseconds will be split into `1` minute, `13` seconds an
 
 > ```cpp
 > template <class Rep, class Period>
-> std::string to_string(std::chrono::duration<Rep, Period> value);
+> std::string to_string(std::chrono::duration<Rep, Period> value, std::size_t relevant_units = 3);
 > ```
 
-Converts given duration to a string with a following format: `%H hours %M min %S sec %L ms` with zero-values hidden.
+Converts given duration to a string, showing counts only for the highest `relevant_units`.
 
-For example, `73432` milliseconds will be converted to a string `1 min 13 sec 432 ms`.
+See table below for an example:
+
+| Duration             | `relevant_units` | Resulting string           |
+| -------------------- | ---------------- | -------------------------- |
+| `73432` milliseconds | 4                | `1 min 13 sec 432 ms 0 us` |
+| `73432` milliseconds | Default (3)      | `1 min 13 sec 432 ms`      |
+| `73432` milliseconds | 2                | `1 min 13 sec`             |
+| `73432` milliseconds | 1                | `1 min`                    |
+| `73432` milliseconds | 0                | Empty string               |
 
 ### Floating-point time
 
@@ -290,8 +320,8 @@ std::cout << watch.elapsed_ms().count()       << '\n';
 
 Output:
 ```
-1 sec 700 ms
-1700.39
+1 sec 700 ms 67 us
+1700.48
 ```
 
 ### Accumulate time
@@ -313,7 +343,7 @@ for (std::size_t i = 0; i < 20; ++i) {
     total += watch.elapsed();
 }
 
-std::cout << time::to_string(total) << '\n';
+std::cout << time::to_string(total, 2) << '\n';
 ```
 
 Output:
@@ -338,7 +368,7 @@ std::cout << "Counted to " << count << " while looping for " << time::to_string(
 
 Output:
 ```
-Counted to 42286547 while looping for 1 sec
+Counted to 42286547 while looping for 1 sec 0 ms 0 us
 ```
 
 ### Get local date & time

@@ -8,24 +8,27 @@
 //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 #if !defined(UTL_PICK_MODULES) || defined(UTLMODULE_TIME)
 #ifndef UTLHEADERGUARD_TIME
 #define UTLHEADERGUARD_TIME
 
 // _______________________ INCLUDES _______________________
 
-#include <chrono>    // steady_clock, system_clock, duration_cast<>(), duration<>, time_point<>
-#include <ctime>     // strftime, mktime
-#include <stdexcept> // runtime_error
-#include <string>    // string, to_string()
-#include <tuple>     // tuple<>, make_tuple()
+#include <array>       // array<>
+#include <chrono>      // steady_clock, system_clock, duration_cast<>(), duration<>, time_point<>
+#include <cstddef>     // size_t
+#include <ctime>       // strftime, mktime
+#include <stdexcept>   // runtime_error
+#include <string>      // string, to_string()
+#include <type_traits> // common_type_t<>
 
 // ____________________ DEVELOPER DOCS ____________________
 
-// Thin wrapper around <chrono> and <ctime> to make common things easier, initially 
+// Thin wrapper around <chrono> and <ctime> to make common things easier, initially
 // started as 'utl::timer' which was a convenient global-state timer that dealt in doubles.
 // After some time and a good read through <chrono> documentation it was deprecated in favor
-// of a this 'utl::time' module, the rewrite got rid of any global state and added better type  
+// of a this 'utl::time' module, the rewrite got rid of any global state and added better type
 // safety by properly using <chrono> type system.
 //
 // The reason we can do things so conveniently is because chrono 'duration' and 'time_moment'
@@ -41,42 +44,77 @@ namespace utl::time {
 // --- <chrono> utils ---
 // ======================
 
+struct SplitDuration {
+    std::chrono::hours        hours;
+    std::chrono::minutes      min;
+    std::chrono::seconds      sec;
+    std::chrono::milliseconds ms;
+    std::chrono::microseconds us;
+    std::chrono::nanoseconds  ns;
+
+    constexpr static std::size_t size = 6; // number of time units, avoids magic constants everywhere
+
+    using common_rep = std::common_type_t<decltype(hours)::rep, decltype(min)::rep, decltype(sec)::rep,
+                                          decltype(ms)::rep, decltype(us)::rep, decltype(ns)::rep>;
+    // standard doesn't specify common representation type, usually it's 'std::int64_t'
+
+    std::array<common_rep, SplitDuration::size> count() {
+        return {this->hours.count(), this->min.count(), this->sec.count(),
+                this->ms.count(),    this->us.count(),  this->ns.count()};
+    }
+};
+
 template <class Rep, class Period>
-[[nodiscard]] auto unit_split(std::chrono::duration<Rep, Period> val)
-    -> std::tuple<std::chrono::hours, std::chrono::minutes, std::chrono::seconds, std::chrono::milliseconds> {
+[[nodiscard]] SplitDuration unit_split(std::chrono::duration<Rep, Period> val) {
     // for some reason 'duration_cast<>()' is not 'noexcept'
-    const auto hours        = std::chrono::duration_cast<std::chrono::hours>(val);
-    const auto minutes      = std::chrono::duration_cast<std::chrono::minutes>(val - hours);
-    const auto seconds      = std::chrono::duration_cast<std::chrono::seconds>(val - hours - minutes);
-    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(val - hours - minutes - seconds);
-    return std::make_tuple(hours, minutes, seconds, milliseconds);
+    const auto hours = std::chrono::duration_cast<std::chrono::hours>(val);
+    const auto min   = std::chrono::duration_cast<std::chrono::minutes>(val - hours);
+    const auto sec   = std::chrono::duration_cast<std::chrono::seconds>(val - hours - min);
+    const auto ms    = std::chrono::duration_cast<std::chrono::milliseconds>(val - hours - min - sec);
+    const auto us    = std::chrono::duration_cast<std::chrono::microseconds>(val - hours - min - sec - ms);
+    const auto ns    = std::chrono::duration_cast<std::chrono::nanoseconds>(val - hours - min - sec - ms - us);
+    return {hours, min, sec, ms, us, ns};
 }
 
 template <class Rep, class Period>
-[[nodiscard]] std::string to_string(std::chrono::duration<Rep, Period> value) {
-    const auto [hours, minutes, seconds, milliseconds] = unit_split(value);
+[[nodiscard]] std::string to_string(std::chrono::duration<Rep, Period> value, std::size_t relevant_units = 3) {
 
-    std::string res;
-    if (hours.count()) {
-        res += std::to_string(hours.count());
-        res += " hours";
+    // Takes 'unit_count' of the highest relevant units and converts them to string,
+    // for example with 'unit_count' equal to '3', we will have:
+    //
+    // timescale <= hours   =>   show { hours, min, sec }   =>   string "___ hours ___ min ___ sec"
+    // timescale <= min     =>   show {   min, sec,  ms }   =>   string "___ min ___ sec ___ ms"
+    // timescale <= sec     =>   show {   sec,  ms,  us }   =>   string "___ sec ___ ms ___ us"
+    // timescale <= ms      =>   show {    ms,  us,  ns }   =>   string "___ ms ___ us ___ ns"
+    // timescale <= us      =>   show {    us,  ns      }   =>   string "___ us ___ ns"
+    // timescale <= ns      =>   show {    ns           }   =>   string "___ ns"
+
+    if (relevant_units == 0) return ""; // early escape for a pathological case
+
+    const std::array<SplitDuration::common_rep, SplitDuration::size> counts = unit_split(value).count();
+    const std::array<const char*, SplitDuration::size>               names  = {"hours", "min", "sec", "ms", "us", "ns"};
+
+    for (std::size_t unit = 0; unit < counts.size(); ++unit) {
+        if (counts[unit]) {
+            std::string res;
+
+            const std::size_t last = (unit + relevant_units < counts.size()) ? (unit + relevant_units) : counts.size();
+            // don't want to include the whole <algorithm> just for 'std::max()'
+
+            for (std::size_t k = unit; k < last; ++k) {
+                res += std::to_string(counts[k]);
+                res += ' ';
+                res += names[k];
+                res += ' ';
+            }
+
+            res.resize(res.size() - 1); // remove trailing space at the end
+
+            return res;
+        }
     }
-    if (minutes.count()) {
-        if (hours.count()) res += ' ';
-        res += std::to_string(minutes.count());
-        res += " min";
-    }
-    if (seconds.count()) {
-        if (minutes.count()) res += ' ';
-        res += std::to_string(seconds.count());
-        res += " sec";
-    }
-    if (milliseconds.count()) {
-        if (seconds.count()) res += ' ';
-        res += std::to_string(milliseconds.count());
-        res += " ms";
-    }
-    return res;
+
+    return "0 ns"; // fallback, unlikely to ever be triggered
 }
 
 // ===========================
@@ -126,7 +164,9 @@ struct Stopwatch {
     [[nodiscard]] hours elapsed_hours() const { return this->elapsed(); }
     // <chrono> handles conversion to a floating-point representation when casting duration to the return type
 
-    [[nodiscard]] std::string elapsed_string() const { return to_string(this->elapsed()); }
+    [[nodiscard]] std::string elapsed_string(std::size_t relevant_units = 3) const {
+        return to_string(this->elapsed(), relevant_units);
+    }
 
 private:
     time_point _start;
@@ -167,7 +207,9 @@ struct Timer {
     [[nodiscard]] hours elapsed_hours() const { return this->elapsed(); }
     // <chrono> handles conversion to a floating-point representation when casting duration to the return type
 
-    [[nodiscard]] std::string elapsed_string() const { return to_string(this->elapsed()); }
+    [[nodiscard]] std::string elapsed_string(std::size_t relevant_units = 3) const {
+        return to_string(this->elapsed(), relevant_units);
+    }
 
     [[nodiscard]] bool     finished() const { return this->elapsed() >= this->_length; }
     [[nodiscard]] bool     running() const noexcept { return this->_length != duration{}; }
