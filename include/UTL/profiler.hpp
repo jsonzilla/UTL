@@ -16,7 +16,6 @@
 
 #ifndef UTL_PROFILER_DISABLE
 
-#include <algorithm>     // max(), sort()
 #include <cassert>       // assert()
 #include <charconv>      // to_chars()
 #include <chrono>        // steady_clock, duration<>, duration_cast<>
@@ -28,7 +27,7 @@
 #include <string>        // string
 #include <string_view>   // string_view
 #include <thread>        // thread::id, this_thread::get_id()
-#include <type_traits>   // enable_if_t, is_enum_v, is_arithmetic_v, is_invokable_v
+#include <type_traits>   // enable_if_t, is_enum_v, is_invokable_v
 #include <unordered_map> // unordered_map<>
 #include <vector>        // vector<>
 
@@ -38,16 +37,16 @@
 
 // Optional macros:
 // - #define UTL_PROFILER_DISABLE                            // disable all profiling
-// - #define UTL_PROFILER_USE_INTRINSICS_FOR_FREQUENCY 3.3e6 // use low-overhead rdtsc timestamps
+// - #define UTL_PROFILER_USE_INTRINSICS_FOR_FREQUENCY 3.3e9 // use low-overhead rdtsc timestamps
 //
-// This used to be a much simpler header with a few macros to profile scope & print a flat table,
-// it introduced the idea of using static variables to mark callsites efficiently and later underwent
+// This used to be a much simpler header with a few macros to profile scope & print a flat table, it
+// already applied the idea of using static variables to mark callsites efficiently and later underwent
 // a full rewrite to add proper threading & call graph support.
 //
 // A lot of though went into making it fast, the key idea is to use 'thread_local' callsite
 // markers to associate callsites with numeric thread-specific IDs and to reduce all call graph
 // traversal to simple integer array lookups. Store everything we can densely, minimize locks,
-// delay formatting and result evaluation as much as possible. 
+// delay formatting and result evaluation as much as possible.
 //
 // Docs & comments scattered through code should explain the details decently well.
 
@@ -79,13 +78,17 @@
 
 namespace utl::profiler::impl {
 
+template <class T>
+const T& max(const T& a, const T& b) {
+    return (a < b) ? b : a;
+} // saves us a heavy <algorithm> include
+
 template <class... Args>
 void append_fold(std::string& str, const Args&... args) {
     ((str += args), ...);
 } // faster than 'std::ostringstream' and saves us an include
 
-template <class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
-std::string format_number(T value, std::chars_format format = std::chars_format::general, int precision = 3) {
+inline std::string format_number(double value, std::chars_format format, int precision) {
     std::array<char, 30> buffer; // 80-bit 'long double' fits in 29, 64-bit 'double' in 24, this is always enough
     const auto end_ptr = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value, format, precision).ptr;
     return std::string(buffer.data(), end_ptr);
@@ -487,10 +490,10 @@ class Profiler {
                 // Gather column widths for alignment
                 std::size_t width_percentage = 0, width_time = 0, width_label = 0, width_callsite = 0;
                 for (const auto& row : rows_str) {
-                    width_percentage = std::max(width_percentage, row[0].size());
-                    width_time       = std::max(width_time, row[1].size());
-                    width_label      = std::max(width_label, row[2].size());
-                    width_callsite   = std::max(width_callsite, row[3].size());
+                    width_percentage = max(width_percentage, row[0].size());
+                    width_time       = max(width_time, row[1].size());
+                    width_label      = max(width_label, row[2].size());
+                    width_callsite   = max(width_callsite, row[3].size());
                 }
 
                 assert(rows.size() == rows_str.size());
@@ -547,8 +550,8 @@ class Profiler {
     void call_graph_upload(std::thread::id thread_id, NodeMatrix&& info, bool joined) {
         const std::lock_guard lock(this->call_graph_mutex);
 
-        auto& lifetime   = this->call_graph_info.at(thread_id).lifetimes.back();
-        lifetime.mat     = std::move(info);
+        auto& lifetime  = this->call_graph_info.at(thread_id).lifetimes.back();
+        lifetime.mat    = std::move(info);
         lifetime.joined = joined;
     }
 
@@ -728,16 +731,6 @@ using impl::Style;
 
 } // namespace utl::profiler
 
-#define UTL_PROFILER(label_)                                                                                           \
-    constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
-    static_assert(utl_profiler_uuid(utl_profiler_macro_guard_), "UTL_PROFILE is a multi-line macro.");                 \
-                                                                                                                       \
-    const thread_local utl::profiler::impl::Callsite utl_profiler_uuid(utl_profiler_callsite_)(                        \
-        utl::profiler::impl::CallsiteInfo{__FILE__, __func__, label_, __LINE__});                                      \
-                                                                                                                       \
-    if constexpr (const utl::profiler::impl::ScopeTimer utl_profiler_uuid(utl_profiler_scope_timer_){                  \
-                      utl_profiler_uuid(utl_profiler_callsite_).get_id()})
-
 #define UTL_PROFILER_SCOPE(label_)                                                                                     \
     constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
     static_assert(utl_profiler_uuid(utl_profiler_macro_guard_), "UTL_PROFILE is a multi-line macro.");                 \
@@ -748,6 +741,26 @@ using impl::Style;
     const utl::profiler::impl::ScopeTimer utl_profiler_uuid(utl_profiler_scope_timer_) {                               \
         utl_profiler_uuid(utl_profiler_callsite_).get_id()                                                             \
     }
+
+// all variable names are concatenated with a line number to prevent shadowing when then there are multiple nested
+// profilers, this isn't a 100% foolproof solution, but it works reasonable well. Shadowed variables don't have any
+// effect on functionality, but might cause warnings from some static analysis tools
+//
+// 'constexpr bool' and 'static_assert()' are here to improve error messages when this macro is misused as an
+// expression, when someone write 'if (...) UTL_PROFILER(...) func()' instead of many ugly errors they will see
+// a macro expansion that contains a 'static_assert()' with a proper message
+
+#define UTL_PROFILER(label_)                                                                                           \
+    constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
+    static_assert(utl_profiler_uuid(utl_profiler_macro_guard_), "UTL_PROFILER is a multi-line macro.");                \
+                                                                                                                       \
+    const thread_local utl::profiler::impl::Callsite utl_profiler_uuid(utl_profiler_callsite_)(                        \
+        utl::profiler::impl::CallsiteInfo{__FILE__, __func__, label_, __LINE__});                                      \
+                                                                                                                       \
+    if constexpr (const utl::profiler::impl::ScopeTimer utl_profiler_uuid(utl_profiler_scope_timer_){                  \
+                      utl_profiler_uuid(utl_profiler_callsite_).get_id()})
+
+// 'if constexpr (timer)' allows this macro to "capture" the scope of the following expression
 
 #define UTL_PROFILER_BEGIN(segment_, label_)                                                                           \
     const thread_local utl::profiler::impl::Callsite utl_profiler_callsite_##segment_(                                 \
@@ -761,10 +774,12 @@ using impl::Style;
 // --- Definitions with profiling disabled ---
 // ===========================================
 
-// No-op mocks of the public API & minimal necessary includes
+// No-op mocks of the public API and minimal necessary includes
+
 #else
 
-#include <string> // string
+#include <cstddef> // size_t
+#include <string>  // string
 
 namespace utl::profiler {
 struct Style {
@@ -785,10 +800,12 @@ struct Profiler {
 };
 } // namespace utl::profiler
 
-#define UTL_PROFILER(label_)
-#define UTL_PROFILER_SCOPE(label_)
-#define UTL_PROFILER_BEGIN(segment_, label_)
-#define UTL_PROFILER_END(segment_)
+#define UTL_PROFILER_SCOPE(label_) static_assert(true)
+#define UTL_PROFILER(label_) 
+#define UTL_PROFILER_BEGIN(segment_, label_) static_assert(true)
+#define UTL_PROFILER_END(segment_) static_assert(true)
+
+// 'static_assert(true)' emulates the "semicolon after the macro" requirement
 
 #endif
 
