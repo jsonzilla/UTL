@@ -58,6 +58,12 @@ void benchmark_stringification() {
         const std::string str = oss.str();
         DO_NOT_OPTIMIZE_AWAY(str);
     });
+    
+    benchmark("+= (std::ostringstream{} << ...).str()", [&]() {
+        std::string str;
+        REPEAT(repeats) str += (std::ostringstream{} << datagen::rand_int()).str();
+        DO_NOT_OPTIMIZE_AWAY(str);
+    });
 
     // Note:
     // += std::to_string() is surprisingly fast (I assume due to SSO) and sometimes even beats <charconv>.
@@ -91,6 +97,12 @@ void benchmark_stringification() {
         std::ostringstream oss;
         REPEAT(repeats) oss << datagen::rand_double();
         const std::string str = oss.str();
+        DO_NOT_OPTIMIZE_AWAY(str);
+    });
+    
+    benchmark("+= (std::ostringstream{} << ...).str()", [&]() {
+        std::string str;
+        REPEAT(repeats) str += (std::ostringstream{} << datagen::rand_double()).str();
         DO_NOT_OPTIMIZE_AWAY(str);
     });
 

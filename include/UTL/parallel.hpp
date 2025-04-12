@@ -228,6 +228,8 @@ public:
     }
 
     void set_thread_count(std::size_t thread_count) {
+        this->wait_for_tasks(); // all threads need to be free
+        
         const std::size_t current_thread_count = this->get_thread_count();
 
         if (thread_count == current_thread_count) return;
