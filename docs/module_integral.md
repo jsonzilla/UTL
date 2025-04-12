@@ -289,5 +289,5 @@ constexpr auto x = 124_i8;
 
 // constexpr auto x = -17_i8;
 // be wary of this, C++ has no concept of signed literals and treats it as an unary minus
-// applied to 'std::int8_t', which trigger integer promotion and returns an 'int'
+// applied to 'std::int8_t', which triggers integer promotion and returns an 'int'
 ```

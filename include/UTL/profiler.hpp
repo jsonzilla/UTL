@@ -28,7 +28,7 @@
 #include <string>        // string
 #include <string_view>   // string_view
 #include <thread>        // thread::id, this_thread::get_id()
-#include <type_traits>   // enable_if_t, is_enum_v, is_arithmetic_v
+#include <type_traits>   // enable_if_t, is_enum_v, is_arithmetic_v, is_invokable_v
 #include <unordered_map> // unordered_map<>
 #include <vector>        // vector<>
 
@@ -47,8 +47,7 @@
 // A lot of though went into making it fast, the key idea is to use 'thread_local' callsite
 // markers to associate callsites with numeric thread-specific IDs and to reduce all call graph
 // traversal to simple integer array lookups. Store everything we can densely, minimize locks,
-// delay formatting and result evaluation as much as possible. Comments scattered through code
-// explain the idea decently well.
+// delay formatting and result evaluation as much as possible. 
 //
 // Docs & comments scattered through code should explain the details decently well.
 
@@ -179,10 +178,13 @@ struct Style {
 
 namespace color {
 
-constexpr std::string_view red       = "\033[31m";   // call graph rows that take very significant time
-constexpr std::string_view yellow    = "\033[33m";   // call graph rows that take significant time
-constexpr std::string_view gray      = "\033[90m";   // call graph rows that take very little time
-constexpr std::string_view bold_cyan = "\033[36;1m"; // call graph headings
+constexpr std::string_view red          = "\033[31m";   // call graph rows that take very significant time
+constexpr std::string_view yellow       = "\033[33m";   // call graph rows that take significant time
+constexpr std::string_view gray         = "\033[90m";   // call graph rows that take very little time
+constexpr std::string_view bold_cyan    = "\033[36;1m"; // call graph headings
+constexpr std::string_view bold_green   = "\033[32;1m"; // joined  threads
+constexpr std::string_view bold_magenta = "\033[35;1m"; // running threads
+constexpr std::string_view bold_blue    = "\033[34;1m"; // thread runtime
 
 constexpr std::string_view reset = "\033[0m";
 
@@ -369,9 +371,14 @@ public:
 // --- Profiler ---
 // ================
 
+struct ThreadLifetimeData {
+    NodeMatrix mat;
+    bool       joined = false;
+};
+
 struct ThreadIdData {
-    std::vector<NodeMatrix> lifetimes;
-    std::size_t             readable_id;
+    std::vector<ThreadLifetimeData> lifetimes;
+    std::size_t                     readable_id;
     // since we need a map from 'std::thread::id' to both lifetimes and human-readable id mappings,
     // and those maps would be accessed at the same time, it makes sense to instead avoid a second
     // map lookup and merge both values into a single struct
@@ -411,7 +418,8 @@ class Profiler {
 
         for (const auto& [thread_id, thread_lifetimes] : this->call_graph_info) {
             for (std::size_t reuse = 0; reuse < thread_lifetimes.lifetimes.size(); ++reuse) {
-                const auto&       mat         = thread_lifetimes.lifetimes[reuse];
+                const auto&       mat         = thread_lifetimes.lifetimes[reuse].mat;
+                const bool        joined      = thread_lifetimes.lifetimes[reuse].joined;
                 const std::size_t readable_id = thread_lifetimes.readable_id;
 
                 rows.clear();
@@ -420,23 +428,32 @@ class Profiler {
                 const std::string thread_str      = (readable_id == 0) ? "main" : std::to_string(readable_id);
                 const bool        thread_uploaded = !mat.empty();
 
-                // Early escape & header for graphs that weren't uploaded yet
+                // Format thread header
+                if (style.color) res += color::bold_cyan;
+                append_fold(res, "\n# Thread [", thread_str, "] (reuse ", std::to_string(reuse), ")");
+                if (style.color) res += color::reset;
+
+                // Format thread status
+                if (style.color) res += joined ? color::bold_green : color::bold_magenta;
+                append_fold(res, joined ? " (joined)" : " (running)");
+                if (style.color) res += color::reset;
+
+                // Early escape for lifetimes that haven't uploaded yet
                 if (!thread_uploaded) {
-                    if (style.color) res += color::bold_cyan;
-                    append_fold(res, "\n# Thread [", thread_str, "] (reuse ", std::to_string(reuse), ")\n");
-                    if (style.color) res += color::reset;
-                    res.append(style.indent, ' ') += "Running...\n";
+                    append_fold(res, '\n');
                     continue;
                 }
 
-                // Format total thread runtime
+                // Format thread runtime
                 const ms   runtime     = mat.time(NodeId::root);
                 const auto runtime_str = format_number(runtime.count(), std::chars_format::fixed, 2);
 
-                if (style.color) res += color::bold_cyan;
-                append_fold(res, "\n# Thread [", thread_str, "] (reuse ", std::to_string(reuse), ")");
+                if (style.color) res += color::bold_blue;
                 append_fold(res, " (runtime -> ", runtime_str, " ms)\n");
                 if (style.color) res += color::reset;
+
+                // Early escape for lifetimes that haven't uploaded yet
+                if (!thread_uploaded) continue;
 
                 // Gather call graph data in a digestible format
                 mat.root_apply_recursively([&](CallsiteId callsite_id, NodeId node_id, std::size_t depth) {
@@ -527,10 +544,12 @@ class Profiler {
         it->second.lifetimes.emplace_back();
     }
 
-    void call_graph_upload(std::thread::id thread_id, NodeMatrix&& info) {
+    void call_graph_upload(std::thread::id thread_id, NodeMatrix&& info, bool joined) {
         const std::lock_guard lock(this->call_graph_mutex);
 
-        this->call_graph_info.at(thread_id).lifetimes.back() = std::move(info);
+        auto& lifetime   = this->call_graph_info.at(thread_id).lifetimes.back();
+        lifetime.mat     = std::move(info);
+        lifetime.joined = joined;
     }
 
 public:
@@ -543,7 +562,7 @@ public:
         this->print_at_destruction = value;
     }
 
-    std::string format_results(const Style style = Style{}) {
+    std::string format_results(const Style& style = Style{}) {
         this->upload_this_thread();
         // Call graph from current thread is not yet uploaded by its 'thread_local' destructor, we need to
         // explicitly pull them which we can easily since current thread can't contest its own resources
@@ -596,11 +615,11 @@ struct ThreadCallGraph {
         return this->current_node_id;
     }
 
-    void upload_results() {
+    void upload_results(bool joined) {
         this->mat.time(NodeId::root) = clock::now() - this->entry_time_point;
         // root node doesn't get time updates from timers, we need to collect total runtime manually
 
-        profiler.call_graph_upload(this->thread_id, NodeMatrix(this->mat)); // deep copy & mutex lock, slow
+        profiler.call_graph_upload(this->thread_id, NodeMatrix(this->mat), joined); // deep copy & mutex lock, slow
     }
 
 public:
@@ -610,7 +629,7 @@ public:
         this->create_root_node();
     }
 
-    ~ThreadCallGraph() { this->upload_results(); }
+    ~ThreadCallGraph() { this->upload_results(true); }
 
     NodeId traverse_forward(CallsiteId callsite_id) {
         const NodeId next_node_id = this->mat.next_id(callsite_id, this->current_node_id);
@@ -641,7 +660,7 @@ public:
 
 inline thread_local ThreadCallGraph thread_call_graph;
 
-void Profiler::upload_this_thread() { thread_call_graph.upload_results(); }
+void Profiler::upload_this_thread() { thread_call_graph.upload_results(false); }
 
 // =======================
 // --- Callsite Marker ---
@@ -692,7 +711,7 @@ struct ScopeTimer : public Timer { // just like regular timer, but finishes at t
 #define utl_profiler_concat_tokens(a, b) a##b
 #define utl_profiler_concat_tokens_wrapper(a, b) utl_profiler_concat_tokens(a, b)
 #define utl_profiler_uuid(varname_) utl_profiler_concat_tokens_wrapper(varname_, __LINE__)
-// creates token 'varname_##__LINE__' from 'varname_', necessary 
+// creates token 'varname_##__LINE__' from 'varname_', necessary
 // to work around some macro expansion order shenanigans
 
 // ______________________ PUBLIC API ______________________
@@ -703,9 +722,9 @@ struct ScopeTimer : public Timer { // just like regular timer, but finishes at t
 
 namespace utl::profiler {
 
-using impl::Style;
 using impl::Profiler;
 using impl::profiler;
+using impl::Style;
 
 } // namespace utl::profiler
 

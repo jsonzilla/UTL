@@ -51,7 +51,7 @@ struct Profiler {
     
     void upload_this_thread();
     
-    std::string format_results(const Style style = Style{});
+    std::string format_results(const Style& style = Style{});
 };
 
 inline Profiler profiler;
@@ -69,7 +69,7 @@ Attaches profiler to the current scope.
 
 If profiled scope was entered at any point of the program, upon exiting `main()` a per-thread call graph will be build for all profiled segments.
 
-**Note:** `label` in a **string literal** name that will be shown in the results table.
+**Note:** `label` is a **string literal** name that will be shown in the results table.
 
 > ```cpp
 > UTL_PROFILER(label);
@@ -107,21 +107,29 @@ A struct with formatting settings for `Profiler::format_results()`.
 > void Profiler::print_at_exit(bool value) noexcept;
 >    ```
 
-Sets whether profiling results should be automatically printed after exiting from `main()`. `true` by default. Thread-safe.
+Sets whether profiling results should be automatically printed after exiting from `main()`. `true` by default.
+
+**Note:** This and all other profiler object methods are thread-safe.
 
 > ```cpp
-> void upload_this_thread();
+> void Profiler::upload_this_thread();
 >    ```
 
 Uploads profiling results from the current thread to the profiler object.
 
-Can be used to upload results from detached threads. Otherwise results are automatically uploaded once detached thread joins another one.
+Can be used to upload results from detached threads. Otherwise results are automatically uploaded once detached thread joins another one. 
 
 > ```cpp
-> std::string format_results(const Style style = Style{});
+> std::string Profiler::format_results(const Style& style = Style{});
 >    ```
 
 Formats profiling results to a string using given `style` options.
+
+> ```cpp
+> inline Profiler profiler;
+> ```
+
+Global profiler object.
 
 ## Examples
 
