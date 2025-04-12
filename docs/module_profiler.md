@@ -15,6 +15,7 @@ Key features:
 
 - Easy to use
 - Low overhead
+- No reliance on system APIs
 - [Supports multi-threading](#profiling-parallel-section) & recursion
 - Supports [CPU-counter timestamps](#reducing-overhead-with-x86-intrinsics)
 - [Can export results at any point](#profiling-detached-threads-&-uploading-results) of the program
@@ -345,7 +346,7 @@ This is exceedingly helpful when benchmarking code on a hot path. Below are a fe
 |    86.3% |                4.05 |              247.01 |    0.2% |      0.49 | `Theoretical best __rdtsc() profiler`
 |    73.7% |                4.74 |              210.97 |    0.3% |      0.57 | `UTL_PROFILER()`
 
-// notable reduction in profiling overhead is still present
+// notable reduction in profiling overhead
 ```
 
 > [!Note]
