@@ -28,26 +28,26 @@ Secondary design goals also include:
 
 ## Modules & documentation
 
-| Module                                                     | Short description                                                    |
-| ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| [**utl::bit**](./docs/module_bit.md)                       | Bit-twiddling, enum bitflags                                         |
-| [**utl::enum_reflect**](./docs/module_enum_reflect.md)     | Enum reflection                                                      |
-| [**utl::integral**](./docs/module_integral.md)             | Saturated math, safe integer casts, literals, rounding and etc.      |
-| [**utl::json**](./docs/module_json.md)                     | JSON parsing, serializing & reflection                               |
-| [**utl::log**](./docs/module_log.md)                       | Logging library                                                      |
-| [**utl::math**](./docs/module_math.md)                     | Math-related utilities                                               |
-| [**utl::mvl**](./docs/module_mvl.md)                       | Flexible API for vector and matrix operations                        |
+| Module                                                     | Short description                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------ |
+| [**utl::bit**](./docs/module_bit.md)                       | Bit-twiddling, enum bitflags                                 |
+| [**utl::enum_reflect**](./docs/module_enum_reflect.md)     | Enum reflection                                              |
+| [**utl::integral**](./docs/module_integral.md)             | Saturated math, safe integer casts, literals, rounding and etc. |
+| [**utl::json**](./docs/module_json.md)                     | JSON parsing, serializing & reflection                       |
+| [**utl::log**](./docs/module_log.md)                       | Logging library                                              |
+| [**utl::math**](./docs/module_math.md)                     | Math-related utilities                                       |
+| [**utl::mvl**](./docs/module_mvl.md)                       | Flexible API for vector and matrix operations                |
 | [**utl::parallel**](./docs/module_parallel.md)             | Thread pool, async tasks, parallel for, parallel reductions and etc. |
-| [**utl::predef**](./docs/module_predef.md)                 | Detection of architectures, compilers, platforms and etc.            |
-| [**utl::profiler**](./docs/module_profiler.md)             | Scope & expression profiling macros                                  |
-| [**utl::progressbar**](./docs/module_progressbar.md)       | Progress bars for CLI apps                                           |
-| [**utl::random**](./docs/module_random.md)                 | PRNGs & random number generation                                     |
-| [**utl::shell**](./docs/module_shell.md)                   | Shell commands and temporary files                                   |
-| [**utl::sleep**](./docs/module_sleep.md)                   | Precise sleep implementations                                        |
-| [**utl::stre**](./docs/module_stre.md)                     | Efficient implementations of common string utils                     |
-| [**utl::struct_reflect**](./docs/module_struct_reflect.md) | Struct reflection                                                    |
-| [**utl::table**](./docs/module_table.md)                   | Drawing of LaTeX and ASCII tables                                    |
-| [**utl::time**](./docs/module_time.md)                     | Floating-point time, timers, stopwatches, datetime                   |
+| [**utl::predef**](./docs/module_predef.md)                 | Detection of architectures, compilers, platforms and etc.    |
+| [**utl::profiler**](./docs/module_profiler.md)             | Call graph & thread profiling                                |
+| [**utl::progressbar**](./docs/module_progressbar.md)       | Progress bars for CLI apps                                   |
+| [**utl::random**](./docs/module_random.md)                 | PRNGs & random number generation                             |
+| [**utl::shell**](./docs/module_shell.md)                   | Shell commands and temporary files                           |
+| [**utl::sleep**](./docs/module_sleep.md)                   | Precise sleep implementations                                |
+| [**utl::stre**](./docs/module_stre.md)                     | Efficient implementations of common string utils             |
+| [**utl::struct_reflect**](./docs/module_struct_reflect.md) | Struct reflection                                            |
+| [**utl::table**](./docs/module_table.md)                   | Drawing of LaTeX and ASCII tables                            |
+| [**utl::time**](./docs/module_time.md)                     | Floating-point time, timers, stopwatches, datetime           |
 
 ## See also
 

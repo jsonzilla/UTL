@@ -703,9 +703,9 @@ struct ScopeTimer : public Timer { // just like regular timer, but finishes at t
 
 namespace utl::profiler {
 
+using impl::Style;
 using impl::Profiler;
 using impl::profiler;
-using impl::Style;
 
 } // namespace utl::profiler
 

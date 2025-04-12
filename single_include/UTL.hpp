@@ -7585,12 +7585,13 @@ constexpr bool debug =
 //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#include <ratio>
 #if !defined(UTL_PICK_MODULES) || defined(UTLMODULE_PROFILER)
 #ifndef UTLHEADERGUARD_PROFILER
 #define UTLHEADERGUARD_PROFILER
 
 // _______________________ INCLUDES _______________________
+
+#ifndef UTL_PROFILER_DISABLE
 
 #include <algorithm>     // max(), sort()
 #include <cassert>       // assert()
@@ -7604,16 +7605,35 @@ constexpr bool debug =
 #include <string>        // string
 #include <string_view>   // string_view
 #include <thread>        // thread::id, this_thread::get_id()
+#include <type_traits>   // enable_if_t, is_enum_v, is_arithmetic_v
 #include <unordered_map> // unordered_map<>
 #include <vector>        // vector<>
+
+#endif // no need to pull all these headers with profiling disabled
 
 // ____________________ DEVELOPER DOCS ____________________
 
 // Optional macros:
 // - #define UTL_PROFILER_DISABLE                            // disable all profiling
 // - #define UTL_PROFILER_USE_INTRINSICS_FOR_FREQUENCY 3.3e6 // use low-overhead rdtsc timestamps
+//
+// This used to be a much simpler header with a few macros to profile scope & print a flat table,
+// it introduced the idea of using static variables to mark callsites efficiently and later underwent
+// a full rewrite to add proper threading & call graph support.
+//
+// A lot of though went into making it fast, the key idea is to use 'thread_local' callsite
+// markers to associate callsites with numeric thread-specific IDs and to reduce all call graph
+// traversal to simple integer array lookups. Store everything we can densely, minimize locks,
+// delay formatting and result evaluation as much as possible. Comments scattered through code
+// explain the idea decently well.
+//
+// Docs & comments scattered through code should explain the details decently well.
 
 // ____________________ IMPLEMENTATION ____________________
+
+#ifndef UTL_PROFILER_DISABLE
+// '#ifndef' that wraps almost entire header,
+// in '#else' branch only no-op mocks of the public API are compiled
 
 // ==================================
 // --- Optional __rdtsc() support ---
@@ -7631,9 +7651,9 @@ constexpr bool debug =
 
 #endif
 
-// =============
-// --- Utils ---
-// =============
+// ====================
+// --- String utils ---
+// ====================
 
 namespace utl::profiler::impl {
 
@@ -7644,7 +7664,7 @@ void append_fold(std::string& str, const Args&... args) {
 
 template <class T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
 std::string format_number(T value, std::chars_format format = std::chars_format::general, int precision = 3) {
-    std::array<char, 50> buffer; // 80-bit long double fits in 29, so 50 is more than enough
+    std::array<char, 30> buffer; // 80-bit 'long double' fits in 29, 64-bit 'double' in 24, this is always enough
     const auto end_ptr = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value, format, precision).ptr;
     return std::string(buffer.data(), end_ptr);
 }
@@ -7676,6 +7696,9 @@ inline void append_aligned_left(std::string& str, const std::string& source, std
 // --- Timing ---
 // ==============
 
+// If we know CPU frequency at compile time we can wrap '__rdtsc()' into a <chrono>-compatible
+// clock and use it seamlessly, no need for conditional compilation anywhere else
+
 #ifdef UTL_PROFILER_USE_INTRINSICS_FOR_FREQUENCY
 struct clock {
     using rep                   = unsigned long long int;
@@ -7694,9 +7717,10 @@ using duration   = clock::duration;
 using time_point = clock::time_point;
 
 using ms = std::chrono::duration<double, std::chrono::milliseconds::period>;
+// float time makes conversions more convenient
 
 // =====================
-// --- Type-safe ids ---
+// --- Type-safe IDs ---
 // =====================
 
 template <class Enum, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
@@ -7704,8 +7728,8 @@ template <class Enum, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
     return static_cast<std::underlying_type_t<Enum>>(value);
 }
 
-enum class CallsiteId : std::uint16_t { empty = to_int(CallsiteId(-1)) };
-enum class NodeId : std::uint16_t { root = 0, empty = to_int(NodeId(-1)) };
+enum class CallsiteId : std::uint32_t { empty = to_int(CallsiteId(-1)) };
+enum class NodeId : std::uint32_t { root = 0, empty = to_int(NodeId(-1)) };
 
 struct CallsiteInfo {
     const char* file;
@@ -7724,10 +7748,9 @@ struct CallsiteInfo {
 struct Style {
     std::size_t indent = 2;
     bool        color  = true;
-    bool        align  = true;
 
-    double cutoff_red    = 0.4;  // > 40% of total runtime
-    double cutoff_yellow = 0.2;  // > 20% of total runtime
+    double cutoff_red    = 0.40; // > 40% of total runtime
+    double cutoff_yellow = 0.20; // > 20% of total runtime
     double cutoff_gray   = 0.01; // <  1% of total runtime
 };
 
@@ -7747,13 +7770,6 @@ struct FormattedRow {
     duration     time;
     std::size_t  depth;
     double       percentage;
-
-    bool operator<(const FormattedRow& other) const {
-        if (this->depth == other.depth) return this->time > other.time;
-        return this->depth < other.depth;
-    }
-    // order by depth then time, makes it much easier to get a sorted call graph by ordering a flat structure
-    // of rows rather than trying to figure it out "on the fly" during recursive expansion
 };
 
 // =================================
@@ -7762,15 +7778,16 @@ struct FormattedRow {
 
 class NodeMatrix {
     template <class T>
-    using array_type =
-        std::vector<T>; // Note: Using manual arrays would be more efficient, but cumbersome, look into it
+    using array_type = std::vector<T>;
+    // Note: Using 'std::unique_ptr<T[]> arrays would shave off 64 bytes from 'sizeof(NodeMatrix)',
+    //       but it's cumbersome and not particularly important for performance
 
     constexpr static std::size_t col_growth_mul = 2;
     constexpr static std::size_t row_growth_add = 4;
     // - rows capacity grows additively in fixed increments
     // - cols capacity grows multiplicatively
-    // this unusual growth strategy is due to our anticipated growth pattern - callsites are few, every one
-    // needs to be manually created by the user, nodes can quickly grow in number due to recursion
+    // this unusual growth strategy is due to our anticipated growth pattern - callsites are few, every
+    // one needs to be manually created by the user, nodes can quickly grow in number due to recursion
 
     array_type<NodeId> prev_ids;
     // [ nodes ] dense vector encoding backwards-traversal of a call graph
@@ -7781,12 +7798,14 @@ class NodeMatrix {
     // 'next_ids(callsite_id, node_id)' -> id of the next node in the call graph for 'node_id' at 'callsite_id',
     //                                     storage is col-major due to our access pattern
 
+    // Note: Both 'prev_ids' and 'next_ids' will contain 'NodeId::empty' values at positions with no link
+
     array_type<duration> times;
-    // [ nodes ] dense vector encoding time spent at each node of the call graph
+    // [ nodes ] dense vector containing time spent at each node of the call graph
     // 'times[node_id]' -> total time spent at 'node_id'
 
     array_type<CallsiteInfo> callsites;
-    // [ callsites ] dense vector encoding info about the callsites
+    // [ callsites ] dense vector containing info about the callsites
     // 'callsites[callsite_id]' -> pointers to file/function/label & line
 
     std::size_t rows_size;
@@ -7879,6 +7898,7 @@ public:
         for (std::size_t j = 0; j < this->cols_size; ++j) new_times[j] = this->times[j];
         for (std::size_t i = 0; i < this->rows_size; ++i) new_callsites[i] = this->callsites[i];
 
+        // Assign new data
         this->prev_ids  = std::move(new_prev_ids);
         this->next_ids  = std::move(new_next_ids);
         this->times     = std::move(new_times);
@@ -7894,9 +7914,7 @@ public:
 
     void grow_nodes() { this->resize(this->rows_size, this->cols_size + 1); }
 
-    // Todo: More efficient methods for growing just rows / cols tailored to our allocation case
-
-    template <class Func> // func = func(CallsiteId callsize_id, NodeId node_id, std::size_t depth)
+    template <class Func, std::enable_if_t<std::is_invocable_v<Func, CallsiteId, NodeId, std::size_t>, bool> = true>
     void node_apply_recursively(CallsiteId callsite_id, NodeId node_id, Func func, std::size_t depth) const {
         func(callsite_id, node_id, depth);
 
@@ -7910,7 +7928,7 @@ public:
         // "next" nodes we iterate rows (callsites) in a column
     }
 
-    template <class Func>
+    template <class Func, std::enable_if_t<std::is_invocable_v<Func, CallsiteId, NodeId, std::size_t>, bool> = true>
     void root_apply_recursively(Func func) const {
         if (!this->rows_size || !this->cols_size) return; // possibly redundant
 
@@ -7936,17 +7954,17 @@ struct ThreadIdData {
     // map lookup and merge both values into a single struct
 };
 
-// - inline, declared in header
 class Profiler {
+    // header-inline, only one instance exists, this instance is effectively a persistent
+    // "database" responsible for collecting & formatting results
+
     using call_graph_storage = std::unordered_map<std::thread::id, ThreadIdData>;
-
-    friend struct ThreadCallGraph;
-
-    // Note:
     // thread ID by itself in not enough to identify a distinct thread with a finite lifetime, OS only guarantees
     // unique thread ids for currently existing threads, new threads may reuse IDs of the old joined threads,
     // this is why for every thread ID we store a vector - this vector grow every time a new thread with a given
     // id is created
+
+    friend struct ThreadCallGraph;
 
     call_graph_storage call_graph_info;
     std::mutex         call_graph_mutex;
@@ -7954,7 +7972,8 @@ class Profiler {
     std::thread::id main_thread_id;
     std::size_t     thread_counter;
 
-    bool print_at_destruction = true;
+    bool       print_at_destruction = true;
+    std::mutex setter_mutex;
 
     std::string format_available_results(const Style& style = Style{}) {
         const std::lock_guard lock(this->call_graph_mutex);
@@ -7988,7 +8007,7 @@ class Profiler {
                 }
 
                 // Format total thread runtime
-                const ms  runtime     = mat.time(NodeId::root);
+                const ms   runtime     = mat.time(NodeId::root);
                 const auto runtime_str = format_number(runtime.count(), std::chars_format::fixed, 2);
 
                 if (style.color) res += color::bold_cyan;
@@ -8072,14 +8091,15 @@ class Profiler {
         const auto [it, emplaced] = this->call_graph_info.try_emplace(thread_id);
 
         // Emplacement took place =>
-        // this is the first time inserting this thread id, add human-readable mapping that grows by 1 for each new
+        // This is the first time inserting this thread id, add human-readable mapping that grows by 1 for each new
         // thread, additional checks are here to ensure that main thread is always '0' and other threads are always
-        // '1+' even if main thread wasn't the first one to register a profiler
+        // '1+' even if main thread wasn't the first one to register a profiler. This is important because formatting
+        // prints zero-thread as '[main]' and we don't want this title to go to some other thread
         if (emplaced) it->second.readable_id = (thread_id == this->main_thread_id) ? 0 : ++this->thread_counter;
 
         // Add a default-constructed call graph matrix to lifetimes,
-        // if this thead ID was emplace then this is a non-reused thread ID,
-        // if this thread ID was already there then this is a reused thread ID,
+        // - if this thread ID was emplaced      then this is a non-reused thread ID,
+        // - if this thread ID was already there then this is a     reused  thread ID,
         // regardless, our actions are the same
         it->second.lifetimes.emplace_back();
     }
@@ -8093,7 +8113,12 @@ class Profiler {
 public:
     void upload_this_thread(); // depends on the 'thread_call_graph', defined later
 
-    void print_at_exit(bool value) noexcept { this->print_at_destruction = value; }
+    void print_at_exit(bool value) noexcept {
+        const std::lock_guard lock(this->setter_mutex);
+        // useless most of the time, but allows public API to be completely thread-safe
+
+        this->print_at_destruction = value;
+    }
 
     std::string format_results(const Style style = Style{}) {
         this->upload_this_thread();
@@ -8116,8 +8141,10 @@ inline Profiler profiler;
 // --- Thread Call Graph ---
 // =========================
 
-// - thread_local, declared in header
 struct ThreadCallGraph {
+    // header-inline-thread_local, gets created whenever we create a new thread anywhere,
+    // this class is responsible for managing some thread-specific things on top of our
+    // core graph traversal structure and provides an actual high-level API for graph traversal
 
     NodeMatrix      mat;
     NodeId          current_node_id  = NodeId::empty;
@@ -8148,7 +8175,7 @@ struct ThreadCallGraph {
 
     void upload_results() {
         this->mat.time(NodeId::root) = clock::now() - this->entry_time_point;
-        // root node doesn't get time updates from times, we need to collect total runtime manually
+        // root node doesn't get time updates from timers, we need to collect total runtime manually
 
         profiler.call_graph_upload(this->thread_id, NodeMatrix(this->mat)); // deep copy & mutex lock, slow
     }
@@ -8197,8 +8224,9 @@ void Profiler::upload_this_thread() { thread_call_graph.upload_results(); }
 // --- Callsite Marker ---
 // =======================
 
-// - static, declared in macro
 struct Callsite {
+    // local-thread_local, small marker binding a numeric ID to a callsite
+
     CallsiteId callsite_id;
 
 public:
@@ -8223,7 +8251,7 @@ public:
     }
 };
 
-struct ScopeTimer : public Timer {
+struct ScopeTimer : public Timer { // just like regular timer, but finishes at the end of the scope
     ScopeTimer(CallsiteId callsite_id) : Timer(callsite_id) {}
 
     constexpr operator bool() const noexcept { return true; }
@@ -8234,16 +8262,29 @@ struct ScopeTimer : public Timer {
 
 } // namespace utl::profiler::impl
 
-// ========================
-// --- Profiling macros ---
-// ========================
+// =====================
+// --- Helper macros ---
+// =====================
 
 #define utl_profiler_concat_tokens(a, b) a##b
 #define utl_profiler_concat_tokens_wrapper(a, b) utl_profiler_concat_tokens(a, b)
 #define utl_profiler_uuid(varname_) utl_profiler_concat_tokens_wrapper(varname_, __LINE__)
-// creates token 'varname_##__LINE__' from 'varname_'.
+// creates token 'varname_##__LINE__' from 'varname_', necessary 
+// to work around some macro expansion order shenanigans
 
 // ______________________ PUBLIC API ______________________
+
+// ==========================================
+// --- Definitions with profiling enabled ---
+// ==========================================
+
+namespace utl::profiler {
+
+using impl::Style;
+using impl::Profiler;
+using impl::profiler;
+
+} // namespace utl::profiler
 
 #define UTL_PROFILER(label_)                                                                                           \
     constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
@@ -8274,12 +8315,40 @@ struct ScopeTimer : public Timer {
 
 #define UTL_PROFILER_END(segment_) utl_profiler_timer_##segment_.finish()
 
+// ===========================================
+// --- Definitions with profiling disabled ---
+// ===========================================
+
+// No-op mocks of the public API & minimal necessary includes
+#else
+
+#include <string> // string
+
 namespace utl::profiler {
+struct Style {
+    std::size_t indent = 2;
+    bool        color  = true;
 
-using impl::Profiler;
-using impl::profiler;
+    double cutoff_red    = 0.40;
+    double cutoff_yellow = 0.20;
+    double cutoff_gray   = 0.01;
+};
 
+struct Profiler {
+    void print_at_exit(bool) noexcept {}
+
+    void upload_this_thread() {}
+
+    std::string format_results(const Style = Style{}) { return "<profiling is disabled>"; }
+};
 } // namespace utl::profiler
+
+#define UTL_PROFILER(label_)
+#define UTL_PROFILER_SCOPE(label_)
+#define UTL_PROFILER_BEGIN(segment_, label_)
+#define UTL_PROFILER_END(segment_)
+
+#endif
 
 #endif
 #endif // module utl::profiler
