@@ -306,10 +306,10 @@ Output:
 ```
 -------------------- UTL PROFILING RESULTS ---------------------
 
-# Thread [main] (reuse 0) (runtime -> 204.91 ms)
- - 99.99%  | 204.89 ms |                 Loop | example.cpp:35, main() |
- - 50.08%  | 102.62 ms | 1st half of the loop | example.cpp:37, main() |
- - 49.90%  | 102.26 ms | 2nd half of the loop | example.cpp:38, main() |
+# Thread [main] (reuse 0) (running) (runtime -> 201.81 ms)
+ - 99.99%  | 201.79 ms |                 Loop | example.cpp:8, main()  |
+ - 49.91%  | 100.73 ms | 1st half of the loop | example.cpp:10, main() |
+ - 50.07%  | 101.04 ms | 2nd half of the loop | example.cpp:11, main() |
 ```
 
 ## Reducing overhead with x86 intrinsics
@@ -372,7 +372,7 @@ A simple & naive way to construct a call graph would be through building a tree 
 
 This library uses a bunch of `thread_local` variables (created by macros) to correlate call-sites with integer IDs and reduces tree traversal logic to traversing a "network" of indices encoded as a dense $M \times N$ matrix where $M$ — number of call-sites visited by this thread, $N$ — number of nodes in the call graph.
 
-There are some additional details & arrays, but the bottom-line is that by associating everything we can with linearly growing IDs and delaying "heavy" things as much as possible until thread destruction / formatting, we can reduce almost all common operations outside of time measurement trivial integer arrays lookups.
+There are some additional details & arrays, but the bottom-line is that by associating everything we can with linearly growing IDs and delaying "heavy" things as much as possible until thread destruction / formatting, we can reduce almost all common operations outside of time measurement to trivial integer array lookups.
 
 This way, the cost of re-entry on existing call graph nodes (aka the fast path taken most of the time) is reduced down to a single array lookup & branch that gets predicted most of the time.
 
@@ -384,7 +384,7 @@ Memory overhead of profiling is mostly defined by the aforementioned call graph 
 
 ### Thread safety
 
-Almost all profiling is lock-free, there are only 3 points at which we need to lock a mutex:
+Almost all profiling is lock-free, there are only 3 points at which implementation needs to lock a mutex:
 
 - When creating a new thread
 - When joining a thread
