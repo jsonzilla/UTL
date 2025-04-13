@@ -16,13 +16,12 @@
 
 #ifndef UTL_PROFILER_DISABLE
 
+#include <array>         // array<>
 #include <cassert>       // assert()
 #include <charconv>      // to_chars()
 #include <chrono>        // steady_clock, duration<>, duration_cast<>
-#include <cstddef>       // size_t
 #include <cstdint>       // uint16_t, uint32_t
 #include <iostream>      // cout
-#include <limits>        // numeric_limits<>::max()
 #include <mutex>         // mutex, lock_guard
 #include <string>        // string
 #include <string_view>   // string_view
@@ -78,6 +77,8 @@
 // ====================
 
 namespace utl::profiler::impl {
+
+using size_type = decltype(sizeof(1));
 
 template <class T>
 const T& max(const T& a, const T& b) {
