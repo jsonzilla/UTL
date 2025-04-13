@@ -16,17 +16,17 @@
 
 #ifndef UTL_PROFILER_DISABLE
 
-#include <array>         // array<>
+#include <array>         // array<>, size_t
 #include <cassert>       // assert()
 #include <charconv>      // to_chars()
-#include <chrono>        // steady_clock, duration<>, duration_cast<>
+#include <chrono>        // steady_clock, duration<>
 #include <cstdint>       // uint16_t, uint32_t
 #include <iostream>      // cout
 #include <mutex>         // mutex, lock_guard
-#include <string>        // string
+#include <string>        // string, to_string()
 #include <string_view>   // string_view
 #include <thread>        // thread::id, this_thread::get_id()
-#include <type_traits>   // enable_if_t, is_enum_v, is_invokable_v
+#include <type_traits>   // enable_if_t<>, is_enum_v<>, is_invokable_v<>, underlying_type_t<>
 #include <unordered_map> // unordered_map<>
 #include <vector>        // vector<>
 
@@ -78,10 +78,7 @@
 
 namespace utl::profiler::impl {
 
-using size_type = decltype(sizeof(1));
-
-template <class T>
-const T& max(const T& a, const T& b) {
+constexpr std::size_t max(std::size_t a, std::size_t b) noexcept {
     return (a < b) ? b : a;
 } // saves us a heavy <algorithm> include
 
