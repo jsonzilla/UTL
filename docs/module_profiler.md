@@ -68,9 +68,11 @@ inline Profiler profiler;
 
 Attaches profiler to the current scope.
 
-If profiled scope was entered at any point of the program, upon exiting `main()` a per-thread call graph will be build for all profiled segments.
+If profiled scope was entered at any point of the program, upon exiting `main()` a per-thread call graph will be built for all profiled segments.
 
-**Note:** `label` is a **string literal** name that will be shown in the results table.
+**Note 1:** `label` is a **string literal** name that will be shown in the results table.
+
+**Note 2:** Automatic printing on `main()` exit can be disabled.
 
 > ```cpp
 > UTL_PROFILER(label);
