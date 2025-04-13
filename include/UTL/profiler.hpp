@@ -20,7 +20,7 @@
 #include <charconv>      // to_chars()
 #include <chrono>        // steady_clock, duration<>, duration_cast<>
 #include <cstddef>       // size_t
-#include <cstdint>       // uint32_t
+#include <cstdint>       // uint16_t, uint32_t
 #include <iostream>      // cout
 #include <limits>        // numeric_limits<>::max()
 #include <mutex>         // mutex, lock_guard
@@ -38,6 +38,7 @@
 // Optional macros:
 // - #define UTL_PROFILER_DISABLE                            // disable all profiling
 // - #define UTL_PROFILER_USE_INTRINSICS_FOR_FREQUENCY 3.3e9 // use low-overhead rdtsc timestamps
+// - #define UTL_PROFILER_USE_SMALL_IDS                      // use 16-bit ids
 //
 // This used to be a much simpler header with a few macros to profile scope & print a flat table, it
 // already applied the idea of using static variables to mark callsites efficiently and later underwent
@@ -153,8 +154,14 @@ template <class Enum, std::enable_if_t<std::is_enum_v<Enum>, bool> = true>
     return static_cast<std::underlying_type_t<Enum>>(value);
 }
 
-enum class CallsiteId : std::uint32_t { empty = to_int(CallsiteId(-1)) };
-enum class NodeId : std::uint32_t { root = 0, empty = to_int(NodeId(-1)) };
+#ifdef UTL_PROFILER_USE_SMALL_IDS
+using id_type = std::uint16_t;
+#else
+using id_type = std::uint32_t;
+#endif
+
+enum class CallsiteId : id_type { empty = to_int(CallsiteId(-1)) };
+enum class NodeId : id_type { root = 0, empty = to_int(NodeId(-1)) };
 
 struct CallsiteInfo {
     const char* file;

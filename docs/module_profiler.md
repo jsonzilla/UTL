@@ -72,7 +72,7 @@ If profiled scope was entered at any point of the program, upon exiting `main()`
 
 **Note 1:** `label` is a **string literal** name that will be shown in the results table.
 
-**Note 2:** Automatic printing on `main()` exit can be disabled.
+**Note 2:** Automatic printing on exit can be disabled.
 
 > ```cpp
 > UTL_PROFILER(label);
@@ -326,7 +326,7 @@ It is possible to significantly reduce that overhead by using CPU-counter intrin
 #include "UTL/profiler.hpp"                             // will now use 'rdtsc' for timestamps
 ```
 
-This is exceedingly helpful when benchmarking code on a hot path. Below are a few [benchmarks](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/benchmark_profiler.cpp) showcasing the difference on particular hardware:
+This is exceedingly helpful when profiling code on a hot path. Below are a few [benchmarks](https://github.com/DmitriBogdanov/UTL/tree/master/benchmarks/benchmark_profiler.cpp) showcasing the difference on particular hardware:
 
 ```
 ======= USING std::chrono ========
@@ -383,7 +383,16 @@ New call-site entry & new node creation are rare slow paths, they only happen du
 
 ### Memory usage
 
-Memory overhead of profiling is mostly defined by the aforementioned call graph matrix. For example, on thread that runs into `20` profiling macros and creates `200` nodes, memory overhead is going to be `8 kB`. A thread that runs into `100` profiling macros and creates `1000` call graph nodes, memory overhead will be `0.2 MB`.
+Memory overhead of profiling is mostly defined by the aforementioned call graph matrix. For example, on thread that runs into `20` profiling macros and creates `100` nodes, memory overhead is going to be `8 kB`. A thread that runs into `100` profiling macros and creates `500` call graph nodes, memory overhead will be `0.2 MB`.
+
+It is possible to further reduce memory overhead (down to `4 kB` and `0.1 MB`) by defining a `UTL_PROFILER_USE_SMALL_IDS` macro before the include:
+
+```cpp
+#define UTL_PROFILER_USE_SMALL_IDS
+#include "UTL/profiler.hpp"
+```
+
+This switches implementation to 16-bit IDs, which limits the max number of nodes to `65535`. For most practical purposes this should be more than enough as most machines will reach stack overflow far before reaching such depth of the call graph.
 
 ### Thread safety
 
