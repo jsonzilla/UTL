@@ -136,7 +136,7 @@ struct clock {
     static time_point now() noexcept { return time_point(duration(utl_profiler_cpu_counter)); }
 };
 #else
-using clock = std::chrono::steady_clock;
+using clock   = std::chrono::steady_clock;
 #endif
 
 using duration   = clock::duration;
@@ -736,7 +736,7 @@ using impl::Style;
 
 #define UTL_PROFILER_SCOPE(label_)                                                                                     \
     constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
-    static_assert(utl_profiler_uuid(utl_profiler_macro_guard_), "UTL_PROFILE is a multi-line macro.");                 \
+    static_assert(utl_profiler_uuid(utl_profiler_macro_guard_), "UTL_PROFILER is a multi-line macro.");                \
                                                                                                                        \
     const thread_local utl::profiler::impl::Callsite utl_profiler_uuid(utl_profiler_callsite_)(                        \
         utl::profiler::impl::CallsiteInfo{__FILE__, __func__, label_, __LINE__});                                      \
@@ -750,8 +750,8 @@ using impl::Style;
 // effect on functionality, but might cause warnings from some static analysis tools
 //
 // 'constexpr bool' and 'static_assert()' are here to improve error messages when this macro is misused as an
-// expression, when someone writes 'if (...) UTL_PROFILER(...) func()' instead of many ugly errors they will see
-// a macro expansion that contains a 'static_assert()' with a proper message
+// expression, when someone writes 'if (...) UTL_PROFILER_SCOPE(...) func()' instead of many ugly errors they
+// will see a macro expansion that contains a 'static_assert()' with a proper message
 
 #define UTL_PROFILER(label_)                                                                                           \
     constexpr bool utl_profiler_uuid(utl_profiler_macro_guard_) = true;                                                \
@@ -804,7 +804,7 @@ struct Profiler {
 } // namespace utl::profiler
 
 #define UTL_PROFILER_SCOPE(label_) static_assert(true)
-#define UTL_PROFILER(label_) 
+#define UTL_PROFILER(label_)
 #define UTL_PROFILER_BEGIN(segment_, label_) static_assert(true)
 #define UTL_PROFILER_END(segment_) static_assert(true)
 
