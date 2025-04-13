@@ -277,7 +277,7 @@ public:
         return this->callsites[to_int(callsite_id)];
     }
 
-    // - Access (consts) -
+    // - Access (const) -
 
     const NodeId& prev_id(NodeId node_id) const {
         assert(to_int(node_id) < this->cols());
@@ -399,9 +399,9 @@ class Profiler {
     // "database" responsible for collecting & formatting results
 
     using call_graph_storage = std::unordered_map<std::thread::id, ThreadIdData>;
-    // thread ID by itself in not enough to identify a distinct thread with a finite lifetime, OS only guarantees
+    // thread ID by itself is not enough to identify a distinct thread with a finite lifetime, OS only guarantees
     // unique thread ids for currently existing threads, new threads may reuse IDs of the old joined threads,
-    // this is why for every thread ID we store a vector - this vector grow every time a new thread with a given
+    // this is why for every thread ID we store a vector - this vector grows every time a new thread with a given
     // id is created
 
     friend struct ThreadCallGraph;
@@ -461,9 +461,6 @@ class Profiler {
                 if (style.color) res += color::bold_blue;
                 append_fold(res, " (runtime -> ", runtime_str, " ms)\n");
                 if (style.color) res += color::reset;
-
-                // Early escape for lifetimes that haven't uploaded yet
-                if (!thread_uploaded) continue;
 
                 // Gather call graph data in a digestible format
                 mat.root_apply_recursively([&](CallsiteId callsite_id, NodeId node_id, std::size_t depth) {
@@ -548,8 +545,8 @@ class Profiler {
         if (emplaced) it->second.readable_id = (thread_id == this->main_thread_id) ? 0 : ++this->thread_counter;
 
         // Add a default-constructed call graph matrix to lifetimes,
-        // - if this thread ID was emplaced      then this is a non-reused thread ID,
-        // - if this thread ID was already there then this is a     reused  thread ID,
+        // - if this thread ID was emplaced      then this is a non-reused thread ID
+        // - if this thread ID was already there then this is a     reused thread ID
         // regardless, our actions are the same
         it->second.lifetimes.emplace_back();
     }
@@ -563,7 +560,7 @@ class Profiler {
     }
 
 public:
-    void upload_this_thread(); // depends on the 'thread_call_graph', defined later
+    void upload_this_thread(); // depends on the 'ThreadCallGraph', defined later
 
     void print_at_exit(bool value) noexcept {
         const std::lock_guard lock(this->setter_mutex);
@@ -575,7 +572,7 @@ public:
     std::string format_results(const Style& style = Style{}) {
         this->upload_this_thread();
         // Call graph from current thread is not yet uploaded by its 'thread_local' destructor, we need to
-        // explicitly pull them which we can easily since current thread can't contest its own resources
+        // explicitly pull it which we can easily do since current thread can't contest its own resources
 
         return this->format_available_results(style);
     }
@@ -657,8 +654,7 @@ public:
 
     void record_time(duration time) { this->mat.time(this->current_node_id) += time; }
 
-    // Adds new callsite in a thread-safe way and returns its id
-    CallsiteId callsite_add(const CallsiteInfo& info) {
+    CallsiteId callsite_add(const CallsiteInfo& info) { // adds new callsite & returns its id
         const CallsiteId new_callsite_id = CallsiteId(this->mat.rows());
 
         this->mat.grow_callsites();
@@ -750,11 +746,11 @@ using impl::Style;
     }
 
 // all variable names are concatenated with a line number to prevent shadowing when then there are multiple nested
-// profilers, this isn't a 100% foolproof solution, but it works reasonable well. Shadowed variables don't have any
+// profilers, this isn't a 100% foolproof solution, but it works reasonably well. Shadowed variables don't have any
 // effect on functionality, but might cause warnings from some static analysis tools
 //
 // 'constexpr bool' and 'static_assert()' are here to improve error messages when this macro is misused as an
-// expression, when someone write 'if (...) UTL_PROFILER(...) func()' instead of many ugly errors they will see
+// expression, when someone writes 'if (...) UTL_PROFILER(...) func()' instead of many ugly errors they will see
 // a macro expansion that contains a 'static_assert()' with a proper message
 
 #define UTL_PROFILER(label_)                                                                                           \
