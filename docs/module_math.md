@@ -3,7 +3,7 @@
 [<img src ="images/icon_header_only.svg">](https://en.wikipedia.org/wiki/Header-only)
 [<img src ="images/icon_no_dependencies.svg">](https://github.com/DmitriBogdanov/UTL/tree/master/single_include)
 
-# utl::math
+# utl::math (experimental)
 
 [<- to README.md](..)
 
