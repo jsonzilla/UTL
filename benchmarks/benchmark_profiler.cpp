@@ -90,22 +90,22 @@ void benchmark_profiling_overhead() {
 }
 
 void test_scope_profiler_precision() {
-    UTL_PROFILER("Scope precision test:   50 ms") utl::sleep::spinlock(50);
-    UTL_PROFILER("Scope precision test:  200 ms") utl::sleep::spinlock(200);
-    UTL_PROFILER("Scope precision test: 1000 ms") utl::sleep::spinlock(1000);
+    UTL_PROFILER("Scope precision test:   50 ms") utl::sleep::spinlock(50ms);
+    UTL_PROFILER("Scope precision test:  200 ms") utl::sleep::spinlock(200ms);
+    UTL_PROFILER("Scope precision test: 1000 ms") utl::sleep::spinlock(1000ms);
 }
 
 void test_segment_profiler_precision() {
     UTL_PROFILER_BEGIN(segment_1, "Segment precision test:   50 ms");
-    utl::sleep::spinlock(50);
+    utl::sleep::spinlock(50ms);
     UTL_PROFILER_END(segment_1);
     
     UTL_PROFILER_BEGIN(segment_2, "Segment precision test:   200 ms");
-    utl::sleep::spinlock(200);
+    utl::sleep::spinlock(200ms);
     UTL_PROFILER_END(segment_2);
     
     UTL_PROFILER_BEGIN(segment_3, "Segment precision test:  1000 ms");
-    utl::sleep::spinlock(1000);
+    utl::sleep::spinlock(1000ms);
     UTL_PROFILER_END(segment_3);
 }
 
