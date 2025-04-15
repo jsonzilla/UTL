@@ -8155,7 +8155,9 @@ public:
     Profiler() : main_thread_id(std::this_thread::get_id()) {}
 
     ~Profiler() {
-        if (this->print_at_destruction) std::cout << format_available_results();
+        if (this->call_graph_info.empty()) return; // no profiling was ever invoked
+        if (!this->print_at_destruction) return;   // printing was manually disabled
+        std::cout << format_available_results();
     }
 };
 
