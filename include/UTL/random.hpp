@@ -32,42 +32,34 @@
 // "better" entropy sources and several convenience wrappers for rng.
 //
 // Everything implemented here should be portable assuming reasonable assumptions (like existence of
-// uint32_t, uint64_t, 8-bit bytes, 32-bit floats, 64-bit doubles and etc.) which hold for most platforms
+// uint32_t, uint64_t, 8-bit bytes, 32-bit floats, 64-bit doubles and etc.) which hold for most platforms.
+//
+// Optional macros:
+// - #define UTL_RANDOM_USE_INTRINSICS // use rdtsc timestamps for entropy
 
 // ____________________ IMPLEMENTATION ____________________
 
-// ======================================
-// --- Ugly platform-specific entropy ---
-// ======================================
+// ==================================
+// --- Optional __rdtsc() support ---
+// ==================================
 
-// MSVC
-#if defined(UTL_RANDOM_USE_INTRINSICS) && !defined(utl_random_cpu_counter) && defined(_MSC_VER)
-#if defined(_M_IX86)
+#ifdef UTL_RANDOM_USE_INTRINSICS
+
+// x86 RDTSC timestamps make for a good source of entropy
+#ifdef _MSC_VER
 #include <intrin.h>
-#define utl_random_cpu_counter __rdtsc()
-#endif
-#endif
-
-// GCC
-#if defined(UTL_RANDOM_USE_INTRINSICS) && !defined(utl_random_cpu_counter) && defined(__GNUC__)
-#if __has_builtin(__builtin_ia32_rdtsc)
-#define utl_random_cpu_counter __builtin_ia32_rdtsc()
-#endif
+#else
+#include <x86intrin.h>
 #endif
 
-// clang
-#if defined(UTL_RANDOM_USE_INTRINSICS) && !defined(utl_random_cpu_counter) && !defined(__GNUC__) && defined(__clang__)
-#if __has_builtin(__builtin_readcyclecounter) && __has_include(<xmmintrin.h>)
-#include <xmmintrin.h>
-#define utl_random_cpu_counter __builtin_readcyclecounter()
-#endif
-#endif
+#define utl_profiler_cpu_counter __rdtsc()
 
-// Fallback onto a constant that changes with each compilation,
-// not good, but better than nothing
-#if !defined(utl_random_cpu_counter)
-#include <string>
+#else
+
+// Fallback onto a constant that changes with each compilation, not good, but better than nothing
+#include <string> // string
 #define utl_random_cpu_counter std::hash<std::string>{}(std::string(__TIME__))
+
 #endif
 
 namespace utl::random {
@@ -131,7 +123,7 @@ template <class T> constexpr bool _has_wider = !std::is_void_v<_wider_t<T>>;
 
 // Helper method to crush large uints to uint32_t,
 // inspired by Melissa E. O'Neil's randutils https://gist.github.com/imneme/540829265469e673d045
-template <class T, std::enable_if_t<std::is_integral_v<T> && sizeof(T) <= 8, bool> = true>
+template <class T, _require<std::is_integral_v<T> && sizeof(T) <= 8> = true>
 [[nodiscard]] constexpr std::uint32_t _crush_to_uint32(T value) {
     if constexpr (sizeof(value) <= 4) {
         return std::uint32_t(value);
@@ -187,7 +179,7 @@ template <class ResultType>
 
 template <class T>
 constexpr T _default_seed = std::numeric_limits<T>::max() / 2 + 1;
-// an "overall decent" default seed - doesn't gave too many zeroes,
+// an "overall decent" default seed - doesn't have too many zeroes,
 // unlikely to accidentally match with a user-defined seed
 
 
@@ -222,7 +214,7 @@ namespace generators {
 // Romu family provides extremely fast non-linear PRNGs, "RomuMono16" is the fastest 16-bit option available
 // that still provides some resemblance of quality. There has been some concerns over the math used
 // in its original paper (see https://news.ycombinator.com/item?id=22447848), however I'd yet to find
-// a faster 16-bit PRNG, so if speed is needed at all cost this one provides it.
+// a faster 16-bit PRNG, so if speed is needed at all costs, this one provides it.
 //
 class RomuMono16 {
 public:

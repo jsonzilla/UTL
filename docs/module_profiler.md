@@ -362,7 +362,7 @@ To disable any profiling code from interfering with the program, simply define `
 #define UTL_PROFILER_DISABLE
 #include "UTL/profiler.hpp"
 // - the header is now stripped of any and all code and only provides no-op mocks of the public API,
-//   this means no effectively no impact on compile times
+//   this means effectively no impact on compile times
 // - 'profiler.format_results()' now returns "<profiling is disabled>"
 ```
 
