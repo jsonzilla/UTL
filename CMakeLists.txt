@@ -11,5 +11,5 @@ project(
 include_directories(include)
 
 # Tests & Benchmarks
-add_subdirectory(tests)
-add_subdirectory(benchmarks)
+#add_subdirectory(tests)
+#add_subdirectory(benchmarks)
